@@ -5,9 +5,10 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Code2, Play, Star, Zap } from "lucide-react";
+import { Code2, Play, Star, Zap, Map } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
+import { LearningPath } from "@/components/roadmap/LearningPath";
 import Link from "next/link";
 
 export default function Home() {
@@ -16,8 +17,13 @@ export default function Home() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      const { data } = await supabase.from("modules").select("*").limit(1);
-      if (data) setModules(data);
+      try {
+        const { data, error } = await supabase.from("modules").select("*").limit(1);
+        if (error) console.error("Error fetching dashboard modules:", error.message || error);
+        if (data) setModules(data);
+      } catch (e: any) {
+        console.error("Dashboard data fetch error:", e?.message || String(e));
+      }
     };
     fetchDashboardData();
   }, []);
@@ -37,36 +43,15 @@ export default function Home() {
             <h1 className="text-4xl font-heading font-bold text-white mb-2">
               ¡Hola de nuevo, {profile?.username || "Coder"}! 👋
             </h1>
-            <p className="text-zinc-400 font-sans text-lg">Tu camino hacia la maestría en programación continúa. ¿Listo para el próximo reto?</p>
+            <p className="text-zinc-400 font-sans text-lg">Tu camino hacia la maestría en programación continúa. ¿Listo para el próximo nivel?</p>
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Action Area */}
+            {/* Left Area: Duolingo-style Learning Path Board & Quick Tools */}
             <div className="lg:col-span-2 space-y-8">
-              {modules.length > 0 ? (
-                <Card variant="glass" className="p-8 relative overflow-hidden group">
-                  <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary/20 to-transparent pointer-events-none" />
-                  <div className="relative z-10 flex flex-col items-start gap-4">
-                    <div className="flex items-center gap-2 text-primary font-semibold mb-2">
-                      <Star size={18} className="fill-primary" />
-                      <span>Módulo Sugerido</span>
-                    </div>
-                    <h2 className="text-3xl font-heading font-bold">{modules[0].title}</h2>
-                    <p className="text-zinc-300 max-w-md">
-                      {modules[0].description}
-                    </p>
-                    <Link href="/ide">
-                      <Button size="lg" className="mt-6 shadow-[0_0_15px_rgba(139,92,246,0.3)]" rightIcon={<Play size={18} />}>
-                        Ir a los Retos
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              ) : (
-                <Card variant="glass" className="p-8 relative overflow-hidden flex items-center justify-center min-h-[200px]">
-                  <p className="text-zinc-400">No hay módulos disponibles aún. Ve al panel de admin para crearlos.</p>
-                </Card>
-              )}
+              
+              {/* Duolingo-style Winding Level Path */}
+              <LearningPath />
 
               {/* Quick Actions / Micro-environments */}
               <div>
@@ -87,15 +72,15 @@ export default function Home() {
                       <div className="w-12 h-12 rounded-lg bg-yellow-500/20 text-yellow-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <Zap size={24} />
                       </div>
-                      <h4 className="font-bold text-lg mb-2">Algoritmia (JS)</h4>
-                      <p className="text-sm text-zinc-400">Resuelve problemas con tests unitarios y optimiza tu lógica.</p>
+                      <h4 className="font-bold text-lg mb-2">Algoritmia & POO</h4>
+                      <p className="text-sm text-zinc-400">Lista completa de retos y validaciones ocultas.</p>
                     </Card>
                   </Link>
                 </div>
               </div>
             </div>
 
-            {/* Sidebar Widgets */}
+            {/* Right Sidebar Widgets */}
             <div className="space-y-6">
               <Card className="p-6 glass border-t-4 border-t-accent">
                 <h3 className="font-heading font-bold text-lg mb-4">Misiones Diarias</h3>
