@@ -19,6 +19,7 @@ export default function AdminPage() {
   const [initialCode, setInitialCode] = useState("");
   const [solutionCode, setSolutionCode] = useState("");
   const [testCode, setTestCode] = useState("");
+  const [theory, setTheory] = useState("");
   const [xpReward, setXpReward] = useState("50");
 
   // New Module State
@@ -63,6 +64,7 @@ export default function AdminPage() {
       module_id: moduleId,
       title,
       description,
+      theory,
       challenge_type: challengeType,
       initial_code: initialCode,
       solution_code: solutionCode,
@@ -76,6 +78,7 @@ export default function AdminPage() {
       alert("¡Reto creado exitosamente!");
       setTitle("");
       setDescription("");
+      setTheory("");
       setInitialCode("");
       setSolutionCode("");
       setTestCode("");
@@ -148,8 +151,13 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Descripción y Requisitos</label>
-                <textarea required value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-primary h-24" />
+                <label className="block text-sm text-zinc-400 mb-1">Descripción Breve (Consigna)</label>
+                <textarea required value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-primary h-20" />
+              </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">📚 Contenido Teórico / Micro-lección (Markdown/Texto)</label>
+                <textarea value={theory} onChange={e => setTheory(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-primary h-36 font-mono text-sm" placeholder="Ejemplo: En este reto aprenderás qué es una función pura...&#10;&#10;Sintaxis:&#10;function miFuncion(a, b) { return a + b; }" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
