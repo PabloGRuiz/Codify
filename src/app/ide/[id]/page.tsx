@@ -33,9 +33,9 @@ function TheoryRenderer({ content }: { content: string }) {
             </strong>
           ),
           p: ({ children }) => (
-            <p className="text-base text-zinc-300 leading-relaxed my-3 font-sans">
+            <span className="block text-base text-zinc-300 leading-relaxed my-3 font-sans">
               {children}
-            </p>
+            </span>
           ),
           ul: ({ children }) => (
             <ul className="space-y-2 my-4 pl-2 list-none">
@@ -62,9 +62,9 @@ function TheoryRenderer({ content }: { content: string }) {
                     </span>
                     <span className="text-[10px] text-zinc-500 font-mono">EJEMPLO INTERACTIVO</span>
                   </span>
-                  <pre className="p-4 overflow-x-auto text-emerald-300 font-mono text-sm leading-relaxed border-none">
+                  <span className="block p-4 overflow-x-auto text-emerald-300 font-mono text-sm leading-relaxed whitespace-pre">
                     <code>{codeString}</code>
-                  </pre>
+                  </span>
                 </span>
               );
             }
