@@ -48,23 +48,24 @@ function TheoryRenderer({ content }: { content: string }) {
               <div>{children}</div>
             </li>
           ),
+          pre: ({ children }) => <>{children}</>,
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || "");
             const codeString = String(children).replace(/\n$/, "");
             
             if (!inline) {
               return (
-                <div className="my-5 rounded-xl overflow-hidden border border-white/10 bg-[#0d0d11] font-mono text-sm shadow-xl">
-                  <div className="bg-black/60 px-4 py-2 border-b border-white/10 text-xs text-zinc-400 flex items-center justify-between">
+                <span className="block my-5 rounded-xl overflow-hidden border border-white/10 bg-[#0d0d11] font-mono text-sm shadow-xl">
+                  <span className="bg-black/60 px-4 py-2 border-b border-white/10 text-xs text-zinc-400 flex items-center justify-between">
                     <span className="font-bold text-primary tracking-wider uppercase">
                       {match ? match[1] : "CÓDIGO DE EJEMPLO"}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-mono">EJEMPLO INTERACTIVO</span>
-                  </div>
-                  <pre className="p-4 overflow-x-auto text-emerald-300 font-mono text-sm leading-relaxed">
+                  </span>
+                  <pre className="p-4 overflow-x-auto text-emerald-300 font-mono text-sm leading-relaxed border-none">
                     <code>{codeString}</code>
                   </pre>
-                </div>
+                </span>
               );
             }
 
