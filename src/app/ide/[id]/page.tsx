@@ -14,6 +14,60 @@ import { useParams } from "next/navigation";
 // Deshabilitar SSR para Monaco Editor
 const CodeEditor = dynamic(() => import("@/components/ide/CodeEditor").then(mod => mod.CodeEditor), { ssr: false });
 
+function TheoryRenderer({ content }: { content: string }) {
+  if (!content) return null;
+
+  const parts = content.split(/(```[\s\S]*?```)/g);
+
+  return (
+    <div className="space-y-4 font-sans text-zinc-300">
+      {parts.map((part, index) => {
+        if (part.startsWith("```")) {
+          const lines = part.slice(3, -3).trim().split("\n");
+          const language = lines[0].match(/^[a-z]+/i) ? lines[0] : "";
+          const codeText = language ? lines.slice(1).join("\n") : lines.join("\n");
+
+          return (
+            <div key={index} className="my-4 rounded-xl overflow-hidden border border-white/10 bg-[#0d0d11] font-mono text-sm shadow-lg">
+              <div className="bg-black/50 px-4 py-1.5 border-b border-white/10 text-xs text-zinc-400 flex items-center justify-between">
+                <span>{language ? language.toUpperCase() : "CÓDIGO DE EJEMPLO"}</span>
+                <span className="text-[10px] text-primary font-bold">EJEMPLO</span>
+              </div>
+              <pre className="p-4 overflow-x-auto text-emerald-300 font-mono text-sm leading-relaxed">
+                <code>{codeText}</code>
+              </pre>
+            </div>
+          );
+        }
+
+        const blocks = part.split("\n\n");
+        return (
+          <div key={index} className="space-y-3">
+            {blocks.map((block, bIdx) => {
+              const text = block.trim();
+              if (!text) return null;
+
+              if (text.startsWith("### ")) {
+                return (
+                  <h3 key={bIdx} className="text-xl font-heading font-bold text-white mt-6 mb-2 flex items-center gap-2">
+                    {text.replace("### ", "")}
+                  </h3>
+                );
+              }
+
+              return (
+                <p key={bIdx} className="leading-relaxed text-zinc-300 text-base whitespace-pre-line">
+                  {text}
+                </p>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ChallengeIDEPage() {
   const { id } = useParams();
   const { user, profile } = useUser();
@@ -167,25 +221,14 @@ export default function ChallengeIDEPage() {
               <div className="space-y-6 py-4">
                 <div className="flex items-center gap-3 text-accent font-semibold">
                   <Lightbulb size={24} />
-                  <span className="uppercase tracking-wider text-xs">Concepto & Lección Rápida</span>
+                  <span className="uppercase tracking-wider text-xs font-bold">Concepto & Lección Rápida</span>
                 </div>
 
                 <h2 className="text-3xl font-heading font-bold text-white">{challenge.title}</h2>
 
                 <Card className="p-6 glass-panel border-l-4 border-l-primary space-y-4">
-                  <h3 className="font-bold text-lg text-white">¿Qué aprenderás en esta lección?</h3>
-                  <p className="text-zinc-300 leading-relaxed font-sans text-base whitespace-pre-line">
-                    {challenge.theory || challenge.description || "En este reto pondrás a prueba tus conocimientos fundamentales de lógica y programación."}
-                  </p>
+                  <TheoryRenderer content={challenge.theory || challenge.description} />
                 </Card>
-
-                <div className="bg-black/50 p-6 rounded-xl border border-white/10 space-y-3">
-                  <div className="flex items-center gap-2 text-zinc-400 text-sm font-semibold">
-                    <Code2 size={16} className="text-primary" />
-                    <span>Consigna del Reto:</span>
-                  </div>
-                  <p className="text-zinc-200 text-sm">{challenge.description}</p>
-                </div>
               </div>
 
               <div className="pt-6 pb-2 flex justify-end border-t border-white/10 shrink-0">
@@ -200,7 +243,7 @@ export default function ChallengeIDEPage() {
               </div>
             </div>
           ) : (
-            /* TAB 2: CÓDIGO Y PRACTICA */
+            /* TAB 2: CÓDIGO Y PRÁCTICA */
             <div className="h-full flex flex-col gap-4">
               <div className="text-zinc-300 text-sm bg-black/40 p-4 rounded-xl border border-white/5 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
@@ -214,9 +257,9 @@ export default function ChallengeIDEPage() {
                 </div>
                 <button 
                   onClick={() => setActiveTab("theory")}
-                  className="text-xs text-primary hover:underline font-semibold shrink-0 ml-4"
+                  className="text-xs text-primary hover:underline font-semibold shrink-0 ml-4 flex items-center gap-1"
                 >
-                  📖 Reorganizar Teoría
+                  <BookOpen size={14} /> Repasar Teoría
                 </button>
               </div>
 
@@ -233,12 +276,12 @@ export default function ChallengeIDEPage() {
                     <span>Salida de Consola y Validaciones</span>
                   </div>
                   {status === "success" && (
-                    <span className="flex items-center gap-1 text-emerald-400">
+                    <span className="flex items-center gap-1 text-emerald-400 font-bold">
                       <CheckCircle2 size={13} /> Pasó las validaciones
                     </span>
                   )}
                   {status === "error" && (
-                    <span className="flex items-center gap-1 text-red-400">
+                    <span className="flex items-center gap-1 text-red-400 font-bold">
                       <AlertCircle size={13} /> Errores encontrados
                     </span>
                   )}
