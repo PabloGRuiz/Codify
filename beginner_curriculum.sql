@@ -1,4 +1,5 @@
 -- Script SQL para insertar el Curso Desde Cero (5 Lecciones Progresivas con Teoría + Práctica)
+-- Usamos Dollar Quoting ($$) para evitar problemas de escape de comillas en Postgres.
 
 DO $$
 DECLARE
@@ -20,7 +21,8 @@ BEGIN
     base_module_id,
     'Lección 1: Variables y Contenedores de Datos',
     'Declara una constante llamada "nombrePlataforma" con valor "Codify" y una variable "nivelInicial" con valor 1.',
-    '### 💡 ¿Qué es una Variable?
+    $THEORY$
+### 💡 ¿Qué es una Variable?
 Una variable es como una **caja etiquetada** en la memoria de la computadora donde guardamos un dato para usarlo después.
 
 En JavaScript usamos dos palabras clave principales:
@@ -35,11 +37,19 @@ puntos = 10;
 ```
 
 ### 🎯 Tu Misión:
-Declara una constante llamada `nombrePlataforma` asignándole el texto `"Codify"` y una variable llamada `nivelInicial` asignándole el número `1`.',
+Declara una constante llamada `nombrePlataforma` asignándole el texto `"Codify"` y una variable llamada `nivelInicial` asignándole el número `1`.
+$THEORY$,
     'logic',
-    '// 1. Declara aquí la constante nombrePlataforma\n\n// 2. Declara aquí la variable nivelInicial\n',
-    'const nombrePlataforma = "Codify";\nlet nivelInicial = 1;',
-    'const assert = (c, m) => { if (!c) throw new Error(m); };\nassert(typeof nombrePlataforma !== "undefined", "No has declarado la variable nombrePlataforma");\nassert(nombrePlataforma === "Codify", "nombrePlataforma debe valer \'Codify\'");\nassert(typeof nivelInicial !== "undefined", "No has declarado la variable nivelInicial");\nassert(nivelInicial === 1, "nivelInicial debe ser igual a 1");',
+    $CODE$// 1. Declara aquí la constante nombrePlataforma
+
+// 2. Declara aquí la variable nivelInicial$CODE$,
+    $CODE$const nombrePlataforma = "Codify";
+let nivelInicial = 1;$CODE$,
+    $TEST$const assert = (c, m) => { if (!c) throw new Error(m); };
+assert(typeof nombrePlataforma !== "undefined", "No has declarado la variable nombrePlataforma");
+assert(nombrePlataforma === "Codify", "nombrePlataforma debe valer 'Codify'");
+assert(typeof nivelInicial !== "undefined", "No has declarado la variable nivelInicial");
+assert(nivelInicial === 1, "nivelInicial debe ser igual a 1");$TEST$,
     25,
     1
   );
@@ -51,7 +61,8 @@ Declara una constante llamada `nombrePlataforma` asignándole el texto `"Codify"
     base_module_id,
     'Lección 2: Operaciones Matemáticas Básicas',
     'Calcula el precio final aplicando un descuento.',
-    '### 🔢 Matemáticas en Programación
+    $THEORY$
+### 🔢 Matemáticas en Programación
 Las computadoras son calculadoras ultrarrápidas. Podemos hacer operaciones usando los símbolos tradicionales:
 - `+` Suma
 - `-` Resta
@@ -66,11 +77,19 @@ let total = precio - descuento; // Vale 80
 ```
 
 ### 🎯 Tu Misión:
-Usa las variables `precioOriginal` (100) y `descuento` (20) para calcular `precioFinal` (precioOriginal menos descuento).',
+Usa las variables `precioOriginal` (100) y `descuento` (20) para calcular `precioFinal` (precioOriginal menos descuento).
+$THEORY$,
     'logic',
-    'const precioOriginal = 100;\nconst descuento = 20;\n\n// Calcula precioFinal aquí:\nlet precioFinal = 0;\n',
-    'const precioOriginal = 100;\nconst descuento = 20;\nlet precioFinal = precioOriginal - descuento;',
-    'const assert = (c, m) => { if (!c) throw new Error(m); };\nassert(precioFinal === 80, "precioFinal debe ser igual a 80 (100 - 20)");',
+    $CODE$const precioOriginal = 100;
+const descuento = 20;
+
+// Calcula precioFinal aquí:
+let precioFinal = 0;$CODE$,
+    $CODE$const precioOriginal = 100;
+const descuento = 20;
+let precioFinal = precioOriginal - descuento;$CODE$,
+    $TEST$const assert = (c, m) => { if (!c) throw new Error(m); };
+assert(precioFinal === 80, "precioFinal debe ser igual a 80 (100 - 20)");$TEST$,
     30,
     2
   );
@@ -82,7 +101,8 @@ Usa las variables `precioOriginal` (100) y `descuento` (20) para calcular `preci
     base_module_id,
     'Lección 3: Tomando Decisiones (If / Else)',
     'Crea una función que verifique si una persona es mayor de edad (>= 18).',
-    '### 🚦 Tomar Decisiones con `if` / `else`
+    $THEORY$
+### 🚦 Tomar Decisiones con `if` / `else`
 En programación, a menudo queremos que el código haga una cosa u otra según una condición.
 
 - Si la condición es **verdadera** (`true`), ejecuta el bloque `if`.
@@ -100,11 +120,24 @@ function evaluarClima(temperatura) {
 ```
 
 ### 🎯 Tu Misión:
-Crea una función llamada `esMayorDeEdad(edad)` que devuelva `true` si la edad es mayor o igual a 18, y `false` en caso contrario.',
+Crea una función llamada `esMayorDeEdad(edad)` que devuelva `true` si la edad es mayor o igual a 18, y `false` en caso contrario.
+$THEORY$,
     'logic',
-    'function esMayorDeEdad(edad) {\n  // Tu código de decisión aquí:\n  \n}\n',
-    'function esMayorDeEdad(edad) {\n  if (edad >= 18) {\n    return true;\n  } else {\n    return false;\n  }\n}',
-    'const assert = (c, m) => { if (!c) throw new Error(m); };\nassert(esMayorDeEdad(20) === true, "esMayorDeEdad(20) debe devolver true");\nassert(esMayorDeEdad(15) === false, "esMayorDeEdad(15) debe devolver false");\nassert(esMayorDeEdad(18) === true, "esMayorDeEdad(18) debe devolver true");',
+    $CODE$function esMayorDeEdad(edad) {
+  // Tu código de decisión aquí:
+  
+}$CODE$,
+    $CODE$function esMayorDeEdad(edad) {
+  if (edad >= 18) {
+    return true;
+  } else {
+    return false;
+  }
+}$CODE$,
+    $TEST$const assert = (c, m) => { if (!c) throw new Error(m); };
+assert(esMayorDeEdad(20) === true, "esMayorDeEdad(20) debe devolver true");
+assert(esMayorDeEdad(15) === false, "esMayorDeEdad(15) debe devolver false");
+assert(esMayorDeEdad(18) === true, "esMayorDeEdad(18) debe devolver true");$TEST$,
     40,
     3
   );
@@ -116,7 +149,8 @@ Crea una función llamada `esMayorDeEdad(edad)` que devuelva `true` si la edad e
     base_module_id,
     'Lección 4: Repitiendo Tareas con Bucles (Loops)',
     'Escribe una función que sume todos los números desde 1 hasta n.',
-    '### 🔄 Repetir código con un Bucle `for`
+    $THEORY$
+### 🔄 Repetir código con un Bucle `for`
 Un bucle nos permite repetir un bloque de código muchas veces sin tener que escribirlo manualmente.
 
 Estructura de un `for`:
@@ -133,11 +167,25 @@ for (let i = 1; i <= 3; i++) {
 ```
 
 ### 🎯 Tu Misión:
-Escribe la función `sumarHasta(n)` que reciba un número `n` y devuelva la suma de todos los enteros desde 1 hasta `n`.',
+Escribe la función `sumarHasta(n)` que reciba un número `n` y devuelva la suma de todos los enteros desde 1 hasta `n`.
+$THEORY$,
     'logic',
-    'function sumarHasta(n) {\n  let total = 0;\n  // Escribe tu bucle for aquí:\n  \n  return total;\n}\n',
-    'function sumarHasta(n) {\n  let total = 0;\n  for (let i = 1; i <= n; i++) {\n    total += i;\n  }\n  return total;\n}',
-    'const assert = (c, m) => { if (!c) throw new Error(m); };\nassert(sumarHasta(3) === 6, "sumarHasta(3) debe dar 6 (1+2+3)");\nassert(sumarHasta(5) === 15, "sumarHasta(5) debe dar 15 (1+2+3+4+5)");',
+    $CODE$function sumarHasta(n) {
+  let total = 0;
+  // Escribe tu bucle for aquí:
+  
+  return total;
+}$CODE$,
+    $CODE$function sumarHasta(n) {
+  let total = 0;
+  for (let i = 1; i <= n; i++) {
+    total += i;
+  }
+  return total;
+}$CODE$,
+    $TEST$const assert = (c, m) => { if (!c) throw new Error(m); };
+assert(sumarHasta(3) === 6, "sumarHasta(3) debe dar 6 (1+2+3)");
+assert(sumarHasta(5) === 15, "sumarHasta(5) debe dar 15 (1+2+3+4+5)");$TEST$,
     50,
     4
   );
@@ -149,7 +197,8 @@ Escribe la función `sumarHasta(n)` que reciba un número `n` y devuelva la suma
     base_module_id,
     'Lección 5: Tu Primer Algoritmo Completo',
     'Combina funciones, arreglos, bucles y condicionales para contar exámenes aprobados (>= 60).',
-    '### 🏆 ¡El Desafío Integrador!
+    $THEORY$
+### 🏆 ¡El Desafío Integrador!
 ¡Felicitaciones! Has llegado a la última lección del curso inicial. Aquí combinarás todo lo aprendido:
 - **Funciones**: Para empaquetar tu lógica.
 - **Arreglos (`[]`)**: Listas de datos.
@@ -170,11 +219,27 @@ function contarPositivos(numeros) {
 ```
 
 ### 🎯 Tu Misión:
-Crea la función `contarAprobados(notas)` que reciba una lista de notas (números) y devuelva cuántas de esas notas son mayores o iguales a 60.',
+Crea la función `contarAprobados(notas)` que reciba una lista de notas (números) y devuelva cuántas de esas notas son mayores o iguales a 60.
+$THEORY$,
     'logic',
-    'function contarAprobados(notas) {\n  let aprobados = 0;\n  // Recorre el arreglo de notas y cuenta las >= 60:\n  \n  return aprobados;\n}\n',
-    'function contarAprobados(notas) {\n  let aprobados = 0;\n  for (let nota of notas) {\n    if (nota >= 60) {\n      aprobados++;\n    }\n  }\n  return aprobados;\n}',
-    'const assert = (c, m) => { if (!c) throw new Error(m); };\nassert(contarAprobados([50, 70, 80, 40, 60]) === 3, "Debe haber 3 aprobados (70, 80, 60)");\nassert(contarAprobados([10, 20, 30]) === 0, "Debe haber 0 aprobados");',
+    $CODE$function contarAprobados(notas) {
+  let aprobados = 0;
+  // Recorre el arreglo de notas y cuenta las >= 60:
+  
+  return aprobados;
+}$CODE$,
+    $CODE$function contarAprobados(notas) {
+  let aprobados = 0;
+  for (let nota of notas) {
+    if (nota >= 60) {
+      aprobados++;
+    }
+  }
+  return aprobados;
+}$CODE$,
+    $TEST$const assert = (c, m) => { if (!c) throw new Error(m); };
+assert(contarAprobados([50, 70, 80, 40, 60]) === 3, "Debe haber 3 aprobados (70, 80, 60)");
+assert(contarAprobados([10, 20, 30]) === 0, "Debe haber 0 aprobados");$TEST$,
     75,
     5
   );
