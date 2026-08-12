@@ -141,8 +141,8 @@ export function LearningPath() {
     <Card className="p-8 glass-panel border-t-4 border-t-primary relative overflow-hidden space-y-8 shadow-2xl">
       
       {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-6">
-        <div className="space-y-2">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 border-b border-white/10 pb-6">
+        <div className="space-y-2 flex-1 min-w-0">
           <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
             <ShieldCheck size={16} />
             <span>Ruta de Aprendizaje Interactiva</span>
@@ -159,35 +159,35 @@ export function LearningPath() {
                   localStorage.setItem("codify_last_module", newId);
                 }
               }}
-              className="bg-black/60 text-white font-heading font-bold text-xl p-2 rounded-lg border border-white/20 outline-none focus:border-primary max-w-full"
+              className="bg-black/60 text-white font-heading font-bold text-lg sm:text-xl p-2.5 rounded-xl border border-white/20 outline-none focus:border-primary w-full max-w-full lg:max-w-xl truncate cursor-pointer shadow-inner"
             >
               {modules.map((m) => (
-                <option key={m.id} value={m.id}>
+                <option key={m.id} value={m.id} className="bg-zinc-900 text-white">
                   {m.title}
                 </option>
               ))}
             </select>
           ) : (
-            <h2 className="text-2xl font-heading font-bold text-white">
+            <h2 className="text-2xl font-heading font-bold text-white truncate">
               {activeModule?.title || "Curso Inicial: Aprende a Programar desde Cero"}
             </h2>
           )}
 
-          <p className="text-sm text-zinc-400 max-w-xl">
+          <p className="text-sm text-zinc-400 max-w-xl leading-relaxed">
             {activeModule?.description || "Domina las bases de la programación paso a paso."}
           </p>
         </div>
 
         {/* Segment Progress Indicator */}
-        <div className="bg-black/50 p-4 rounded-xl border border-white/10 flex items-center gap-4 shrink-0 shadow-lg">
-          <div className="text-right">
+        <div className="bg-black/50 p-4 rounded-xl border border-white/10 flex items-center justify-between xl:justify-start gap-4 shrink-0 shadow-lg self-start xl:self-auto w-full xl:w-auto">
+          <div>
             <span className="text-xs text-zinc-400 block font-semibold">Progreso del Módulo</span>
             <span className="text-xl font-bold text-white font-mono">
               {completedCount} / {totalCount} <span className="text-xs text-primary font-sans">({progressPercent}%)</span>
             </span>
           </div>
-          <div className="w-14 h-14 rounded-full border-4 border-primary/20 flex items-center justify-center relative bg-black/40">
-            <Star className="text-primary fill-primary animate-pulse" size={24} />
+          <div className="w-12 h-12 rounded-full border-4 border-primary/20 flex items-center justify-center relative bg-black/40 shrink-0">
+            <Star className="text-primary fill-primary animate-pulse" size={22} />
           </div>
         </div>
       </div>
