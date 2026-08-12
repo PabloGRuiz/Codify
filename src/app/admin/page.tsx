@@ -211,7 +211,7 @@ Genera el script SQL completo listo para copiar y pegar.`;
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="ml-64 flex-1 p-8 overflow-y-auto">
+      <div className="md:ml-64 ml-0 flex-1 p-8 overflow-y-auto">
         
         {/* Header */}
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">

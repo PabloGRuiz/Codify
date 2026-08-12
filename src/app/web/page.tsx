@@ -41,7 +41,7 @@ export default function WebPrototypingPage() {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="ml-64 flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="md:ml-64 ml-0 flex-1 flex flex-col h-screen overflow-hidden">
         
         {/* Header / Topbar */}
         <header className="h-16 w-full glass border-b border-border flex items-center justify-between px-6 shrink-0">

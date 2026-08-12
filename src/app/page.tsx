@@ -31,7 +31,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="ml-64 flex-1 flex flex-col min-h-screen relative overflow-hidden">
+      <div className="md:ml-64 ml-0 flex-1 flex flex-col min-h-screen relative overflow-hidden">
         {/* Background glow effects */}
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent/20 blur-[120px] pointer-events-none" />
@@ -84,19 +84,28 @@ export default function Home() {
             <div className="space-y-6">
               <Card className="p-6 glass border-t-4 border-t-accent">
                 <h3 className="font-heading font-bold text-lg mb-4">Misiones Diarias</h3>
-                <ul className="space-y-4">
+                <ul className="space-y-5">
                   {[
-                    { title: "Completa 1 reto de lógica", xp: 50, done: false },
-                    { title: "Resuelve un reto sin errores", xp: 100, done: false },
-                    { title: "Inicia sesión", xp: 25, done: true },
+                    { title: "Completa 1 reto de lógica", xp: 50, progress: 0, total: 1, done: false },
+                    { title: "Gana 100 XP hoy", xp: 100, progress: 25, total: 100, done: false },
+                    { title: "Inicia sesión", xp: 25, progress: 1, total: 1, done: true },
                   ].map((mission, i) => (
                     <li key={i} className="flex items-start gap-3">
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 flex-shrink-0 ${mission.done ? 'bg-success border-success text-black' : 'border-zinc-500'}`}>
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 flex-shrink-0 ${mission.done ? 'bg-success border-success text-black shadow-[0_0_10px_rgba(52,211,153,0.3)]' : 'border-zinc-500 bg-zinc-900/50'}`}>
                         {mission.done && <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                       </div>
-                      <div>
-                        <p className={`text-sm ${mission.done ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>{mission.title}</p>
-                        <p className="text-xs text-primary font-bold">+{mission.xp} XP</p>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className={`text-sm font-medium ${mission.done ? 'text-zinc-500' : 'text-zinc-200'}`}>{mission.title}</p>
+                          <p className={`text-xs font-bold ${mission.done ? 'text-zinc-600' : 'text-primary'}`}>+{mission.xp} XP</p>
+                        </div>
+                        <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden mt-1.5">
+                          <div 
+                            className={`h-full transition-all duration-500 ${mission.done ? 'bg-zinc-600' : 'bg-accent shadow-[0_0_10px_rgba(56,189,248,0.5)]'}`}
+                            style={{ width: `${(mission.progress / mission.total) * 100}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 mt-1 text-right">{mission.progress} / {mission.total}</p>
                       </div>
                     </li>
                   ))}

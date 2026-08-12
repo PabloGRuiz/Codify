@@ -96,8 +96,26 @@ export function LearningPath() {
 
   if (loading) {
     return (
-      <Card className="p-8 text-center text-zinc-400 font-sans glass animate-pulse">
-        Cargando Tablero de Niveles...
+      <Card className="p-8 glass-panel border-t-4 border-t-primary space-y-8 shadow-2xl animate-pulse">
+        <div className="flex flex-col md:flex-row justify-between md:items-center pb-6 border-b border-white/10 gap-6">
+          <div className="space-y-3">
+            <div className="h-4 w-32 bg-white/10 rounded"></div>
+            <div className="h-8 w-64 bg-white/10 rounded"></div>
+            <div className="h-4 w-48 bg-white/10 rounded"></div>
+          </div>
+          <div className="h-20 w-40 bg-white/10 rounded-xl"></div>
+        </div>
+        <div className="space-y-4 max-w-3xl mx-auto py-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-start gap-6">
+              <div className="flex flex-col items-center pt-1">
+                <div className="w-14 h-14 rounded-2xl bg-white/10"></div>
+                {i < 4 && <div className="w-0.5 h-14 my-2 bg-white/5"></div>}
+              </div>
+              <div className="flex-1 h-28 sm:h-24 bg-white/5 rounded-2xl border border-white/5"></div>
+            </div>
+          ))}
+        </div>
       </Card>
     );
   }
