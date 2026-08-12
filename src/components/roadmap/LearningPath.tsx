@@ -54,9 +54,21 @@ export function LearningPath() {
       
       if (modulesData && modulesData.length > 0) {
         setModules(modulesData);
-        // Find beginner module or default to first
-        const beginnerMod = modulesData.find((m) => m.title.toLowerCase().includes("inicial") || m.title.toLowerCase().includes("cero"));
-        setSelectedModuleId(beginnerMod ? beginnerMod.id : modulesData[0].id);
+        let defaultModId = "";
+        
+        if (typeof window !== "undefined") {
+          const saved = localStorage.getItem("codify_last_module");
+          if (saved && modulesData.some(m => m.id === saved)) {
+            defaultModId = saved;
+          }
+        }
+        
+        if (!defaultModId) {
+          const beginnerMod = modulesData.find((m) => m.title.toLowerCase().includes("inicial") || m.title.toLowerCase().includes("cero"));
+          defaultModId = beginnerMod ? beginnerMod.id : modulesData[0].id;
+        }
+        
+        setSelectedModuleId(defaultModId);
       }
 
       // 2. Fetch user completed challenges if logged in
@@ -140,8 +152,14 @@ export function LearningPath() {
           {modules.length > 1 ? (
             <select
               value={selectedModuleId}
-              onChange={(e) => setSelectedModuleId(e.target.value)}
-              className="bg-black/60 text-white font-heading font-bold text-xl p-2 rounded-lg border border-white/20 outline-none focus:border-primary"
+              onChange={(e) => {
+                const newId = e.target.value;
+                setSelectedModuleId(newId);
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("codify_last_module", newId);
+                }
+              }}
+              className="bg-black/60 text-white font-heading font-bold text-xl p-2 rounded-lg border border-white/20 outline-none focus:border-primary max-w-full"
             >
               {modules.map((m) => (
                 <option key={m.id} value={m.id}>
