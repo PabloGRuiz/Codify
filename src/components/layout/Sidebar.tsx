@@ -93,9 +93,10 @@ export function Sidebar() {
         </nav>
 
         <div className="px-6 mt-auto space-y-3">
-          <div className="p-4 rounded-xl glass-panel">
+          <Link href="/profile" onClick={() => setIsOpen(false)}>
+          <div className="p-4 rounded-xl glass-panel hover:border-primary/50 transition-all cursor-pointer group">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-zinc-300">
+              <span className="text-sm font-semibold text-zinc-300 group-hover:text-primary transition-colors">
                 {profile?.username ? `@${profile.username}` : "Coder"}
               </span>
               <span className="text-xs text-primary font-bold">Nivel {currentLevel}</span>
@@ -108,6 +109,7 @@ export function Sidebar() {
               ></div>
             </div>
           </div>
+        </Link>
           
           <button 
             onClick={handleLogout}
