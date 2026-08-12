@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Code2, LayoutDashboard, TerminalSquare, LogOut, Menu, X } from "lucide-react";
+import { Code2, LayoutDashboard, TerminalSquare, LogOut, Menu, X, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
@@ -23,6 +23,7 @@ export function Sidebar() {
     { name: "Dashboard", href: "/", icon: <LayoutDashboard size={20} /> },
     { name: "Laboratorio Web", href: "/web", icon: <Code2 size={20} /> },
     { name: "IDE Algorítmico", href: "/ide", icon: <TerminalSquare size={20} /> },
+    { name: "Documentación", href: "/docs", icon: <BookOpen size={20} /> },
   ];
 
   // XP Formula: Every level requires (level * 100) XP.
@@ -80,12 +81,12 @@ export function Sidebar() {
                   whileHover={{ x: 5 }}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors ${
                     isActive
-                      ? "bg-primary/20 text-primary border border-primary/30"
-                      : "text-zinc-400 hover:text-white hover:bg-white/5"
+                      ? "bg-primary/20 text-primary border border-primary/30 font-bold"
+                      : "text-zinc-400 hover:text-white hover:bg-white/5 font-medium"
                   }`}
                 >
                   {item.icon}
-                  <span className="font-medium font-sans">{item.name}</span>
+                  <span className="font-sans">{item.name}</span>
                 </motion.div>
               </Link>
             );
@@ -94,22 +95,22 @@ export function Sidebar() {
 
         <div className="px-6 mt-auto space-y-3">
           <Link href="/profile" onClick={() => setIsOpen(false)}>
-          <div className="p-4 rounded-xl glass-panel hover:border-primary/50 transition-all cursor-pointer group">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-zinc-300 group-hover:text-primary transition-colors">
-                {profile?.username ? `@${profile.username}` : "Coder"}
-              </span>
-              <span className="text-xs text-primary font-bold">Nivel {currentLevel}</span>
+            <div className="p-4 rounded-xl glass-panel hover:border-primary/50 transition-all cursor-pointer group">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-zinc-300 group-hover:text-primary transition-colors">
+                  {profile?.username ? `@${profile.username}` : "Coder"}
+                </span>
+                <span className="text-xs text-primary font-bold">Nivel {currentLevel}</span>
+              </div>
+              <div className="text-xs text-zinc-400 mb-2">{currentXp} / {xpRequiredForNext} XP</div>
+              <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                  style={{ width: `${xpPercentage}%` }}
+                ></div>
+              </div>
             </div>
-            <div className="text-xs text-zinc-400 mb-2">{currentXp} / {xpRequiredForNext} XP</div>
-            <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
-                style={{ width: `${xpPercentage}%` }}
-              ></div>
-            </div>
-          </div>
-        </Link>
+          </Link>
           
           <button 
             onClick={handleLogout}

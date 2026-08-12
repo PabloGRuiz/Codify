@@ -13,6 +13,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { QuizRunner } from "@/components/ide/QuizRunner";
+
 // Deshabilitar SSR para Monaco Editor con Loading State amigable
 const CodeEditor = dynamic(
   () => import("@/components/ide/CodeEditor").then((mod) => mod.CodeEditor),
@@ -240,8 +242,26 @@ export default function ChallengeIDEPage() {
           </div>
         </header>
 
-        {/* Main Content Area: Side-by-Side on Desktop, Tabs on Mobile */}
-        <main className="flex-1 overflow-hidden p-0 lg:p-4 bg-[#09090b] flex flex-col lg:flex-row gap-0 lg:gap-4 relative">
+        {/* Main Content Area: Quiz vs Code IDE */}
+        {challenge.challenge_type === "quiz" ? (
+          <main className="flex-1 p-4 lg:p-6 bg-[#09090b]">
+            <QuizRunner
+              questions={[
+                {
+                  id: "q1",
+                  question: challenge.description || "¿Cuál es la sintaxis correcta?",
+                  options: ["Opción A (Incorrecta)", "Opción B (Correcta)", "Opción C", "Opción D"],
+                  correctIndex: 1,
+                  explanation: "La opción B es la respuesta pedagógicamente correcta según la teoría mostrada."
+                }
+              ]}
+              xpReward={challenge.xp_reward || 50}
+              onComplete={() => setShowSuccessModal(true)}
+            />
+          </main>
+        ) : (
+          /* Main Content Area: Side-by-Side on Desktop, Tabs on Mobile */
+          <main className="flex-1 overflow-hidden p-0 lg:p-4 bg-[#09090b] flex flex-col lg:flex-row gap-0 lg:gap-4 relative">
           
           {/* LEFT PANEL: Theory (Hidden on mobile if Code tab active) */}
           <div
@@ -325,6 +345,7 @@ export default function ChallengeIDEPage() {
             </div>
           </div>
         </main>
+        )}
       </div>
 
       {/* SUCCESS CELEBRATION MODAL (Replaces alert()) */}
