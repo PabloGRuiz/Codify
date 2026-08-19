@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { 
   Play, 
   TerminalSquare, 
@@ -19,7 +18,10 @@ import {
   Trophy, 
   Star,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Globe,
+  RefreshCw,
+  Eye
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
@@ -97,7 +99,6 @@ function TheoryRenderer({ content }: { content: string }) {
               );
             }
 
-            // Inline code rendering (compact and clean)
             return (
               <code className="bg-primary/20 text-purple-300 border border-primary/30 px-1.5 py-0.5 rounded font-mono text-xs font-semibold mx-0.5 inline-block">
                 {children}
@@ -124,7 +125,10 @@ export default function ChallengeIDEPage() {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [isCompleted, setIsCompleted] = useState(false);
   const [activeTab, setActiveTab] = useState<"theory" | "code">("theory");
+  const [bottomTab, setBottomTab] = useState<"console" | "preview">("console");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -135,10 +139,65 @@ export default function ChallengeIDEPage() {
         if (!data.theory) {
           setActiveTab("code");
         }
+        if (data.challenge_type === "web") {
+          setBottomTab("preview");
+        }
       }
     };
     if (id) fetchChallenge();
   }, [id]);
+
+  const initSandboxIframe = () => {
+    if (iframeRef.current && iframeRef.current.contentDocument) {
+      const doc = iframeRef.current.contentDocument;
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+          <head>
+            <meta charset="utf-8" />
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                margin: 16px;
+                background-color: #0d0d11;
+                color: #e4e4e7;
+              }
+              h1 { color: #8b5cf6; font-size: 1.5rem; margin-top: 0; margin-bottom: 0.5rem; }
+              p { color: #a1a1aa; line-height: 1.5; margin-top: 0; margin-bottom: 0.75rem; }
+              a { color: #38bdf8; text-decoration: underline; }
+              img { max-width: 100%; border-radius: 8px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); }
+              ul { padding-left: 20px; color: #cbd5e1; }
+              li { margin-bottom: 4px; }
+              button {
+                background: linear-gradient(135deg, #8b5cf6, #ec4899);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: opacity 0.2s;
+              }
+              button:hover { opacity: 0.9; }
+              input {
+                background: #18181b;
+                border: 1px solid #3f3f46;
+                color: white;
+                padding: 6px 12px;
+                border-radius: 6px;
+                outline: none;
+              }
+            </style>
+          </head>
+          <body></body>
+        </html>
+      `);
+      doc.close();
+      return { doc, win: iframeRef.current.contentWindow };
+    }
+    return { doc: document, win: window };
+  };
 
   const runCodeAndTests = async () => {
     if (!challenge) return;
@@ -161,10 +220,16 @@ export default function ChallengeIDEPage() {
 
     let passed = false;
     try {
+      // Initialize fresh sandbox isolated DOM
+      const { doc: sandboxDoc, win: sandboxWin } = initSandboxIframe();
+
       const fullCode = `${code}\n\n${challenge.test_code || ""}`;
-      const runFn = new Function(fullCode);
-      runFn();
-      setLogs([...capturedLogs, "✅ ¡Todos los tests ocultos pasaron exitosamente!"]);
+      
+      // Execute in isolated sandbox scope passing sandbox document and window
+      const runFn = new Function("document", "window", fullCode);
+      runFn(sandboxDoc, sandboxWin);
+      
+      setLogs([...capturedLogs, "✅ ¡Todos los tests pasaron exitosamente!"]);
       setStatus("success");
       passed = true;
     } catch (err: any) {
@@ -208,6 +273,8 @@ export default function ChallengeIDEPage() {
       </div>
     );
 
+  const isWebChallenge = challenge.challenge_type === "web";
+
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
@@ -230,14 +297,14 @@ export default function ChallengeIDEPage() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
-                <TerminalSquare size={18} className="text-yellow-400" />
+              <div className={`w-8 h-8 rounded-lg ${isWebChallenge ? "bg-blue-500/20" : "bg-yellow-500/20"} flex items-center justify-center shrink-0`}>
+                {isWebChallenge ? <Globe size={18} className="text-blue-400" /> : <TerminalSquare size={18} className="text-yellow-400" />}
               </div>
               <h1 className="font-heading font-bold text-base lg:text-lg text-white line-clamp-1">{challenge.title}</h1>
             </div>
           </div>
 
-          {/* Mobile Navigation Tabs (Hidden on Desktop, where it's Side-by-Side) */}
+          {/* Mobile Navigation Tabs */}
           <div className="lg:hidden flex items-center bg-black/40 p-1 rounded-lg border border-white/10">
             <button
               onClick={() => setActiveTab("theory")}
@@ -293,7 +360,7 @@ export default function ChallengeIDEPage() {
           /* Main Content Area: Side-by-Side on Desktop, Tabs on Mobile */
           <main className="flex-1 overflow-hidden p-0 lg:p-4 bg-[#09090b] flex flex-col lg:flex-row gap-0 lg:gap-4 relative">
             
-            {/* LEFT PANEL: Theory (Hidden on mobile if Code tab active) */}
+            {/* LEFT PANEL: Theory */}
             <div
               className={`w-full lg:w-[45%] xl:w-[40%] flex-col h-full bg-[#0d0d11] lg:rounded-2xl lg:border lg:border-white/10 overflow-hidden ${
                 activeTab === "theory" ? "flex" : "hidden lg:flex"
@@ -316,7 +383,7 @@ export default function ChallengeIDEPage() {
               </div>
             </div>
 
-            {/* RIGHT PANEL: Code & Terminal (Hidden on mobile if Theory tab active) */}
+            {/* RIGHT PANEL: Code & Sandbox / Console */}
             <div
               className={`w-full lg:w-[55%] xl:w-[60%] flex-col h-full gap-2 lg:gap-4 ${
                 activeTab === "code" ? "flex" : "hidden lg:flex"
@@ -329,30 +396,62 @@ export default function ChallengeIDEPage() {
               </div>
 
               {/* Top Right: Monaco Editor */}
-              <div className="flex-1 relative lg:rounded-2xl overflow-hidden border-y lg:border border-white/10 shadow-lg">
+              <div className="flex-1 relative lg:rounded-2xl overflow-hidden border-y lg:border border-white/10 shadow-lg min-h-[220px]">
                 <CodeEditor language="javascript" value={code} onChange={(v) => setCode(v || "")} />
               </div>
 
-              {/* Bottom Right: Interactive Terminal Console */}
-              <div className="h-48 lg:h-56 lg:rounded-2xl bg-black border-t lg:border border-white/10 flex flex-col overflow-hidden font-mono text-sm shadow-xl shrink-0">
-                <div className="h-9 bg-zinc-900/80 px-4 flex items-center justify-between border-b border-zinc-800 text-xs text-zinc-400">
+              {/* Bottom Right: Interactive Terminal Console & Web Sandbox */}
+              <div className="h-56 lg:h-64 lg:rounded-2xl bg-black border-t lg:border border-white/10 flex flex-col overflow-hidden font-mono text-sm shadow-xl shrink-0">
+                
+                {/* Bottom Bar Header with Tabs */}
+                <div className="h-10 bg-zinc-900/90 px-3 flex items-center justify-between border-b border-zinc-800 text-xs text-zinc-400">
                   <div className="flex items-center gap-2">
-                    <TerminalSquare size={14} />
-                    <span>Salida de Consola y Validaciones</span>
+                    <button
+                      onClick={() => setBottomTab("console")}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-colors ${
+                        bottomTab === "console"
+                          ? "bg-white/10 text-white font-bold"
+                          : "text-zinc-400 hover:text-zinc-200"
+                      }`}
+                    >
+                      <TerminalSquare size={14} />
+                      <span>Consola & Tests</span>
+                    </button>
+
+                    {isWebChallenge && (
+                      <button
+                        onClick={() => setBottomTab("preview")}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-colors ${
+                          bottomTab === "preview"
+                            ? "bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30"
+                            : "text-zinc-400 hover:text-blue-300"
+                        }`}
+                      >
+                        <Globe size={14} />
+                        <span>Vista Previa Web</span>
+                      </button>
+                    )}
                   </div>
-                  {status === "success" && (
-                    <span className="flex items-center gap-1 text-emerald-400 font-bold">
-                      <CheckCircle2 size={13} /> Pasó las validaciones
-                    </span>
-                  )}
-                  {status === "error" && (
-                    <span className="flex items-center gap-1 text-red-400 font-bold">
-                      <AlertCircle size={13} /> Errores encontrados
-                    </span>
-                  )}
+
+                  {/* Status Indicator */}
+                  <div>
+                    {status === "success" && (
+                      <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                        <CheckCircle2 size={13} /> Tests superados
+                      </span>
+                    )}
+                    {status === "error" && (
+                      <span className="flex items-center gap-1 text-red-400 font-bold">
+                        <AlertCircle size={13} /> Error en validación
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex-1 p-4 overflow-y-auto space-y-1 text-zinc-300 custom-scrollbar">
+                {/* Tab 1: Terminal Console Logs */}
+                <div className={`flex-1 p-4 overflow-y-auto space-y-1 text-zinc-300 custom-scrollbar ${
+                  bottomTab === "console" ? "block" : "hidden"
+                }`}>
                   {logs.length === 0 ? (
                     <div className="text-zinc-600 italic">Haz clic en "Ejecutar Tests" cuando termines tu solución...</div>
                   ) : (
@@ -372,13 +471,32 @@ export default function ChallengeIDEPage() {
                     ))
                   )}
                 </div>
+
+                {/* Tab 2: Sandboxed Web Preview Iframe */}
+                <div className={`flex-1 bg-[#0d0d11] relative overflow-hidden flex flex-col ${
+                  bottomTab === "preview" ? "flex" : "hidden"
+                }`}>
+                  <div className="h-6 bg-black/60 border-b border-white/5 px-3 flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-red-500/60 inline-block"></span>
+                    <span className="w-2 h-2 rounded-full bg-yellow-500/60 inline-block"></span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500/60 inline-block"></span>
+                    <span className="ml-2 text-zinc-400 font-sans">http://sandbox.local/preview</span>
+                  </div>
+                  <iframe
+                    ref={iframeRef}
+                    id="ide-web-sandbox"
+                    title="Live Web Sandbox"
+                    className="w-full flex-1 border-none bg-transparent"
+                  />
+                </div>
+
               </div>
             </div>
           </main>
         )}
       </div>
 
-      {/* SUCCESS CELEBRATION MODAL (Replaces alert()) */}
+      {/* SUCCESS CELEBRATION MODAL */}
       <AnimatePresence>
         {showSuccessModal && (
           <motion.div 
@@ -392,7 +510,6 @@ export default function ChallengeIDEPage() {
               transition={{ type: "spring", bounce: 0.5 }}
               className="bg-zinc-900 border-2 border-emerald-500/50 p-8 rounded-3xl shadow-[0_0_50px_rgba(16,185,129,0.2)] max-w-sm w-full text-center relative overflow-hidden"
             >
-              {/* Confetti / Glow backdrop */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/20 blur-[60px] rounded-full pointer-events-none" />
 
               <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)] relative z-10">
