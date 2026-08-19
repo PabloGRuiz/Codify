@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useSidebar } from "@/context/SidebarContext";
 import { 
   BookOpen, 
   Search, 
@@ -291,11 +292,11 @@ export default function DocsPage() {
               </span>
               
               {filteredTopics.map((topic) => {
-                const isActive = topic.id === selectedId;
+                const isActive = topic.id === selectedTopicId;
                 return (
                   <button
                     key={topic.id}
-                    onClick={() => setSelectedId(topic.id)}
+                    onClick={() => setSelectedTopicId(topic.id)}
                     className={`w-full text-left p-3 rounded-xl transition-all flex flex-col gap-1 border ${
                       isActive
                         ? "bg-primary/20 border-primary/40 text-white shadow-lg"
