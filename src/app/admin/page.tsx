@@ -5,9 +5,11 @@ import { supabase } from "@/lib/supabase";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { useSidebar } from "@/context/SidebarContext";
 import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy } from "lucide-react";
 
 export default function AdminPage() {
+  const { isCollapsed } = useSidebar();
   const [activeTab, setActiveTab] = useState<"content" | "users" | "ai_prompt">("content");
   
   // Data States
@@ -211,7 +213,7 @@ Genera el script SQL completo listo para copiar y pegar.`;
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="md:ml-64 ml-0 flex-1 p-8 overflow-y-auto">
+      <div className={`${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 flex-1 p-8 overflow-y-auto transition-all duration-300`}>
         
         {/* Header */}
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">

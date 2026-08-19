@@ -6,9 +6,24 @@ import ReactMarkdown from "react-markdown";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Play, TerminalSquare, CheckCircle2, AlertCircle, ArrowLeft, BookOpen, Code2, ArrowRight, Lightbulb, Trophy, Star } from "lucide-react";
+import { 
+  Play, 
+  TerminalSquare, 
+  CheckCircle2, 
+  AlertCircle, 
+  ArrowLeft, 
+  BookOpen, 
+  Code2, 
+  ArrowRight, 
+  Lightbulb, 
+  Trophy, 
+  Star,
+  PanelLeftClose,
+  PanelLeftOpen
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
+import { useSidebar } from "@/context/SidebarContext";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,52 +52,54 @@ function TheoryRenderer({ content }: { content: string }) {
       <ReactMarkdown
         components={{
           h3: ({ children }) => (
-            <h3 className="text-xl font-heading font-bold text-white mt-6 mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
+            <h3 className="text-lg sm:text-xl font-heading font-bold text-white mt-6 mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
               {children}
             </h3>
           ),
           strong: ({ children }) => (
-            <strong className="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+            <strong className="text-primary font-bold bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
               {children}
             </strong>
           ),
           p: ({ children }) => (
-            <span className="block text-base text-zinc-300 leading-relaxed my-3 font-sans">
+            <p className="text-sm sm:text-base text-zinc-300 leading-relaxed my-2.5 font-sans">
               {children}
-            </span>
+            </p>
           ),
           ul: ({ children }) => (
-            <ul className="space-y-2 my-4 pl-2 list-none">{children}</ul>
+            <ul className="space-y-1.5 my-3 pl-1 list-none">{children}</ul>
           ),
           li: ({ children }) => (
-            <li className="flex items-start gap-2 text-zinc-200 text-base">
-              <span className="text-primary font-bold shrink-0 mt-1">•</span>
+            <li className="flex items-start gap-2 text-zinc-200 text-sm sm:text-base">
+              <span className="text-primary font-bold shrink-0 mt-0.5">•</span>
               <div>{children}</div>
             </li>
           ),
           pre: ({ children }) => <>{children}</>,
-          code({ node, inline, className, children, ...props }: any) {
+          code({ node, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || "");
             const codeString = String(children).replace(/\n$/, "");
+            const isBlock = match || codeString.includes("\n");
 
-            if (!inline) {
+            if (isBlock) {
               return (
-                <span className="block my-5 rounded-xl overflow-hidden border border-white/10 bg-[#0d0d11] font-mono text-sm shadow-xl">
-                  <span className="bg-black/60 px-4 py-2 border-b border-white/10 text-xs text-zinc-400 flex items-center justify-between">
-                    <span className="font-bold text-primary tracking-wider uppercase">
+                <div className="my-4 rounded-xl overflow-hidden border border-white/10 bg-[#0d0d11] font-mono text-xs sm:text-sm shadow-xl">
+                  <div className="bg-black/60 px-3.5 py-1.5 border-b border-white/10 text-xs text-zinc-400 flex items-center justify-between">
+                    <span className="font-bold text-primary tracking-wider uppercase text-[11px]">
                       {match ? match[1] : "CÓDIGO DE EJEMPLO"}
                     </span>
-                    <span className="text-[10px] text-zinc-500 font-mono">EJEMPLO INTERACTIVO</span>
-                  </span>
-                  <span className="block p-4 overflow-x-auto text-emerald-300 font-mono text-sm leading-relaxed whitespace-pre">
+                    <span className="text-[10px] text-zinc-500 font-mono">EJEMPLO</span>
+                  </div>
+                  <pre className="p-3.5 overflow-x-auto text-emerald-300 font-mono leading-relaxed whitespace-pre m-0">
                     <code>{codeString}</code>
-                  </span>
-                </span>
+                  </pre>
+                </div>
               );
             }
 
+            // Inline code rendering (compact and clean)
             return (
-              <code className="bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded font-mono text-sm font-semibold">
+              <code className="bg-primary/20 text-purple-300 border border-primary/30 px-1.5 py-0.5 rounded font-mono text-xs font-semibold mx-0.5 inline-block">
                 {children}
               </code>
             );
@@ -99,6 +116,7 @@ export default function ChallengeIDEPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user, profile } = useUser();
+  const { isCollapsed, toggleCollapse } = useSidebar();
   const [challenge, setChallenge] = useState<any>(null);
   const [code, setCode] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
@@ -159,7 +177,7 @@ export default function ChallengeIDEPage() {
     }
 
     if (passed && !isCompleted) {
-      setShowSuccessModal(true); // Trigger beautiful modal instead of alert()
+      setShowSuccessModal(true);
       if (user) {
         try {
           await supabase.from("user_progress").insert({
@@ -193,7 +211,7 @@ export default function ChallengeIDEPage() {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="md:ml-64 ml-0 flex-1 flex flex-col h-screen overflow-hidden">
+      <div className={`${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300`}>
         {/* Header */}
         <header className="h-16 w-full glass border-b border-border flex items-center justify-between px-4 lg:px-6 shrink-0 z-20 pl-16 md:pl-6">
           <div className="flex items-center gap-2 lg:gap-4">
@@ -201,8 +219,18 @@ export default function ChallengeIDEPage() {
               <ArrowLeft size={16} /> Volver
             </Link>
             <div className="w-px h-6 bg-white/10 mx-2 hidden sm:block"></div>
+            
+            {/* Quick sidebar toggle on desktop header */}
+            <button
+              onClick={toggleCollapse}
+              className="hidden md:flex p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              title={isCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+            >
+              {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
+
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
                 <TerminalSquare size={18} className="text-yellow-400" />
               </div>
               <h1 className="font-heading font-bold text-base lg:text-lg text-white line-clamp-1">{challenge.title}</h1>
@@ -233,12 +261,14 @@ export default function ChallengeIDEPage() {
             <span className="text-primary font-bold text-xs lg:text-sm bg-primary/10 px-2 lg:px-3 py-1 lg:py-1.5 rounded-full border border-primary/20 hidden sm:block">
               +{challenge.xp_reward} XP
             </span>
-            <div className={`${activeTab === "code" ? "block" : "hidden lg:block"}`}>
-              <Button size="sm" onClick={runCodeAndTests} isLoading={isRunning} leftIcon={<Play size={16} />} className="shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                <span className="hidden sm:inline">Ejecutar Tests</span>
-                <span className="sm:hidden">Ejecutar</span>
-              </Button>
-            </div>
+            {challenge.challenge_type !== "quiz" && (
+              <div className={`${activeTab === "code" ? "block" : "hidden lg:block"}`}>
+                <Button size="sm" onClick={runCodeAndTests} isLoading={isRunning} leftIcon={<Play size={16} />} className="shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+                  <span className="hidden sm:inline">Ejecutar Tests</span>
+                  <span className="sm:hidden">Ejecutar</span>
+                </Button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -262,89 +292,89 @@ export default function ChallengeIDEPage() {
         ) : (
           /* Main Content Area: Side-by-Side on Desktop, Tabs on Mobile */
           <main className="flex-1 overflow-hidden p-0 lg:p-4 bg-[#09090b] flex flex-col lg:flex-row gap-0 lg:gap-4 relative">
-          
-          {/* LEFT PANEL: Theory (Hidden on mobile if Code tab active) */}
-          <div
-            className={`w-full lg:w-[45%] xl:w-[40%] flex-col h-full bg-[#0d0d11] lg:rounded-2xl lg:border lg:border-white/10 overflow-hidden ${
-              activeTab === "theory" ? "flex" : "hidden lg:flex"
-            }`}
-          >
-            <div className="p-6 h-full flex flex-col overflow-y-auto custom-scrollbar">
-              <div className="flex items-center gap-3 text-accent font-semibold mb-6">
-                <Lightbulb size={24} />
-                <span className="uppercase tracking-wider text-xs font-bold">Concepto & Lección</span>
-              </div>
-              <h2 className="text-2xl font-heading font-bold text-white mb-6">{challenge.title}</h2>
-              <TheoryRenderer content={challenge.theory || challenge.description} />
-              
-              {/* Mobile next button */}
-              <div className="pt-8 pb-4 lg:hidden">
-                <Button size="lg" onClick={() => setActiveTab("code")} rightIcon={<ArrowRight size={18} />} className="w-full shadow-lg">
-                  Ir a Programar
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT PANEL: Code & Terminal (Hidden on mobile if Theory tab active) */}
-          <div
-            className={`w-full lg:w-[55%] xl:w-[60%] flex-col h-full gap-2 lg:gap-4 ${
-              activeTab === "code" ? "flex" : "hidden lg:flex"
-            }`}
-          >
-            {/* Mobile instructions hint */}
-            <div className="lg:hidden p-3 bg-blue-900/20 text-blue-300 text-xs flex items-center justify-between border-b border-blue-500/20">
-              <span className="line-clamp-1">{challenge.description}</span>
-              <button onClick={() => setActiveTab("theory")} className="font-bold underline shrink-0 ml-2">Ver Teoría</button>
-            </div>
-
-            {/* Top Right: Monaco Editor */}
-            <div className="flex-1 relative lg:rounded-2xl overflow-hidden border-y lg:border border-white/10 shadow-lg">
-              <CodeEditor language="javascript" value={code} onChange={(v) => setCode(v || "")} />
-            </div>
-
-            {/* Bottom Right: Interactive Terminal Console */}
-            <div className="h-48 lg:h-56 lg:rounded-2xl bg-black border-t lg:border border-white/10 flex flex-col overflow-hidden font-mono text-sm shadow-xl shrink-0">
-              <div className="h-9 bg-zinc-900/80 px-4 flex items-center justify-between border-b border-zinc-800 text-xs text-zinc-400">
-                <div className="flex items-center gap-2">
-                  <TerminalSquare size={14} />
-                  <span>Salida de Consola y Validaciones</span>
+            
+            {/* LEFT PANEL: Theory (Hidden on mobile if Code tab active) */}
+            <div
+              className={`w-full lg:w-[45%] xl:w-[40%] flex-col h-full bg-[#0d0d11] lg:rounded-2xl lg:border lg:border-white/10 overflow-hidden ${
+                activeTab === "theory" ? "flex" : "hidden lg:flex"
+              }`}
+            >
+              <div className="p-6 h-full flex flex-col overflow-y-auto custom-scrollbar">
+                <div className="flex items-center gap-3 text-accent font-semibold mb-6">
+                  <Lightbulb size={24} />
+                  <span className="uppercase tracking-wider text-xs font-bold">Concepto & Lección</span>
                 </div>
-                {status === "success" && (
-                  <span className="flex items-center gap-1 text-emerald-400 font-bold">
-                    <CheckCircle2 size={13} /> Pasó las validaciones
-                  </span>
-                )}
-                {status === "error" && (
-                  <span className="flex items-center gap-1 text-red-400 font-bold">
-                    <AlertCircle size={13} /> Errores encontrados
-                  </span>
-                )}
-              </div>
-
-              <div className="flex-1 p-4 overflow-y-auto space-y-1 text-zinc-300 custom-scrollbar">
-                {logs.length === 0 ? (
-                  <div className="text-zinc-600 italic">Haz clic en "Ejecutar Tests" cuando termines tu solución...</div>
-                ) : (
-                  logs.map((log, index) => (
-                    <div
-                      key={index}
-                      className={
-                        log.includes("❌") || log.startsWith("[ERROR]")
-                          ? "text-red-400"
-                          : log.includes("✅")
-                          ? "text-emerald-400 font-bold"
-                          : "text-emerald-300"
-                      }
-                    >
-                      {log}
-                    </div>
-                  ))
-                )}
+                <h2 className="text-2xl font-heading font-bold text-white mb-6">{challenge.title}</h2>
+                <TheoryRenderer content={challenge.theory || challenge.description} />
+                
+                {/* Mobile next button */}
+                <div className="pt-8 pb-4 lg:hidden">
+                  <Button size="lg" onClick={() => setActiveTab("code")} rightIcon={<ArrowRight size={18} />} className="w-full shadow-lg">
+                    Ir a Programar
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </main>
+
+            {/* RIGHT PANEL: Code & Terminal (Hidden on mobile if Theory tab active) */}
+            <div
+              className={`w-full lg:w-[55%] xl:w-[60%] flex-col h-full gap-2 lg:gap-4 ${
+                activeTab === "code" ? "flex" : "hidden lg:flex"
+              }`}
+            >
+              {/* Mobile instructions hint */}
+              <div className="lg:hidden p-3 bg-blue-900/20 text-blue-300 text-xs flex items-center justify-between border-b border-blue-500/20">
+                <span className="line-clamp-1">{challenge.description}</span>
+                <button onClick={() => setActiveTab("theory")} className="font-bold underline shrink-0 ml-2">Ver Teoría</button>
+              </div>
+
+              {/* Top Right: Monaco Editor */}
+              <div className="flex-1 relative lg:rounded-2xl overflow-hidden border-y lg:border border-white/10 shadow-lg">
+                <CodeEditor language="javascript" value={code} onChange={(v) => setCode(v || "")} />
+              </div>
+
+              {/* Bottom Right: Interactive Terminal Console */}
+              <div className="h-48 lg:h-56 lg:rounded-2xl bg-black border-t lg:border border-white/10 flex flex-col overflow-hidden font-mono text-sm shadow-xl shrink-0">
+                <div className="h-9 bg-zinc-900/80 px-4 flex items-center justify-between border-b border-zinc-800 text-xs text-zinc-400">
+                  <div className="flex items-center gap-2">
+                    <TerminalSquare size={14} />
+                    <span>Salida de Consola y Validaciones</span>
+                  </div>
+                  {status === "success" && (
+                    <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                      <CheckCircle2 size={13} /> Pasó las validaciones
+                    </span>
+                  )}
+                  {status === "error" && (
+                    <span className="flex items-center gap-1 text-red-400 font-bold">
+                      <AlertCircle size={13} /> Errores encontrados
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex-1 p-4 overflow-y-auto space-y-1 text-zinc-300 custom-scrollbar">
+                  {logs.length === 0 ? (
+                    <div className="text-zinc-600 italic">Haz clic en "Ejecutar Tests" cuando termines tu solución...</div>
+                  ) : (
+                    logs.map((log, index) => (
+                      <div
+                        key={index}
+                        className={
+                          log.includes("❌") || log.startsWith("[ERROR]")
+                            ? "text-red-400"
+                            : log.includes("✅")
+                            ? "text-emerald-400 font-bold"
+                            : "text-emerald-300"
+                        }
+                      >
+                        {log}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </main>
         )}
       </div>
 

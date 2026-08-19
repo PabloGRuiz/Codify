@@ -220,11 +220,12 @@ Devuelve SIEMPRE la respuesta en formato JSON estricto con las llaves:
 ];
 
 export default function DocsPage() {
-  const [selectedId, setSelectedId] = useState<string>(DOC_TOPICS[0].id);
+  const { isCollapsed } = useSidebar();
+  const [selectedTopicId, setSelectedTopicId] = useState<string>("js-variables");
   const [searchQuery, setSearchQuery] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const activeTopic = DOC_TOPICS.find((t) => t.id === selectedId) || DOC_TOPICS[0];
+  const activeTopic = DOC_TOPICS.find((t) => t.id === selectedTopicId) || DOC_TOPICS[0];
 
   const filteredTopics = DOC_TOPICS.filter(
     (t) =>
@@ -242,7 +243,7 @@ export default function DocsPage() {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="md:ml-64 ml-0 flex-1 flex flex-col min-h-screen relative overflow-hidden">
+      <div className={`${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 flex-1 flex flex-col min-h-screen relative overflow-hidden transition-all duration-300`}>
         
         {/* Background glow effects */}
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] pointer-events-none" />
@@ -363,25 +364,27 @@ export default function DocsPage() {
                           {children}
                         </strong>
                       ),
-                      code({ node, inline, className, children, ...props }: any) {
+                      code({ node, className, children, ...props }: any) {
                         const match = /language-(\w+)/.exec(className || "");
                         const codeStr = String(children).replace(/\n$/, "");
-                        if (!inline) {
+                        const isBlock = match || codeStr.includes("\n");
+
+                        if (isBlock) {
                           return (
-                            <span className="block my-6 rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d11] font-mono text-sm shadow-xl">
-                              <span className="bg-black/60 px-4 py-2 border-b border-white/10 text-xs text-zinc-400 flex items-center justify-between">
-                                <span className="font-bold text-primary tracking-wider uppercase">
-                                  EJEMPLO DE CÓDIGO PROBADO
+                            <div className="my-5 rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d11] font-mono text-xs sm:text-sm shadow-xl">
+                              <div className="bg-black/60 px-4 py-2 border-b border-white/10 text-xs text-zinc-400 flex items-center justify-between">
+                                <span className="font-bold text-primary tracking-wider uppercase text-[11px]">
+                                  {match ? match[1] : "EJEMPLO DE CÓDIGO"}
                                 </span>
-                              </span>
-                              <span className="block p-4 overflow-x-auto text-emerald-300 font-mono text-sm leading-relaxed whitespace-pre">
+                              </div>
+                              <pre className="p-4 overflow-x-auto text-emerald-300 font-mono text-xs sm:text-sm leading-relaxed whitespace-pre m-0">
                                 <code>{codeStr}</code>
-                              </span>
-                            </span>
+                              </pre>
+                            </div>
                           );
                         }
                         return (
-                          <code className="bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded font-mono text-sm font-semibold">
+                          <code className="bg-primary/20 text-purple-300 border border-primary/30 px-1.5 py-0.5 rounded font-mono text-xs font-semibold mx-0.5 inline-block">
                             {children}
                           </code>
                         );

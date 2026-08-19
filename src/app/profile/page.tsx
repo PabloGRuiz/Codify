@@ -6,6 +6,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
+import { useSidebar } from "@/context/SidebarContext";
 import { supabase } from "@/lib/supabase";
 import { 
   User, 
@@ -35,6 +36,7 @@ interface CompletedChallenge {
 
 export default function ProfilePage() {
   const { user, profile, loading } = useUser();
+  const { isCollapsed } = useSidebar();
   const [completedList, setCompletedList] = useState<CompletedChallenge[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [newUsername, setNewUsername] = useState("");
@@ -112,7 +114,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="md:ml-64 ml-0 flex-1 flex flex-col min-h-screen relative overflow-hidden">
+      <div className={`${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 flex-1 flex flex-col min-h-screen relative overflow-hidden transition-all duration-300`}>
         
         {/* Background glow effects */}
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] pointer-events-none" />

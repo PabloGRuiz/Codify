@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Code2, Play, Star, Zap, Map, Trophy, Gift } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
+import { useSidebar } from "@/context/SidebarContext";
 import { supabase } from "@/lib/supabase";
 import { LearningPath } from "@/components/roadmap/LearningPath";
 import { QuestsHub } from "@/components/dashboard/QuestsHub";
@@ -14,12 +15,13 @@ import Link from "next/link";
 
 export default function Home() {
   const { user, profile } = useUser();
+  const { isCollapsed } = useSidebar();
   const [activeDashboardTab, setActiveDashboardTab] = useState<"roadmap" | "quests">("roadmap");
 
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="md:ml-64 ml-0 flex-1 flex flex-col min-h-screen relative overflow-hidden">
+      <div className={`${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 flex-1 flex flex-col min-h-screen relative overflow-hidden transition-all duration-300`}>
         {/* Background glow effects */}
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent/20 blur-[120px] pointer-events-none" />

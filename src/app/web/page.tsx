@@ -6,10 +6,13 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/Button";
 import { Play, Code2, Monitor, Braces, Paintbrush } from "lucide-react";
 
+import { useSidebar } from "@/context/SidebarContext";
+
 // Deshabilitar SSR para Monaco Editor para evitar errores de hidratación
 const CodeEditor = dynamic(() => import("@/components/ide/CodeEditor").then(mod => mod.CodeEditor), { ssr: false });
 
 export default function WebPrototypingPage() {
+  const { isCollapsed } = useSidebar();
   const [html, setHtml] = useState("<h1>¡Hola, Codify!</h1>\n<p>Este es tu primer prototipo web.</p>");
   const [css, setCss] = useState("body {\n  font-family: sans-serif;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  height: 100vh;\n  margin: 0;\n  background: #f4f4f5;\n}\n\nh1 {\n  color: #8b5cf6;\n}\np {\n  color: #52525b;\n}");
   const [js, setJs] = useState("console.log('¡Prototipo cargado!');");
@@ -41,7 +44,7 @@ export default function WebPrototypingPage() {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="md:ml-64 ml-0 flex-1 flex flex-col h-screen overflow-hidden">
+      <div className={`${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300`}>
         
         {/* Header / Topbar */}
         <header className="h-16 w-full glass border-b border-border flex items-center justify-between px-6 shrink-0">

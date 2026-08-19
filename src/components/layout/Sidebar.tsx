@@ -1,18 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Code2, LayoutDashboard, TerminalSquare, LogOut, Menu, X, BookOpen } from "lucide-react";
+import { 
+  Code2, 
+  LayoutDashboard, 
+  TerminalSquare, 
+  LogOut, 
+  Menu, 
+  X, 
+  BookOpen, 
+  PanelLeftClose, 
+  PanelLeftOpen,
+  User as UserIcon
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
+import { useSidebar } from "@/context/SidebarContext";
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useUser();
-  const [isOpen, setIsOpen] = useState(false);
+  const { isCollapsed, toggleCollapse, isMobileOpen, setIsMobileOpen } = useSidebar();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -36,88 +47,141 @@ export function Sidebar() {
     <>
       {/* Mobile Hamburger Button */}
       <button 
-        onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-black/50 backdrop-blur-md rounded-lg border border-white/10 text-white hover:text-primary transition-colors"
+        onClick={() => setIsMobileOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-black/50 backdrop-blur-md rounded-lg border border-white/10 text-white hover:text-primary transition-colors shadow-lg"
+        title="Abrir menú"
       >
         <Menu size={24} />
       </button>
 
       {/* Mobile Overlay */}
-      {isOpen && (
+      {isMobileOpen && (
         <div 
           className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
-          onClick={() => setIsOpen(false)}
+          onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar Panel */}
       <aside 
-        className={`w-64 h-screen glass border-r border-border fixed left-0 top-0 flex flex-col py-6 z-50 transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0`}
+        className={`h-screen glass border-r border-border fixed left-0 top-0 flex flex-col py-6 z-50 transition-all duration-300 ease-in-out ${
+          isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full"
+        } md:translate-x-0 ${isCollapsed ? "md:w-20" : "md:w-64"}`}
       >
-        <div className="px-6 mb-10 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-glow">
+        {/* Header with Logo and Collapse Toggle */}
+        <div className={`px-4 mb-8 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
+          <Link href="/" className="flex items-center gap-3 cursor-pointer overflow-hidden">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-glow shrink-0">
               <Code2 className="text-white" size={20} />
             </div>
-            <span className="font-heading font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-              Codify
-            </span>
-          </div>
+            {!isCollapsed && (
+              <span className="font-heading font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent whitespace-nowrap">
+                Codify
+              </span>
+            )}
+          </Link>
 
-          {/* Close button for mobile */}
-          <button onClick={() => setIsOpen(false)} className="md:hidden text-zinc-400 hover:text-white">
+          {/* Desktop Collapse Toggle Button */}
+          <button
+            onClick={toggleCollapse}
+            className="hidden md:flex p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+            title={isCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+          >
+            {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </button>
+
+          {/* Mobile Close Button */}
+          <button 
+            onClick={() => setIsMobileOpen(false)} 
+            className="md:hidden text-zinc-400 hover:text-white"
+          >
             <X size={24} />
           </button>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2">
+        {/* Navigation items */}
+        <nav className="flex-1 px-3 space-y-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <Link key={item.name} href={item.href} onClick={() => setIsOpen(false)}>
+              <Link 
+                key={item.name} 
+                href={item.href} 
+                onClick={() => setIsMobileOpen(false)}
+                title={isCollapsed ? item.name : undefined}
+              >
                 <motion.div
-                  whileHover={{ x: 5 }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors ${
+                  whileHover={{ x: isCollapsed ? 0 : 4 }}
+                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl cursor-pointer transition-all ${
+                    isCollapsed ? "justify-center" : ""
+                  } ${
                     isActive
-                      ? "bg-primary/20 text-primary border border-primary/30 font-bold"
+                      ? "bg-primary/20 text-primary border border-primary/30 font-bold shadow-lg"
                       : "text-zinc-400 hover:text-white hover:bg-white/5 font-medium"
                   }`}
                 >
-                  {item.icon}
-                  <span className="font-sans">{item.name}</span>
+                  <div className="shrink-0">{item.icon}</div>
+                  {!isCollapsed && (
+                    <span className="font-sans whitespace-nowrap text-sm">{item.name}</span>
+                  )}
                 </motion.div>
               </Link>
             );
           })}
         </nav>
 
-        <div className="px-6 mt-auto space-y-3">
-          <Link href="/profile" onClick={() => setIsOpen(false)}>
-            <div className="p-4 rounded-xl glass-panel hover:border-primary/50 transition-all cursor-pointer group">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-zinc-300 group-hover:text-primary transition-colors">
-                  {profile?.username ? `@${profile.username}` : "Coder"}
-                </span>
-                <span className="text-xs text-primary font-bold">Nivel {currentLevel}</span>
-              </div>
-              <div className="text-xs text-zinc-400 mb-2">{currentXp} / {xpRequiredForNext} XP</div>
-              <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
-                  style={{ width: `${xpPercentage}%` }}
-                ></div>
-              </div>
+        {/* Footer Profile & Logout */}
+        <div className="px-3 mt-auto space-y-3">
+          <Link 
+            href="/profile" 
+            onClick={() => setIsMobileOpen(false)}
+            title={isCollapsed ? `Nivel ${currentLevel} - ${profile?.username || "Coder"}` : undefined}
+          >
+            <div className={`p-3 rounded-xl glass-panel hover:border-primary/50 transition-all cursor-pointer group ${
+              isCollapsed ? "flex flex-col items-center justify-center gap-1.5" : ""
+            }`}>
+              {isCollapsed ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-accent to-primary p-[2px]">
+                    <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center overflow-hidden">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <UserIcon size={14} className="text-zinc-300" />
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-primary font-bold mt-1">Nv {currentLevel}</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-zinc-300 group-hover:text-primary transition-colors truncate">
+                      {profile?.username ? `@${profile.username}` : "Coder"}
+                    </span>
+                    <span className="text-xs text-primary font-bold shrink-0">Nivel {currentLevel}</span>
+                  </div>
+                  <div className="text-xs text-zinc-400 mb-2">{currentXp} / {xpRequiredForNext} XP</div>
+                  <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                      style={{ width: `${xpPercentage}%` }}
+                    ></div>
+                  </div>
+                </>
+              )}
             </div>
           </Link>
           
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 text-zinc-400 hover:text-red-400 w-full px-4 py-2 transition-colors text-sm font-medium"
+            className={`flex items-center gap-3 text-zinc-400 hover:text-red-400 w-full p-2.5 transition-colors text-sm font-medium rounded-xl hover:bg-red-500/10 ${
+              isCollapsed ? "justify-center" : "px-3"
+            }`}
+            title={isCollapsed ? "Cerrar Sesión" : undefined}
           >
-            <LogOut size={18} />
-            <span>Cerrar Sesión</span>
+            <LogOut size={18} className="shrink-0" />
+            {!isCollapsed && <span>Cerrar Sesión</span>}
           </button>
         </div>
       </aside>
