@@ -80,3 +80,4 @@ graph TD
 - [x] **Módulo 5**: Python Moderno & Backend Fundamentals (5 lecciones)
 - [x] **Módulo 6**: FastAPI, Pydantic & APIs Asincrónicas de Alto Rendimiento (10 lecciones)
 - [x] **Módulo 7**: IA Aplicada, Embeddings & Integración con LLMs (10 lecciones)
+- [x] **Módulo Arena & Speed Coding**: 10 Retos Algorítmicos con Rotación Diaria de 3 Desafíos (Preparado para Duelos PvP)

@@ -31,6 +31,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { QuizRunner } from "@/components/ide/QuizRunner";
+import { getLevelInfo } from "@/lib/gamification";
 
 // Deshabilitar SSR para Monaco Editor con Loading State amigable
 const CodeEditor = dynamic(
@@ -254,7 +255,7 @@ export default function ChallengeIDEPage() {
           });
 
           const newXp = (profile?.xp || 0) + challenge.xp_reward;
-          const newLevel = Math.floor(newXp / 100) + 1;
+          const { level: newLevel } = getLevelInfo(newXp);
 
           await supabase.from("profiles").update({ xp: newXp, level: newLevel }).eq("id", user.id);
           setIsCompleted(true);

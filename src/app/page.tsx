@@ -25,20 +25,25 @@ import { useSidebar } from "@/context/SidebarContext";
 import { LearningPath } from "@/components/roadmap/LearningPath";
 import { QuestsHub } from "@/components/dashboard/QuestsHub";
 import { TechNewsFeed } from "@/components/dashboard/TechNewsFeed";
+import { DailyCodingArena } from "@/components/dashboard/DailyCodingArena";
 import { StreakModal } from "@/components/dashboard/StreakModal";
+import { getLevelInfo } from "@/lib/gamification";
 import Link from "next/link";
+import { Swords } from "lucide-react";
 
 export default function Home() {
   const { user, profile } = useUser();
   const { isCollapsed } = useSidebar();
-  const [activeDashboardTab, setActiveDashboardTab] = useState<"roadmap" | "news" | "quests">("roadmap");
+  const [activeDashboardTab, setActiveDashboardTab] = useState<"roadmap" | "arena" | "news" | "quests">("roadmap");
   const [showStreakModal, setShowStreakModal] = useState(false);
 
   const streak = profile?.streak_days || 1;
-  const currentXp = profile?.xp || 0;
-  const currentLevel = profile?.level || Math.floor(currentXp / 100) + 1;
-  const nextLevelXp = currentLevel * 100;
-  const xpProgressInLevel = currentXp % 100;
+  const levelInfo = getLevelInfo(profile?.xp);
+  const currentLevel = levelInfo.level;
+  const currentXp = levelInfo.totalXp;
+  const xpProgressInLevel = levelInfo.xpInLevel;
+  const xpRequiredForNext = levelInfo.xpRequiredForNextLevel;
+  const progressPercentage = levelInfo.progressPercentage;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -78,6 +83,16 @@ export default function Home() {
                 }`}
               >
                 <Map size={16} /> <span>Ruta de Niveles</span>
+              </button>
+              <button
+                onClick={() => setActiveDashboardTab("arena")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                  activeDashboardTab === "arena"
+                    ? "bg-gradient-to-r from-red-600 to-purple-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]"
+                    : "text-red-400/80 hover:text-red-300"
+                }`}
+              >
+                <Swords size={16} /> <span>Arena Diaria ⚡</span>
               </button>
               <button
                 onClick={() => setActiveDashboardTab("news")}
@@ -196,12 +211,12 @@ export default function Home() {
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
                       <span>Progreso al Nivel {currentLevel + 1}</span>
-                      <span>{xpProgressInLevel} / 100 XP</span>
+                      <span>{xpProgressInLevel} / {xpRequiredForNext} XP</span>
                     </div>
                     <div className="h-2 w-full bg-black/60 rounded-full overflow-hidden border border-white/5">
                       <div 
                         className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
-                        style={{ width: `${xpProgressInLevel}%` }}
+                        style={{ width: `${progressPercentage}%` }}
                       />
                     </div>
                   </div>
@@ -250,12 +265,17 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 2: TECH NEWS FEED */}
+          {/* TAB 2: DAILY CODING ARENA PVP RETOS */}
+          {activeDashboardTab === "arena" && (
+            <DailyCodingArena />
+          )}
+
+          {/* TAB 3: TECH NEWS FEED */}
           {activeDashboardTab === "news" && (
             <TechNewsFeed />
           )}
 
-          {/* TAB 3: QUESTS & CHALLENGES HUB */}
+          {/* TAB 4: QUESTS & CHALLENGES HUB */}
           {activeDashboardTab === "quests" && (
             <QuestsHub />
           )}

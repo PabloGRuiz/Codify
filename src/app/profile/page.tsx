@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
 import { supabase } from "@/lib/supabase";
+import { getLevelInfo } from "@/lib/gamification";
 import { 
   User, 
   Trophy, 
@@ -19,6 +20,8 @@ import {
   Code2, 
   Award, 
   Edit3, 
+  Save,
+  X,
   ArrowLeft 
 } from "lucide-react";
 import Link from "next/link";
@@ -98,9 +101,9 @@ export default function ProfilePage() {
     );
   }
 
-  const currentLevel = profile?.level || 1;
-  const currentXp = profile?.xp || 0;
-  const xpRequiredForNext = currentLevel * 100;
+  const levelInfo = getLevelInfo(profile?.xp || 0);
+  const currentLevel = levelInfo.level;
+  const currentXp = levelInfo.totalXp;
   const streak = profile?.streak_days || 1;
   const completedCount = completedList.length;
 
@@ -124,54 +127,57 @@ export default function ProfilePage() {
 
         <main className="flex-1 p-6 lg:p-8 overflow-y-auto z-10 relative space-y-8 max-w-6xl mx-auto w-full">
           
-          {/* Header Link Back */}
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-zinc-400 hover:text-white transition-colors flex items-center gap-2 font-sans text-sm">
-              <ArrowLeft size={16} /> Volver al Dashboard
-            </Link>
-          </div>
-
-          {/* User Hero Banner Card */}
-          <Card className="p-6 lg:p-8 glass-panel border-t-4 border-t-primary relative overflow-hidden shadow-2xl">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+          {/* Main Profile Header Card */}
+          <Card className="p-6 md:p-8 glass relative overflow-hidden border-primary/20">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10">
               
-              {/* Avatar */}
-              <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-accent to-primary p-[3px] shadow-[0_0_30px_rgba(139,92,246,0.3)] shrink-0">
-                <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center overflow-hidden bg-black/60">
+              {/* Avatar Container */}
+              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-tr from-accent to-primary p-[3px] shadow-[0_0_25px_rgba(139,92,246,0.3)] shrink-0">
+                <div className="w-full h-full rounded-full bg-secondary flex items-center justify-center overflow-hidden">
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={40} className="text-zinc-300" />
+                    <User size={48} className="text-zinc-400" />
                   )}
                 </div>
               </div>
 
-              {/* User Info */}
+              {/* User Information */}
               <div className="flex-1 text-center md:text-left space-y-2">
-                <div className="flex flex-col md:flex-row md:items-center gap-3">
+                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
                   {isEditing ? (
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={newUsername}
                         onChange={(e) => setNewUsername(e.target.value)}
-                        className="bg-black/60 border border-white/20 px-3 py-1.5 rounded-lg text-white font-bold text-xl outline-none focus:border-primary"
+                        className="bg-black/50 border border-primary/40 rounded-xl px-3 py-1 text-xl font-bold font-heading text-white focus:outline-none focus:border-primary"
+                        placeholder="Nombre de usuario"
+                        maxLength={20}
                       />
-                      <Button size="sm" onClick={handleSaveProfile} isLoading={saving}>
-                        Guardar
+                      <Button
+                        size="sm"
+                        onClick={handleSaveProfile}
+                        disabled={saving}
+                        className="bg-primary hover:bg-primary/80 text-white"
+                      >
+                        <Save size={16} />
                       </Button>
-                      <button onClick={() => setIsEditing(false)} className="text-xs text-zinc-400 hover:underline">
-                        Cancelar
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5"
+                      >
+                        <X size={16} />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center md:justify-start gap-3">
-                      <h1 className="text-3xl font-heading font-bold text-white">
-                        {profile?.username || "Coder"}
+                    <div className="flex items-center justify-center md:justify-start gap-2">
+                      <h1 className="text-2xl md:text-3xl font-heading font-bold text-white">
+                        {profile?.username || "Usuario de Codify"}
                       </h1>
-                      <button 
+                      <button
                         onClick={() => setIsEditing(true)}
-                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-primary transition-colors rounded-lg hover:bg-white/5"
                         title="Editar nombre"
                       >
                         <Edit3 size={16} />
@@ -179,13 +185,16 @@ export default function ProfilePage() {
                     </div>
                   )}
                   
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-bold w-fit mx-auto md:mx-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/20 text-primary border border-primary/30 w-fit mx-auto md:mx-0">
                     <ShieldCheck size={14} /> Nivel {currentLevel}
                   </span>
                 </div>
 
-                <p className="text-zinc-400 text-sm">{user?.email || "Usuario de Codify"}</p>
-                <div className="flex items-center justify-center md:justify-start gap-2 text-xs text-zinc-500 pt-1">
+                <p className="text-sm text-zinc-400 font-mono">
+                  {user?.email || "correo@ejemplo.com"}
+                </p>
+
+                <div className="flex items-center justify-center md:justify-start gap-2 text-xs text-zinc-400 pt-1">
                   <Calendar size={14} />
                   <span>Miembro activo en la plataforma</span>
                 </div>
@@ -195,16 +204,16 @@ export default function ProfilePage() {
               <div className="w-full md:w-64 p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3 shrink-0 shadow-lg">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-zinc-400 font-semibold">Progreso de Nivel</span>
-                  <span className="text-primary font-bold">{currentXp} / {xpRequiredForNext} XP</span>
+                  <span className="text-primary font-bold">{levelInfo.xpInLevel} / {levelInfo.xpRequiredForNextLevel} XP</span>
                 </div>
                 <div className="h-3 w-full bg-black/60 rounded-full overflow-hidden p-0.5 border border-white/5">
                   <div
                     className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]"
-                    style={{ width: `${Math.min(100, (currentXp / xpRequiredForNext) * 100)}%` }}
+                    style={{ width: `${levelInfo.progressPercentage}%` }}
                   />
                 </div>
                 <p className="text-[11px] text-zinc-500 text-center">
-                  Faltan {Math.max(0, xpRequiredForNext - currentXp)} XP para el Nivel {currentLevel + 1}
+                  Faltan {levelInfo.xpRemaining} XP para el Nivel {currentLevel + 1}
                 </p>
               </div>
 

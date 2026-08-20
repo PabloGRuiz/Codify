@@ -18,6 +18,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
 import { useSidebar } from "@/context/SidebarContext";
+import { getLevelInfo } from "@/lib/gamification";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -36,12 +37,10 @@ export function Sidebar() {
     { name: "Foro Comunitario", href: "/foro", icon: <MessageSquare size={20} /> },
   ];
 
-  // XP Formula: Every level requires (level * 100) XP.
-  const currentLevel = profile?.level || 1;
-  const currentXp = profile?.xp || 0;
+  const levelInfo = getLevelInfo(profile?.xp);
+  const currentLevel = levelInfo.level;
   const currentStars = profile?.reputation_stars || 0;
-  const xpRequiredForNext = currentLevel * 100;
-  const xpPercentage = Math.min(100, (currentXp / xpRequiredForNext) * 100);
+  const xpPercentage = levelInfo.progressPercentage;
 
   return (
     <>
@@ -165,7 +164,7 @@ export function Sidebar() {
                     <span className="text-xs text-primary font-bold shrink-0">Nivel {currentLevel}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs mb-2">
-                    <span className="text-zinc-400">{currentXp} / {xpRequiredForNext} XP</span>
+                    <span className="text-zinc-400">{levelInfo.xpInLevel} / {levelInfo.xpRequiredForNextLevel} XP</span>
                     <span className="flex items-center gap-1 text-yellow-500 font-bold bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20" title="Puntos de Reputación en el Foro">
                       <Star size={12} className="fill-yellow-500" /> {currentStars}
                     </span>
