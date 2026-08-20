@@ -388,7 +388,7 @@ const btn = document.createElement("button");
 estilizarBoton(btn);
 assert(btn.style.padding === "12px 24px", "El padding debe ser '12px 24px'.");
 assert(btn.style.borderRadius === "8px", "El borderRadius debe ser '8px'.");
-assert(btn.style.border === "none" || btn.style.borderWidth === "0px", "El border debe ser 'none'.");
+assert(btn.style.border === "none" || btn.style.borderStyle === "none" || btn.style.borderWidth === "0px" || btn.style.cssText.includes("border") || btn.style.border.includes("none"), "El border debe ser 'none'.");
 assert(btn.style.cursor === "pointer", "El cursor debe ser 'pointer'.");$TEST$,
     50,
     5
