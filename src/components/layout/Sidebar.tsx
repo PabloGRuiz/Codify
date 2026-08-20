@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import { 
   Code2, 
   LayoutDashboard, 
-  TerminalSquare, 
   LogOut, 
   Menu, 
   X, 
-  BookOpen, 
   PanelLeftClose, 
   PanelLeftOpen,
-  User as UserIcon
+  User as UserIcon,
+  MessageSquare,
+  Star
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -33,13 +33,13 @@ export function Sidebar() {
   const navItems = [
     { name: "Dashboard", href: "/", icon: <LayoutDashboard size={20} /> },
     { name: "Laboratorio Web", href: "/web", icon: <Code2 size={20} /> },
-    { name: "IDE Algorítmico", href: "/ide", icon: <TerminalSquare size={20} /> },
-    { name: "Documentación", href: "/docs", icon: <BookOpen size={20} /> },
+    { name: "Foro Comunitario", href: "/foro", icon: <MessageSquare size={20} /> },
   ];
 
   // XP Formula: Every level requires (level * 100) XP.
   const currentLevel = profile?.level || 1;
   const currentXp = profile?.xp || 0;
+  const currentStars = profile?.reputation_stars || 0;
   const xpRequiredForNext = currentLevel * 100;
   const xpPercentage = Math.min(100, (currentXp / xpRequiredForNext) * 100);
 
@@ -102,7 +102,7 @@ export function Sidebar() {
         {/* Navigation items */}
         <nav className="flex-1 px-3 space-y-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link 
                 key={item.name} 
@@ -135,7 +135,7 @@ export function Sidebar() {
           <Link 
             href="/profile" 
             onClick={() => setIsMobileOpen(false)}
-            title={isCollapsed ? `Nivel ${currentLevel} - ${profile?.username || "Coder"}` : undefined}
+            title={isCollapsed ? `Nivel ${currentLevel} - ${profile?.username || "Coder"} (${currentStars} ⭐)` : undefined}
           >
             <div className={`p-3 rounded-xl glass-panel hover:border-primary/50 transition-all cursor-pointer group ${
               isCollapsed ? "flex flex-col items-center justify-center gap-1.5" : ""
@@ -151,7 +151,10 @@ export function Sidebar() {
                       )}
                     </div>
                   </div>
-                  <span className="text-[10px] text-primary font-bold mt-1">Nv {currentLevel}</span>
+                  <div className="flex flex-col items-center mt-1">
+                    <span className="text-[10px] text-primary font-bold">Nv {currentLevel}</span>
+                    <span className="text-[10px] text-yellow-500 font-bold flex items-center"><Star size={8} className="fill-yellow-500 mr-0.5" />{currentStars}</span>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -161,7 +164,12 @@ export function Sidebar() {
                     </span>
                     <span className="text-xs text-primary font-bold shrink-0">Nivel {currentLevel}</span>
                   </div>
-                  <div className="text-xs text-zinc-400 mb-2">{currentXp} / {xpRequiredForNext} XP</div>
+                  <div className="flex justify-between items-center text-xs mb-2">
+                    <span className="text-zinc-400">{currentXp} / {xpRequiredForNext} XP</span>
+                    <span className="flex items-center gap-1 text-yellow-500 font-bold bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20" title="Puntos de Reputación en el Foro">
+                      <Star size={12} className="fill-yellow-500" /> {currentStars}
+                    </span>
+                  </div>
                   <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"

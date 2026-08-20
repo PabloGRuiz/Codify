@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Flame, User } from "lucide-react";
+import { Bell, Flame, User, Star } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { StreakModal } from "@/components/dashboard/StreakModal";
@@ -10,6 +10,7 @@ export function Topbar() {
   const { profile } = useUser();
   const [showStreakModal, setShowStreakModal] = useState(false);
   const streak = profile?.streak_days || 1;
+  const stars = profile?.reputation_stars || 0;
 
   return (
     <>
@@ -19,6 +20,14 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-3 lg:gap-5">
+          {/* Reputation Stars Indicator */}
+          <Link href="/foro">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.15)] hover:scale-105 transition-all cursor-pointer" title="Estrellas de Reputación">
+              <Star size={16} className="fill-yellow-500" />
+              <span className="text-sm font-bold font-mono">{stars}</span>
+            </div>
+          </Link>
+
           {/* Real Interactive Streak Indicator */}
           <button
             onClick={() => setShowStreakModal(true)}
