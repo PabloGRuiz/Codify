@@ -79,4 +79,4 @@ graph TD
 - [x] **Módulo 4**: Asincronismo & Consumo de APIs (5 lecciones)
 - [x] **Módulo 5**: Python Moderno & Backend Fundamentals (5 lecciones)
 - [x] **Módulo 6**: FastAPI, Pydantic & APIs Asincrónicas de Alto Rendimiento (10 lecciones)
-- [ ] **Módulo 7**: IA Aplicada, Embeddings & Integración con LLMs (10 lecciones)
+- [x] **Módulo 7**: IA Aplicada, Embeddings & Integración con LLMs (10 lecciones)
