@@ -1,110 +1,216 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Code2, Play, Star, Zap, Map, Trophy, Gift } from "lucide-react";
+import { 
+  Code2, 
+  Play, 
+  Star, 
+  Zap, 
+  Map, 
+  Trophy, 
+  Gift, 
+  Newspaper, 
+  Flame, 
+  Sparkles, 
+  ChevronRight,
+  TrendingUp,
+  ShieldCheck
+} from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
-import { supabase } from "@/lib/supabase";
 import { LearningPath } from "@/components/roadmap/LearningPath";
 import { QuestsHub } from "@/components/dashboard/QuestsHub";
+import { TechNewsFeed } from "@/components/dashboard/TechNewsFeed";
+import { StreakModal } from "@/components/dashboard/StreakModal";
 import Link from "next/link";
 
 export default function Home() {
   const { user, profile } = useUser();
   const { isCollapsed } = useSidebar();
-  const [activeDashboardTab, setActiveDashboardTab] = useState<"roadmap" | "quests">("roadmap");
+  const [activeDashboardTab, setActiveDashboardTab] = useState<"roadmap" | "news" | "quests">("roadmap");
+  const [showStreakModal, setShowStreakModal] = useState(false);
+
+  const streak = profile?.streak_days || 1;
+  const currentXp = profile?.xp || 0;
+  const currentLevel = profile?.level || Math.floor(currentXp / 100) + 1;
+  const nextLevelXp = currentLevel * 100;
+  const xpProgressInLevel = currentXp % 100;
 
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
       <div className={`${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 flex-1 flex flex-col min-h-screen relative overflow-hidden transition-all duration-300`}>
-        {/* Background glow effects */}
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent/20 blur-[120px] pointer-events-none" />
+        {/* Background ambient lighting */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent/20 blur-[140px] pointer-events-none" />
         
         <Topbar />
         
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto z-10 relative space-y-8">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto z-10 relative space-y-6 lg:space-y-8">
           
-          {/* Header & Main Tabs */}
+          {/* Header Banner & Main Dashboard Navigation Tabs */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-6">
             <div>
+              <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider mb-2">
+                <Sparkles size={16} />
+                <span>Plataforma de Aprendizaje Activo</span>
+              </div>
               <h1 className="text-3xl lg:text-4xl font-heading font-bold text-white mb-2">
-                ¡Hola de nuevo, {profile?.username || "Coder"}! 👋
+                ¡Hola de nuevo, {profile?.username || "Developer"}! 👋
               </h1>
-              <p className="text-zinc-400 font-sans text-base lg:text-lg">
-                Tu camino hacia la maestría en programación continúa. ¿Listo para el próximo nivel?
+              <p className="text-zinc-400 font-sans text-sm lg:text-base max-w-2xl">
+                Continúa construyendo tu carrera en tecnología: domina Python, APIs con FastAPI, JavaScript y Arquitectura de IA.
               </p>
             </div>
 
-            {/* Dashboard Tabs Selector */}
-            <div className="flex items-center bg-black/60 p-1.5 rounded-2xl border border-white/10 shrink-0 self-start md:self-auto">
+            {/* Main Tabs Selector */}
+            <div className="flex items-center bg-black/60 p-1.5 rounded-2xl border border-white/10 shrink-0 self-start md:self-auto flex-wrap gap-1">
               <button
                 onClick={() => setActiveDashboardTab("roadmap")}
-                className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
                   activeDashboardTab === "roadmap"
-                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg"
+                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                <Map size={16} /> 🗺️ Ruta de Niveles
+                <Map size={16} /> <span>Ruta de Niveles</span>
+              </button>
+              <button
+                onClick={() => setActiveDashboardTab("news")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                  activeDashboardTab === "news"
+                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Newspaper size={16} /> <span>Pulso Tech</span>
               </button>
               <button
                 onClick={() => setActiveDashboardTab("quests")}
-                className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
                   activeDashboardTab === "quests"
-                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg"
+                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                <Gift size={16} /> ⚡ Retos y Misiones
+                <Gift size={16} /> <span>Misiones</span>
               </button>
             </div>
           </div>
 
-          {/* TAB 1: ROADMAP & SIDEBAR WIDGETS */}
-          {activeDashboardTab === "roadmap" ? (
+          {/* TAB 1: ROADMAP & DASHBOARD STATS */}
+          {activeDashboardTab === "roadmap" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left Area: Duolingo-style Learning Path Board & Quick Tools */}
+              {/* Left Column: Learning Roadmap & Quick Sandboxes */}
               <div className="lg:col-span-2 space-y-8">
                 <LearningPath />
 
-                {/* Quick Actions / Micro-environments */}
+                {/* Quick Sandboxes */}
                 <div>
-                  <h3 className="text-xl font-heading font-bold text-white mb-4">Entornos Rápidos</h3>
+                  <h3 className="text-xl font-heading font-bold text-white mb-4">Entornos de Práctica</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Link href="/web">
-                      <Card className="p-6 hover:border-primary/50 transition-colors cursor-pointer group glass h-full">
-                        <div className="w-12 h-12 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <Card className="p-6 hover:border-primary/50 transition-all cursor-pointer group glass h-full hover:-translate-y-1 duration-200">
+                        <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                           <Code2 size={24} />
                         </div>
-                        <h4 className="font-bold text-lg mb-2">Prototipado Web</h4>
-                        <p className="text-sm text-zinc-400">Entorno HTML/CSS/JS con vista previa en vivo.</p>
+                        <h4 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors">Prototipado Web</h4>
+                        <p className="text-xs text-zinc-400">Sandbox HTML5, CSS3 y JavaScript con vista previa interactiva.</p>
                       </Card>
                     </Link>
                     
                     <Link href="/ide">
-                      <Card className="p-6 hover:border-accent/50 transition-colors cursor-pointer group glass h-full">
-                        <div className="w-12 h-12 rounded-lg bg-yellow-500/20 text-yellow-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <Card className="p-6 hover:border-accent/50 transition-all cursor-pointer group glass h-full hover:-translate-y-1 duration-200">
+                        <div className="w-12 h-12 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                           <Zap size={24} />
                         </div>
-                        <h4 className="font-bold text-lg mb-2">Algoritmia & POO</h4>
-                        <p className="text-sm text-zinc-400">Lista completa de retos y validaciones ocultas.</p>
+                        <h4 className="font-bold text-lg mb-1 group-hover:text-accent transition-colors">Centro de Desafíos</h4>
+                        <p className="text-xs text-zinc-400">Banco de ejercicios de lógica, algoritmos y tests unitarios.</p>
                       </Card>
                     </Link>
                   </div>
                 </div>
               </div>
 
-              {/* Right Sidebar Widgets */}
+              {/* Right Column: Gamified Streak, Progress & Quests */}
               <div className="space-y-6">
-                <Card className="p-6 glass border-t-4 border-t-accent">
+                
+                {/* 1. Fire Streak Hero Card */}
+                <Card 
+                  onClick={() => setShowStreakModal(true)}
+                  className="p-6 glass border-orange-500/30 hover:border-orange-500/60 transition-all cursor-pointer group relative overflow-hidden shadow-[0_0_30px_rgba(249,115,22,0.1)]"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-[40px] rounded-full pointer-events-none" />
+                  
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-heading font-bold text-lg">Misiones Diarias</h3>
+                    <div className="flex items-center gap-2 text-orange-400 font-bold text-xs uppercase tracking-wider">
+                      <Flame size={16} className="fill-orange-400 animate-pulse" />
+                      <span>Racha Activa</span>
+                    </div>
+                    <span className="text-xs text-zinc-400 group-hover:text-orange-300 font-medium flex items-center gap-1 transition-colors">
+                      Ver detalle <ChevronRight size={14} />
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-orange-500 via-amber-500 to-yellow-400 flex items-center justify-center text-white shadow-lg border-2 border-orange-300 group-hover:scale-105 transition-transform">
+                      <Flame size={32} className="fill-white" />
+                    </div>
+                    <div>
+                      <div className="text-3xl font-heading font-bold text-white leading-none mb-1">
+                        {streak} {streak === 1 ? "Día" : "Días"}
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        {streak >= 7 ? "¡Multiplicador x1.5 activo!" : streak >= 3 ? "¡Multiplicador x1.2 activo!" : "¡Sigue programando hoy!"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="w-full bg-black/40 rounded-xl p-2.5 flex items-center justify-between text-xs text-zinc-300 border border-white/5 font-mono">
+                    <span className="flex items-center gap-1 text-orange-400">
+                      <ShieldCheck size={14} /> Protector activado
+                    </span>
+                    <span className="text-zinc-500">Hoy: Completado</span>
+                  </div>
+                </Card>
+
+                {/* 2. Level & XP Progress Card */}
+                <Card className="p-6 glass border-t-4 border-t-primary">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary font-bold flex items-center justify-center text-sm font-mono border border-primary/30">
+                        {currentLevel}
+                      </div>
+                      <div>
+                        <h4 className="font-heading font-bold text-sm text-white">Nivel {currentLevel}</h4>
+                        <p className="text-[11px] text-zinc-400 font-mono">Desarrollador Junior</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-primary font-mono">{currentXp} XP</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
+                      <span>Progreso al Nivel {currentLevel + 1}</span>
+                      <span>{xpProgressInLevel} / 100 XP</span>
+                    </div>
+                    <div className="h-2 w-full bg-black/60 rounded-full overflow-hidden border border-white/5">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                        style={{ width: `${xpProgressInLevel}%` }}
+                      />
+                    </div>
+                  </div>
+                </Card>
+
+                {/* 3. Daily Quests Widget */}
+                <Card className="p-6 glass">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-heading font-bold text-base">Misiones Diarias</h3>
                     <button 
                       onClick={() => setActiveDashboardTab("quests")}
                       className="text-xs text-primary font-bold hover:underline"
@@ -113,11 +219,11 @@ export default function Home() {
                     </button>
                   </div>
 
-                  <ul className="space-y-5">
+                  <ul className="space-y-4">
                     {[
-                      { title: "Inicia sesión diario", xp: 25, progress: 1, total: 1, done: true },
-                      { title: "Resuelve 1 lección hoy", xp: 50, progress: (profile?.xp || 0) > 0 ? 1 : 0, total: 1, done: (profile?.xp || 0) > 0 },
-                      { title: "Acumula 100 XP hoy", xp: 100, progress: Math.min(100, profile?.xp || 0), total: 100, done: (profile?.xp || 0) >= 100 },
+                      { title: "Inicia sesión a diario", xp: 25, progress: 1, total: 1, done: true },
+                      { title: "Resuelve 1 lección hoy", xp: 50, progress: currentXp > 0 ? 1 : 0, total: 1, done: currentXp > 0 },
+                      { title: "Acumula 100 XP", xp: 100, progress: Math.min(100, currentXp), total: 100, done: currentXp >= 100 },
                     ].map((mission, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <div className={`w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 flex-shrink-0 ${mission.done ? 'bg-emerald-500 border-emerald-400 text-black shadow-[0_0_10px_rgba(52,211,153,0.3)]' : 'border-zinc-500 bg-zinc-900/50'}`}>
@@ -125,44 +231,45 @@ export default function Home() {
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-1">
-                            <p className={`text-sm font-medium ${mission.done ? 'text-zinc-400' : 'text-zinc-200'}`}>{mission.title}</p>
-                            <p className={`text-xs font-bold ${mission.done ? 'text-emerald-400' : 'text-primary'}`}>+{mission.xp} XP</p>
+                            <p className={`text-xs font-medium ${mission.done ? 'text-zinc-400' : 'text-zinc-200'}`}>{mission.title}</p>
+                            <p className={`text-xs font-bold font-mono ${mission.done ? 'text-emerald-400' : 'text-primary'}`}>+{mission.xp} XP</p>
                           </div>
-                          <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden mt-1.5">
+                          <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden mt-1">
                             <div 
-                              className={`h-full transition-all duration-500 ${mission.done ? 'bg-emerald-400' : 'bg-accent shadow-[0_0_10px_rgba(56,189,248,0.5)]'}`}
+                              className={`h-full transition-all duration-500 ${mission.done ? 'bg-emerald-400' : 'bg-primary'}`}
                               style={{ width: `${(mission.progress / mission.total) * 100}%` }}
-                            ></div>
+                            />
                           </div>
-                          <p className="text-[10px] text-zinc-500 mt-1 text-right">{mission.progress} / {mission.total}</p>
                         </div>
                       </li>
                     ))}
                   </ul>
                 </Card>
 
-                <Card className="p-6 glass">
-                  <h3 className="font-heading font-bold text-lg mb-4">Tus Estadísticas</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-black/20 p-4 rounded-xl border border-white/5 flex flex-col items-center">
-                      <span className="text-2xl font-bold text-white mb-1">{profile?.streak_days || 1}</span>
-                      <span className="text-xs text-zinc-400 uppercase tracking-wider">Racha Días</span>
-                    </div>
-                    <div className="bg-black/20 p-4 rounded-xl border border-white/5 flex flex-col items-center">
-                      <span className="text-2xl font-bold text-white mb-1">{profile?.xp || 0}</span>
-                      <span className="text-xs text-zinc-400 uppercase tracking-wider">Puntos XP</span>
-                    </div>
-                  </div>
-                </Card>
               </div>
             </div>
-          ) : (
-            /* TAB 2: QUESTS & CHALLENGES HUB */
+          )}
+
+          {/* TAB 2: TECH NEWS FEED */}
+          {activeDashboardTab === "news" && (
+            <TechNewsFeed />
+          )}
+
+          {/* TAB 3: QUESTS & CHALLENGES HUB */}
+          {activeDashboardTab === "quests" && (
             <QuestsHub />
           )}
 
         </main>
       </div>
+
+      {/* Interactive Streak Modal */}
+      <StreakModal
+        isOpen={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+        streakDays={streak}
+        xpPoints={currentXp}
+      />
     </div>
   );
 }

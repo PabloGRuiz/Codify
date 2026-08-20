@@ -4,9 +4,10 @@ interface CardProps {
   children: ReactNode;
   className?: string;
   variant?: "default" | "glass";
+  onClick?: () => void;
 }
 
-export function Card({ children, className = "", variant = "default" }: CardProps) {
+export function Card({ children, className = "", variant = "default", onClick }: CardProps) {
   const baseStyles = "rounded-xl overflow-hidden";
   const variants = {
     default: "bg-card text-card-foreground border border-border shadow-lg",
@@ -14,7 +15,10 @@ export function Card({ children, className = "", variant = "default" }: CardProp
   };
 
   return (
-    <div className={`${baseStyles} ${variants[variant]} ${className}`}>
+    <div 
+      onClick={onClick}
+      className={`${baseStyles} ${variants[variant]} ${className}`}
+    >
       {children}
     </div>
   );
