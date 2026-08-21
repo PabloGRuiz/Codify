@@ -54,9 +54,23 @@ export function QuizRunner({ questions, xpReward, onComplete }: QuizRunnerProps)
       setIsSubmitted(false);
     } else {
       setQuizFinished(true);
-      onComplete();
+      const percentage = Math.round((score / questions.length) * 100);
+      if (percentage >= 70) {
+        onComplete();
+      }
     }
   };
+
+  const handleRetry = () => {
+    setCurrentIndex(0);
+    setSelectedOption(null);
+    setIsSubmitted(false);
+    setScore(0);
+    setQuizFinished(false);
+  };
+
+  const percentage = Math.round((score / questions.length) * 100);
+  const passed = percentage >= 70;
 
   return (
     <div className="w-full h-full flex flex-col justify-between p-6 bg-[#0d0d11] rounded-2xl border border-white/10 overflow-y-auto">
@@ -165,20 +179,35 @@ export function QuizRunner({ questions, xpReward, onComplete }: QuizRunnerProps)
 
         </div>
       ) : (
-        /* Quiz Finished Celebration Screen */
+        /* Quiz Finished Celebration/Failure Screen */
         <div className="text-center py-12 space-y-6 max-w-md mx-auto my-auto">
-          <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto border-4 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-            <Award size={40} className="text-emerald-400" />
-          </div>
-          
-          <h3 className="text-3xl font-heading font-bold text-white">¡Evaluación Completada!</h3>
-          <p className="text-zinc-400 text-sm">
-            Has acertado <strong className="text-white font-mono">{score}</strong> de <strong className="text-white font-mono">{questions.length}</strong> preguntas.
-          </p>
-
-          <div className="bg-black/50 p-4 rounded-xl border border-emerald-500/20 font-bold text-emerald-400 text-lg">
-            +{xpReward} XP Obtenidos
-          </div>
+          {passed ? (
+            <>
+              <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto border-4 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                <Award size={40} className="text-emerald-400" />
+              </div>
+              <h3 className="text-3xl font-heading font-bold text-white">¡Evaluación Aprobada!</h3>
+              <p className="text-zinc-400 text-sm">
+                Has acertado <strong className="text-white font-mono">{score}</strong> de <strong className="text-white font-mono">{questions.length}</strong> preguntas ({percentage}%).
+              </p>
+              <div className="bg-black/50 p-4 rounded-xl border border-emerald-500/20 font-bold text-emerald-400 text-lg">
+                +{xpReward} XP Obtenidos
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto border-4 border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
+                <XCircle size={40} className="text-red-400" />
+              </div>
+              <h3 className="text-3xl font-heading font-bold text-white">Evaluación Reprobada</h3>
+              <p className="text-zinc-400 text-sm">
+                Has obtenido un <strong className="text-white font-mono">{percentage}%</strong>. Necesitas al menos un 70% para aprobar esta lección.
+              </p>
+              <Button onClick={handleRetry} className="w-full mt-4 py-3 bg-red-500 hover:bg-red-600 text-white font-bold" leftIcon={<RefreshCw size={18} />}>
+                Reintentar Evaluación
+              </Button>
+            </>
+          )}
         </div>
       )}
 

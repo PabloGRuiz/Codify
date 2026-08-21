@@ -200,6 +200,31 @@ export default function ChallengeIDEPage() {
     return { doc: document, win: window };
   };
 
+  const handleChallengeComplete = async () => {
+    if (!isCompleted) {
+      setShowSuccessModal(true);
+      if (user) {
+        try {
+          await supabase.from("user_progress").insert({
+            user_id: user.id,
+            challenge_id: challenge!.id,
+            status: "completed",
+            code_snapshot: code || "",
+            completed_at: new Date().toISOString(),
+          });
+
+          const newXp = (profile?.xp || 0) + challenge!.xp_reward;
+          const { level: newLevel } = getLevelInfo(newXp);
+
+          await supabase.from("profiles").update({ xp: newXp, level: newLevel }).eq("id", user.id);
+          setIsCompleted(true);
+        } catch (e) {
+          console.error("Error guardando progreso", e);
+        }
+      }
+    }
+  };
+
   const runCodeAndTests = async () => {
     if (!challenge) return;
     setIsRunning(true);
@@ -242,27 +267,8 @@ export default function ChallengeIDEPage() {
       setIsRunning(false);
     }
 
-    if (passed && !isCompleted) {
-      setShowSuccessModal(true);
-      if (user) {
-        try {
-          await supabase.from("user_progress").insert({
-            user_id: user.id,
-            challenge_id: challenge.id,
-            status: "completed",
-            code_snapshot: code,
-            completed_at: new Date().toISOString(),
-          });
-
-          const newXp = (profile?.xp || 0) + challenge.xp_reward;
-          const { level: newLevel } = getLevelInfo(newXp);
-
-          await supabase.from("profiles").update({ xp: newXp, level: newLevel }).eq("id", user.id);
-          setIsCompleted(true);
-        } catch (e) {
-          console.error("Error guardando progreso", e);
-        }
-      }
+    if (passed) {
+      await handleChallengeComplete();
     }
   };
 
@@ -275,6 +281,15 @@ export default function ChallengeIDEPage() {
     );
 
   const isWebChallenge = challenge.challenge_type === "web";
+
+  let parsedQuestions = [];
+  if (challenge.challenge_type === "quiz") {
+    try {
+      parsedQuestions = JSON.parse(challenge.test_code || "[]");
+    } catch (e) {
+      console.error("Failed to parse quiz questions");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -298,8 +313,8 @@ export default function ChallengeIDEPage() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg ${isWebChallenge ? "bg-blue-500/20" : "bg-yellow-500/20"} flex items-center justify-center shrink-0`}>
-                {isWebChallenge ? <Globe size={18} className="text-blue-400" /> : <TerminalSquare size={18} className="text-yellow-400" />}
+              <div className={`w-8 h-8 rounded-lg ${isWebChallenge ? "bg-blue-500/20" : challenge.challenge_type === "quiz" ? "bg-emerald-500/20" : "bg-yellow-500/20"} flex items-center justify-center shrink-0`}>
+                {isWebChallenge ? <Globe size={18} className="text-blue-400" /> : challenge.challenge_type === "quiz" ? <BookOpen size={18} className="text-emerald-400" /> : <TerminalSquare size={18} className="text-yellow-400" />}
               </div>
               <h1 className="font-heading font-bold text-base lg:text-lg text-white line-clamp-1">{challenge.title}</h1>
             </div>
@@ -315,14 +330,16 @@ export default function ChallengeIDEPage() {
             >
               <BookOpen size={14} /> <span className="hidden sm:inline">Teoría</span>
             </button>
-            <button
-              onClick={() => setActiveTab("code")}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === "code" ? "bg-primary text-white shadow-lg" : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              <Code2 size={14} /> <span className="hidden sm:inline">Código</span>
-            </button>
+            {challenge.challenge_type !== "quiz" && (
+              <button
+                onClick={() => setActiveTab("code")}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  activeTab === "code" ? "bg-primary text-white shadow-lg" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Code2 size={14} /> <span className="hidden sm:inline">Código</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -342,20 +359,30 @@ export default function ChallengeIDEPage() {
 
         {/* Main Content Area: Quiz vs Code IDE */}
         {challenge.challenge_type === "quiz" ? (
-          <main className="flex-1 p-4 lg:p-6 bg-[#09090b]">
-            <QuizRunner
-              questions={[
-                {
-                  id: "q1",
-                  question: challenge.description || "¿Cuál es la sintaxis correcta?",
-                  options: ["Opción A (Incorrecta)", "Opción B (Correcta)", "Opción C", "Opción D"],
-                  correctIndex: 1,
-                  explanation: "La opción B es la respuesta pedagógicamente correcta según la teoría mostrada."
-                }
-              ]}
-              xpReward={challenge.xp_reward || 50}
-              onComplete={() => setShowSuccessModal(true)}
-            />
+          <main className="flex-1 p-0 lg:p-4 bg-[#09090b] flex flex-col lg:flex-row gap-0 lg:gap-4 relative overflow-hidden">
+            
+            {/* Theory Reading Panel */}
+            <div className={`w-full lg:w-[45%] xl:w-[40%] flex-col h-full bg-[#0d0d11] lg:rounded-2xl lg:border lg:border-white/10 overflow-hidden ${activeTab === "theory" ? "flex" : "hidden lg:flex"}`}>
+              <div className="p-6 h-full flex flex-col overflow-y-auto custom-scrollbar">
+                <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider mb-6">
+                  <BookOpen size={18} />
+                  <span>Lección Teórica</span>
+                </div>
+                <div className="prose prose-invert prose-p:text-sm prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-headings:text-white max-w-none">
+                  <ReactMarkdown>{challenge.theory || "No hay teoría provista para esta lección."}</ReactMarkdown>
+                </div>
+              </div>
+            </div>
+
+            {/* Quiz Runner Panel */}
+            <div className={`w-full lg:flex-1 h-full flex-col relative bg-[#0d0d11] lg:rounded-2xl overflow-hidden lg:border lg:border-white/10 ${activeTab !== "theory" ? "flex" : "hidden lg:flex"}`}>
+              <QuizRunner
+                questions={parsedQuestions}
+                xpReward={challenge.xp_reward || 50}
+                onComplete={handleChallengeComplete}
+              />
+            </div>
+
           </main>
         ) : (
           /* Main Content Area: Side-by-Side on Desktop, Tabs on Mobile */

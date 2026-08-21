@@ -492,6 +492,7 @@ Genera el script SQL completo listo para copiar y pegar.`;
                       <select value={challengeType} onChange={(e) => setChallengeType(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-primary">
                         <option value="logic">Lógica Algorítmica (JS)</option>
                         <option value="web">Prototipado Web (HTML/CSS/JS)</option>
+                        <option value="quiz">Quiz / Cuestionario Teórico</option>
                       </select>
                     </div>
                     <div>
