@@ -50,14 +50,34 @@ const CodeEditor = dynamic(
 function TheoryRenderer({ content }: { content: string }) {
   if (!content) return null;
 
+  // Unescape literal \n or \r\n if stored as raw escaped strings in db
+  const formattedContent = content
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n");
+
   return (
     <div className="space-y-4 font-sans text-zinc-300">
       <ReactMarkdown
         components={{
+          h1: ({ children }) => (
+            <h1 className="text-2xl sm:text-3xl font-heading font-black text-white mt-4 mb-3 border-b border-white/10 pb-2">
+              {children}
+            </h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-xl sm:text-2xl font-heading font-bold text-indigo-400 mt-6 mb-3 border-b border-white/10 pb-2">
+              {children}
+            </h2>
+          ),
           h3: ({ children }) => (
-            <h3 className="text-lg sm:text-xl font-heading font-bold text-white mt-6 mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
+            <h3 className="text-lg sm:text-xl font-heading font-bold text-white mt-5 mb-2.5 flex items-center gap-2 border-b border-white/10 pb-1.5">
               {children}
             </h3>
+          ),
+          h4: ({ children }) => (
+            <h4 className="text-base font-heading font-bold text-purple-300 mt-4 mb-2">
+              {children}
+            </h4>
           ),
           strong: ({ children }) => (
             <strong className="text-primary font-bold bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
@@ -65,17 +85,20 @@ function TheoryRenderer({ content }: { content: string }) {
             </strong>
           ),
           p: ({ children }) => (
-            <p className="text-sm sm:text-base text-zinc-300 leading-relaxed my-2.5 font-sans">
+            <p className="text-sm sm:text-base text-zinc-300 leading-relaxed my-3 font-sans">
               {children}
             </p>
           ),
           ul: ({ children }) => (
-            <ul className="space-y-1.5 my-3 pl-1 list-none">{children}</ul>
+            <ul className="space-y-2 my-3 pl-2 list-none">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="space-y-2 my-3 pl-4 list-decimal text-zinc-300">{children}</ol>
           ),
           li: ({ children }) => (
-            <li className="flex items-start gap-2 text-zinc-200 text-sm sm:text-base">
+            <li className="flex items-start gap-2 text-zinc-200 text-sm sm:text-base leading-relaxed">
               <span className="text-primary font-bold shrink-0 mt-0.5">•</span>
-              <div>{children}</div>
+              <div className="flex-1">{children}</div>
             </li>
           ),
           pre: ({ children }) => <>{children}</>,
@@ -108,7 +131,7 @@ function TheoryRenderer({ content }: { content: string }) {
           },
         }}
       >
-        {content}
+        {formattedContent}
       </ReactMarkdown>
     </div>
   );
@@ -368,9 +391,7 @@ export default function ChallengeIDEPage() {
                   <BookOpen size={18} />
                   <span>Lección Teórica</span>
                 </div>
-                <div className="prose prose-invert prose-p:text-sm prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-headings:text-white max-w-none">
-                  <ReactMarkdown>{challenge.theory || "No hay teoría provista para esta lección."}</ReactMarkdown>
-                </div>
+                <TheoryRenderer content={challenge.theory || "No hay teoría provista para esta lección."} />
               </div>
             </div>
 
