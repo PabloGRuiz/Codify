@@ -22,7 +22,8 @@ import {
   Edit3, 
   Save,
   X,
-  ArrowLeft 
+  ArrowLeft,
+  Star
 } from "lucide-react";
 import Link from "next/link";
 
@@ -41,6 +42,10 @@ export default function ProfilePage() {
   const { user, profile, loading } = useUser();
   const { isCollapsed } = useSidebar();
   const [completedList, setCompletedList] = useState<CompletedChallenge[]>([]);
+  const [coursesStats, setCoursesStats] = useState<{ totalEnrolled: number; completedCourses: number }>({
+    totalEnrolled: 0,
+    completedCourses: 0,
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [saving, setSaving] = useState(false);
@@ -64,6 +69,45 @@ export default function ProfilePage() {
 
         if (error) console.error("Error obteniendo historial:", error);
         if (data) setCompletedList(data as any);
+
+        // Fetch courses completion stats
+        const { data: enrollmentsData } = await supabase
+          .from("course_enrollments")
+          .select("*, courses(*, modules(id, challenges(id)))")
+          .eq("user_id", user.id);
+
+        if (enrollmentsData && enrollmentsData.length > 0) {
+          const completedChallengeIds = new Set((data || []).map((p: any) => p.challenge_id));
+          let finishedCount = 0;
+
+          enrollmentsData.forEach((enr: any) => {
+            const course = enr.courses;
+            let totalCourseChallenges = 0;
+            let userCompletedInCourse = 0;
+
+            if (course?.modules && Array.isArray(course.modules)) {
+              course.modules.forEach((mod: any) => {
+                if (mod.challenges && Array.isArray(mod.challenges)) {
+                  totalCourseChallenges += mod.challenges.length;
+                  mod.challenges.forEach((ch: any) => {
+                    if (completedChallengeIds.has(ch.id)) {
+                      userCompletedInCourse++;
+                    }
+                  });
+                }
+              });
+            }
+
+            if (totalCourseChallenges > 0 && userCompletedInCourse >= totalCourseChallenges) {
+              finishedCount++;
+            }
+          });
+
+          setCoursesStats({
+            totalEnrolled: enrollmentsData.length,
+            completedCourses: finishedCount,
+          });
+        }
       } catch (e) {
         console.error("Error cargando historial de retos:", e);
       }
@@ -106,12 +150,15 @@ export default function ProfilePage() {
   const currentXp = levelInfo.totalXp;
   const streak = profile?.streak_days || 1;
   const completedCount = completedList.length;
+  const reputation = profile?.reputation_stars || 0;
 
   const badges = [
     { title: "Primer Paso", desc: "Completaste tu primera lección", icon: <CheckCircle2 size={24} className="text-emerald-400" />, unlocked: completedCount >= 1 },
     { title: "Constante", desc: "Alcanzaste 3 días de racha", icon: <Flame size={24} className="text-orange-400" />, unlocked: streak >= 3 },
     { title: "Maestro de Lógica", desc: "Completaste 5 lecciones", icon: <Zap size={24} className="text-yellow-400" />, unlocked: completedCount >= 5 },
-    { title: "Arquitecto POO", desc: "Nivel 3 alcanzado", icon: <Trophy size={24} className="text-purple-400" />, unlocked: currentLevel >= 3 },
+    { title: "Arquitecto de Sistemas", desc: "Nivel 3 alcanzado", icon: <Trophy size={24} className="text-purple-400" />, unlocked: currentLevel >= 3 },
+    { title: "Mentor Comunitario", desc: "Obtuviste reputación en el foro", icon: <Star size={24} className="text-yellow-400 fill-yellow-400/30" />, unlocked: reputation >= 3 },
+    { title: "Graduado Especialista", desc: "Completaste al 100% 1 curso", icon: <Award size={24} className="text-indigo-400" />, unlocked: coursesStats.completedCourses >= 1 },
   ];
 
   return (
@@ -185,18 +232,28 @@ export default function ProfilePage() {
                     </div>
                   )}
                   
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/20 text-primary border border-primary/30 w-fit mx-auto md:mx-0">
-                    <ShieldCheck size={14} /> Nivel {currentLevel}
-                  </span>
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/20 text-primary border border-primary/30 w-fit mx-auto md:mx-0">
+                      <ShieldCheck size={14} /> Nivel {currentLevel}
+                    </span>
+
+                    {(profile?.role === 'admin' || profile?.role === 'profesor') && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
+                        {profile.role === 'admin' ? 'Administrador' : 'Profesor'}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-sm text-zinc-400 font-mono">
-                  {user?.email || "correo@ejemplo.com"}
-                </p>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-zinc-400 pt-1">
+                  <div className="flex items-center gap-1.5 text-yellow-400 font-bold bg-yellow-500/10 px-3 py-1 rounded-lg border border-yellow-500/20">
+                    <Star size={16} className="fill-yellow-400" />
+                    <span>{reputation} {reputation === 1 ? 'Estrella de Reputación' : 'Estrellas de Reputación'}</span>
+                  </div>
 
-                <div className="flex items-center justify-center md:justify-start gap-2 text-xs text-zinc-400 pt-1">
-                  <Calendar size={14} />
-                  <span>Miembro activo en la plataforma</span>
+                  <p className="text-sm text-zinc-400 font-mono">
+                    {user?.email || "correo@ejemplo.com"}
+                  </p>
                 </div>
               </div>
 
@@ -222,28 +279,28 @@ export default function ProfilePage() {
 
           {/* Quick Statistics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Card className="p-5 glass flex flex-col items-center justify-center text-center space-y-1">
+            <Card className="p-5 glass flex flex-col items-center justify-center text-center space-y-1 hover:border-yellow-500/40 transition-colors">
               <Zap size={24} className="text-yellow-400 mb-1" />
               <span className="text-3xl font-heading font-bold text-white">{currentXp}</span>
               <span className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Puntos XP</span>
             </Card>
 
-            <Card className="p-5 glass flex flex-col items-center justify-center text-center space-y-1">
+            <Card className="p-5 glass flex flex-col items-center justify-center text-center space-y-1 hover:border-orange-500/40 transition-colors">
               <Flame size={24} className="text-orange-400 mb-1" />
               <span className="text-3xl font-heading font-bold text-white">{streak}</span>
               <span className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Días de Racha</span>
             </Card>
 
-            <Card className="p-5 glass flex flex-col items-center justify-center text-center space-y-1">
+            <Card className="p-5 glass flex flex-col items-center justify-center text-center space-y-1 hover:border-emerald-500/40 transition-colors">
               <CheckCircle2 size={24} className="text-emerald-400 mb-1" />
               <span className="text-3xl font-heading font-bold text-white">{completedCount}</span>
               <span className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Retos Resueltos</span>
             </Card>
 
-            <Card className="p-5 glass flex flex-col items-center justify-center text-center space-y-1">
-              <Trophy size={24} className="text-purple-400 mb-1" />
-              <span className="text-3xl font-heading font-bold text-white">{currentLevel}</span>
-              <span className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Nivel Actual</span>
+            <Card className="p-5 glass flex flex-col items-center justify-center text-center space-y-1 hover:border-indigo-500/40 transition-colors">
+              <Award size={24} className="text-indigo-400 mb-1" />
+              <span className="text-3xl font-heading font-bold text-white">{coursesStats.completedCourses} / {coursesStats.totalEnrolled}</span>
+              <span className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Cursos Completados</span>
             </Card>
           </div>
 

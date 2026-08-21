@@ -20,8 +20,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
+import { formatTimeAgo } from "@/lib/formatTime";
 import { NuevoHiloModal } from "./NuevoHiloModal";
 
 interface Thread {
@@ -30,7 +29,9 @@ interface Thread {
   content: string;
   created_at: string;
   tags: string[];
+  author_id?: string;
   author?: {
+    id: string;
     username: string;
     avatar_url?: string;
     reputation_stars?: number;
@@ -53,8 +54,8 @@ export default function ForoPage() {
       let query = supabase
         .from("forum_threads")
         .select(`
-          id, title, content, created_at, tags,
-          author:profiles(username, avatar_url, reputation_stars, role),
+          id, title, content, created_at, tags, author_id,
+          author:profiles(id, username, avatar_url, reputation_stars, role),
           posts:forum_posts(count)
         `)
         .order("created_at", { ascending: false });
@@ -77,6 +78,7 @@ export default function ForoPage() {
           ...t,
           posts_count: t.posts ? (t.posts[0]?.count || 0) : 0,
           author: authorObj || {
+            id: t.author_id || "",
             username: "Coder",
             avatar_url: "",
             reputation_stars: 0,
@@ -176,64 +178,68 @@ export default function ForoPage() {
                 </div>
               ) : (
                 threads.map((thread) => (
-                  <Link href={`/foro/${thread.id}`} key={thread.id}>
-                    <Card className="p-5 sm:p-6 glass hover:border-blue-500/40 hover:bg-white/[0.03] transition-all cursor-pointer group mb-4">
-                      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                        {/* Stats left column */}
-                        <div className="flex sm:flex-col items-center sm:items-end justify-start gap-4 sm:gap-2 shrink-0 sm:w-24">
-                          <div className={`flex flex-col items-center justify-center p-2 rounded-xl border ${thread.posts_count > 0 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-white/10 bg-black/40 text-zinc-400"} min-w-[60px]`}>
-                            <span className="text-lg font-bold font-mono leading-none">{thread.posts_count}</span>
-                            <span className="text-[10px] uppercase font-bold mt-1">Resp.</span>
-                          </div>
+                  <Card key={thread.id} className="p-5 sm:p-6 glass hover:border-blue-500/40 hover:bg-white/[0.03] transition-all group mb-4 relative">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                      {/* Stats left column */}
+                      <div className="flex sm:flex-col items-center sm:items-end justify-start gap-4 sm:gap-2 shrink-0 sm:w-24">
+                        <div className={`flex flex-col items-center justify-center p-2 rounded-xl border ${thread.posts_count > 0 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-white/10 bg-black/40 text-zinc-400"} min-w-[60px]`}>
+                          <span className="text-lg font-bold font-mono leading-none">{thread.posts_count}</span>
+                          <span className="text-[10px] uppercase font-bold mt-1">Resp.</span>
                         </div>
+                      </div>
 
-                        {/* Content column */}
-                        <div className="flex-1 min-w-0">
+                      {/* Content column */}
+                      <div className="flex-1 min-w-0">
+                        <Link href={`/foro/${thread.id}`} className="block group">
                           <h2 className="text-lg sm:text-xl font-heading font-bold text-blue-100 group-hover:text-blue-400 transition-colors mb-1 truncate">
                             {thread.title}
                           </h2>
                           <p className="text-sm text-zinc-400 line-clamp-2 mb-3">
                             {thread.content.length > 150 ? `${thread.content.substring(0, 150)}...` : thread.content}
                           </p>
+                        </Link>
 
-                          {/* Tags & Meta footer */}
-                          <div className="flex flex-wrap items-center justify-between gap-4 text-xs mt-4">
-                            <div className="flex items-center gap-2">
-                              {thread.tags && thread.tags.length > 0 && thread.tags.map((tag, i) => (
-                                <span key={i} className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded-md font-mono">
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-
-                            <div className="flex items-center gap-4 text-zinc-500 shrink-0">
-                              <span className="flex items-center gap-1">
-                                <Clock size={12} /> {formatDistanceToNow(new Date(thread.created_at), { addSuffix: true, locale: es })}
+                        {/* Tags & Meta footer */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 text-xs mt-4">
+                          <div className="flex items-center gap-2">
+                            {thread.tags && thread.tags.length > 0 && thread.tags.map((tag, i) => (
+                              <span key={i} className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded-md font-mono">
+                                #{tag}
                               </span>
-                              <div className="flex items-center gap-2">
-                                {thread.author?.avatar_url ? (
-                                  <img src={thread.author.avatar_url} alt="avatar" className="w-5 h-5 rounded-full object-cover" />
-                                ) : (
-                                  <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center"><User size={10} /></div>
-                                )}
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-medium text-zinc-300">{thread.author?.username || "Usuario"}</span>
-                                    {(thread.author?.role === 'admin' || thread.author?.role === 'profesor') && (
-                                      <span className="text-indigo-400" title={thread.author.role === 'admin' ? 'Administrador' : 'Profesor'}>
-                                        <ShieldCheck size={14} />
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className="text-yellow-500 font-bold flex items-center bg-yellow-500/10 px-1 rounded-sm w-fit mt-0.5"><Star size={10} className="fill-yellow-500 mr-0.5" />{thread.author?.reputation_stars || 0}</span>
+                            ))}
+                          </div>
+
+                          <div className="flex items-center gap-4 text-zinc-500 shrink-0">
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} /> {formatTimeAgo(thread.created_at)}
+                            </span>
+                            
+                            <Link 
+                              href={thread.author?.id ? `/profile/${thread.author.id}` : "#"}
+                              className="flex items-center gap-2 hover:opacity-80 transition-opacity z-10 relative group/author"
+                            >
+                              {thread.author?.avatar_url ? (
+                                <img src={thread.author.avatar_url} alt="avatar" className="w-5 h-5 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center"><User size={10} /></div>
+                              )}
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-medium text-zinc-300 group-hover/author:text-blue-400 transition-colors">{thread.author?.username || "Usuario"}</span>
+                                  {(thread.author?.role === 'admin' || thread.author?.role === 'profesor') && (
+                                    <span className="text-indigo-400" title={thread.author.role === 'admin' ? 'Administrador' : 'Profesor'}>
+                                      <ShieldCheck size={14} />
+                                    </span>
+                                  )}
                                 </div>
+                                <span className="text-yellow-500 font-bold flex items-center bg-yellow-500/10 px-1 rounded-sm w-fit mt-0.5"><Star size={10} className="fill-yellow-500 mr-0.5" />{thread.author?.reputation_stars || 0}</span>
                               </div>
-                            </div>
+                            </Link>
                           </div>
                         </div>
                       </div>
-                    </Card>
-                  </Link>
+                    </div>
+                  </Card>
                 ))
               )}
             </div>

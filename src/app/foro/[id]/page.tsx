@@ -21,9 +21,8 @@ import {
   CheckCircle2,
   MoreVertical
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 import Link from "next/link";
+import { formatTimeAgo } from "@/lib/formatTime";
 import { ShieldCheck } from "lucide-react";
 
 interface Thread {
@@ -211,12 +210,21 @@ export default function ThreadDetailPage() {
         return p;
       }));
 
+      let voteError = null;
       if (currentVote === voteType) {
-        await supabase.from("forum_votes").delete().match({ post_id: postId, user_id: user.id });
+        const { error } = await supabase.from("forum_votes").delete().match({ post_id: postId, user_id: user.id });
+        voteError = error;
       } else if (currentVote) {
-        await supabase.from("forum_votes").update({ vote_type: voteType }).match({ post_id: postId, user_id: user.id });
+        const { error } = await supabase.from("forum_votes").update({ vote_type: voteType }).match({ post_id: postId, user_id: user.id });
+        voteError = error;
       } else {
-        await supabase.from("forum_votes").insert({ post_id: postId, user_id: user.id, vote_type: voteType });
+        const { error } = await supabase.from("forum_votes").insert({ post_id: postId, user_id: user.id, vote_type: voteType });
+        voteError = error;
+      }
+
+      if (voteError) {
+        console.error("Error guardando voto en Supabase:", voteError);
+        fetchThreadAndPosts();
       }
     } catch (err) {
       console.error("Error voting:", err);
@@ -281,7 +289,10 @@ export default function ThreadDetailPage() {
 
               {/* Thread Meta */}
               <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400 mb-6 pb-6 border-b border-white/10">
-                <div className="flex items-center gap-2">
+                <Link 
+                  href={thread.author?.id ? `/profile/${thread.author.id}` : "#"} 
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity group"
+                >
                   {thread.author?.avatar_url ? (
                     <img src={thread.author.avatar_url} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
                   ) : (
@@ -289,7 +300,7 @@ export default function ThreadDetailPage() {
                   )}
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-zinc-200">{thread.author?.username || "Usuario"}</span>
+                      <span className="font-bold text-zinc-200 group-hover:text-blue-400 transition-colors">{thread.author?.username || "Usuario"}</span>
                       {(thread.author?.role === 'admin' || thread.author?.role === 'profesor') && (
                         <span className="flex items-center gap-1 text-[10px] uppercase px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 font-bold" title="Staff">
                           <ShieldCheck size={12} />
@@ -301,9 +312,9 @@ export default function ThreadDetailPage() {
                       <Star size={12} className="fill-yellow-500 mr-1" />{thread.author?.reputation_stars || 0}
                     </span>
                   </div>
-                </div>
+                </Link>
                 <span className="flex items-center gap-1">
-                  <Clock size={14} /> {formatDistanceToNow(new Date(thread.created_at), { addSuffix: true, locale: es })}
+                  <Clock size={14} /> {formatTimeAgo(thread.created_at)}
                 </span>
                 
                 <div className="flex items-center gap-2 ml-auto">
@@ -367,7 +378,10 @@ export default function ThreadDetailPage() {
                     {/* Content Column */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
-                        <div className="flex items-center gap-3">
+                        <Link 
+                          href={post.author?.id ? `/profile/${post.author.id}` : "#"} 
+                          className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
+                        >
                           {post.author?.avatar_url ? (
                             <img src={post.author.avatar_url} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
                           ) : (
@@ -375,7 +389,7 @@ export default function ThreadDetailPage() {
                           )}
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-zinc-200">{post.author?.username || "Usuario"}</span>
+                              <span className="font-bold text-zinc-200 group-hover:text-blue-400 transition-colors">{post.author?.username || "Usuario"}</span>
                               {(post.author?.role === 'admin' || post.author?.role === 'profesor') && (
                                 <span className="flex items-center gap-1 text-[10px] uppercase px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 font-bold" title="Staff">
                                   <ShieldCheck size={12} />
@@ -390,9 +404,9 @@ export default function ThreadDetailPage() {
                               <Star size={10} className="fill-yellow-500 mr-1" />{post.author?.reputation_stars || 0} Reputación
                             </span>
                           </div>
-                        </div>
+                        </Link>
                         <div className="flex items-center gap-4 text-xs text-zinc-500">
-                          <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: es })}</span>
+                          <span>{formatTimeAgo(post.created_at)}</span>
                           <button className="text-zinc-400 hover:text-white"><MoreVertical size={16}/></button>
                         </div>
                       </div>
