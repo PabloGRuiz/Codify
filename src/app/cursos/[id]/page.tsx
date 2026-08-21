@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { useSidebar } from "@/context/SidebarContext";
@@ -10,15 +11,18 @@ import { GraduationCap, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 
-export default function CourseDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function CourseDetailPage() {
+  const routeParams = useParams();
+  const id = routeParams?.id as string;
   const { isCollapsed } = useSidebar();
   const { user } = useUser();
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCourseDetails();
+    if (id) {
+      fetchCourseDetails();
+    }
   }, [id]);
 
   const fetchCourseDetails = async () => {

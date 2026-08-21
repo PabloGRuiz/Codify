@@ -34,15 +34,18 @@ export function LearningPath({ courseId }: { courseId?: string }) {
 
   useEffect(() => {
     fetchModulesAndProgress();
-  }, [user]);
+  }, [user, courseId]);
 
   useEffect(() => {
     if (selectedModuleId) {
       fetchChallengesForModule(selectedModuleId);
+    } else {
+      setChallenges([]);
     }
   }, [selectedModuleId]);
 
   const fetchModulesAndProgress = async () => {
+    setLoading(true);
     try {
       // 1. Fetch modules
       let query = supabase.from("modules").select("*").order("created_at", { ascending: true });
@@ -59,18 +62,21 @@ export function LearningPath({ courseId }: { courseId?: string }) {
         let defaultModId = "";
         
         if (typeof window !== "undefined") {
-          const saved = localStorage.getItem("codify_last_module");
+          const saved = localStorage.getItem(`codify_last_module_${courseId || "default"}`);
           if (saved && modulesData.some(m => m.id === saved)) {
             defaultModId = saved;
           }
         }
         
         if (!defaultModId) {
-          const beginnerMod = modulesData.find((m) => m.title.toLowerCase().includes("inicial") || m.title.toLowerCase().includes("cero"));
-          defaultModId = beginnerMod ? beginnerMod.id : modulesData[0].id;
+          defaultModId = modulesData[0].id;
         }
         
         setSelectedModuleId(defaultModId);
+      } else {
+        setModules([]);
+        setSelectedModuleId("");
+        setChallenges([]);
       }
 
       // 2. Fetch user completed challenges if logged in

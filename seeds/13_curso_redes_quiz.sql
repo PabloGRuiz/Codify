@@ -7,6 +7,9 @@ DECLARE
     v_module_2_id UUID;
     v_module_3_id UUID;
 BEGIN
+    -- 0. Clean previous incomplete attempts if any
+    DELETE FROM courses WHERE title = 'Fundamentos de Redes y Telecomunicaciones';
+
     -- 1. Create Course
     INSERT INTO courses (title, description, image_url, tags)
     VALUES (
@@ -72,7 +75,7 @@ BEGIN
         'Comprende las diferentes capas de red según el estándar de estandarización OSI.',
         'quiz',
         150,
-        '# El Modelo OSI\n\nEl Modelo de Interconexión de Sistemas Abiertos (OSI) es un modelo conceptual creado por la ISO que caracteriza y estandariza las funciones de comunicación de un sistema de telecomunicaciones o informático.\n\n## Las 7 Capas:\n1. **Física**: Transmisión de bits a través del medio.\n2. **Enlace de Datos**: Direccionamiento MAC y detección de errores.\n3. **Red**: Direccionamiento IP y enrutamiento.\n4. **Transporte**: Conexión de extremo a extremo y confiabilidad (TCP/UDP).\n5. **Sesión**: Establecimiento, mantenimiento y terminación de sesiones.\n6. **Presentación**: Traducción de datos y cifrado.\n7. **Aplicación**: Interfaz con el usuario final (HTTP, FTP, SMTP).',
+        '# El Modelo OSI\n\nEl Modelo de Interconexión de Sistemas Abiertos (OSI) es un modelo conceptual creado por la ISO que caracteres y estandariza las funciones de comunicación de un sistema de telecomunicaciones o informático.\n\n## Las 7 Capas:\n1. **Física**: Transmisión de bits a través del medio.\n2. **Enlace de Datos**: Direccionamiento MAC y detección de errores.\n3. **Red**: Direccionamiento IP y enrutamiento.\n4. **Transporte**: Conexión de extremo a extremo y confiabilidad (TCP/UDP).\n5. **Sesión**: Establecimiento, mantenimiento y terminación de sesiones.\n6. **Presentación**: Traducción de datos y cifrado.\n7. **Aplicación**: Interfaz con el usuario final (HTTP, FTP, SMTP).',
         '[{"id":"q1","question":"¿Qué capa del modelo OSI se encarga del enrutamiento y las direcciones IP?","options":["Capa 2: Enlace de Datos","Capa 3: Red","Capa 4: Transporte","Capa 7: Aplicación"],"correctIndex":1,"explanation":"La capa 3 (Red) es responsable del direccionamiento lógico (IP) y del enrutamiento de paquetes entre diferentes redes."},{"id":"q2","question":"¿Qué capa se encarga del cifrado de datos antes de ser enviados a la red?","options":["Capa de Sesión","Capa Física","Capa de Presentación","Capa de Transporte"],"correctIndex":2,"explanation":"La Capa 6 (Presentación) transforma los datos de la aplicación para la red, lo que incluye tareas como el cifrado y la compresión."}]',
         1
     );
