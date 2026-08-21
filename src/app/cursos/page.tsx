@@ -104,12 +104,21 @@ export default function CatalogPage() {
                       <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
                         <BookOpen size={24} />
                       </div>
-                      <div className="flex gap-1">
-                        {course.tags?.map((tag: string) => (
-                          <span key={tag} className="text-[10px] uppercase font-bold px-2 py-1 bg-white/5 text-zinc-400 rounded-md">
-                            {tag}
-                          </span>
-                        ))}
+                      <div className="flex flex-wrap gap-2">
+                        {course.tags?.slice(0, 3).map((tag: string) => {
+                          const isTeorico = tag.toLowerCase() === 'teórico' || tag.toLowerCase() === 'teorico';
+                          const isPractico = tag.toLowerCase() === 'práctico' || tag.toLowerCase() === 'practico';
+                          let tagStyle = "bg-white/5 text-zinc-400 border border-white/10";
+                          
+                          if (isTeorico) tagStyle = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]";
+                          else if (isPractico) tagStyle = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.1)]";
+
+                          return (
+                            <span key={tag} className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-md ${tagStyle}`}>
+                              {tag}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                     

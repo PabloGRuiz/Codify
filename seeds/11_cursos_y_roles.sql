@@ -73,7 +73,7 @@ BEGIN
   VALUES (
     'Desarrollo Web Full Stack con IA',
     'El bootcamp definitivo para dominar la programación moderna. Aprende desde las bases hasta arquitecturas avanzadas con asistencia de IA integrada.',
-    ARRAY['Web', 'FullStack', 'AI', 'JavaScript', 'Python'],
+    ARRAY['Práctico', 'Web', 'FullStack'],
     'published'
   )
   RETURNING id INTO default_course_id;
