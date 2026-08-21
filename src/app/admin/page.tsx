@@ -5,20 +5,30 @@ import { supabase } from "@/lib/supabase";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
-import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy } from "lucide-react";
+import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap } from "lucide-react";
 
 export default function AdminPage() {
+  const router = useRouter();
   const { isCollapsed } = useSidebar();
-  const [activeTab, setActiveTab] = useState<"content" | "users" | "ai_prompt">("content");
+  const { user, isProfesor, isAdmin, loading: userLoading } = useUser();
+  const [activeTab, setActiveTab] = useState<"courses" | "content" | "users" | "ai_prompt">("courses");
   
   // Data States
+  const [courses, setCourses] = useState<any[]>([]);
   const [modules, setModules] = useState<any[]>([]);
   const [challenges, setChallenges] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // New Course Form State
+  const [newCourseTitle, setNewCourseTitle] = useState("");
+  const [newCourseDesc, setNewCourseDesc] = useState("");
+
   // New Module Form State
+  const [courseId, setCourseId] = useState("");
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [newModuleDescription, setNewModuleDescription] = useState("");
   const [newModuleDifficulty, setNewModuleDifficulty] = useState("1");
@@ -43,14 +53,29 @@ export default function AdminPage() {
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
   useEffect(() => {
-    fetchAdminData();
-  }, []);
+    if (!userLoading && !isProfesor) {
+      router.push("/");
+    }
+  }, [userLoading, isProfesor, router]);
+
+  useEffect(() => {
+    if (isProfesor) {
+      fetchAdminData();
+    }
+  }, [isProfesor]);
 
   const fetchAdminData = async () => {
     setLoading(true);
     try {
+      // 0. Fetch courses
+      const { data: cData } = await supabase.from("courses").select("*").order("created_at", { ascending: true });
+      if (cData) {
+        setCourses(cData);
+        if (cData.length > 0 && !courseId) setCourseId(cData[0].id);
+      }
+
       // 1. Fetch modules
-      const { data: modData } = await supabase.from("modules").select("*").order("created_at", { ascending: true });
+      const { data: modData } = await supabase.from("modules").select("*, courses(title)").order("created_at", { ascending: true });
       if (modData) {
         setModules(modData);
         if (modData.length > 0 && !moduleId) setModuleId(modData[0].id);
@@ -73,9 +98,31 @@ export default function AdminPage() {
     }
   };
 
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from("courses").insert({
+      title: newCourseTitle,
+      description: newCourseDesc,
+      author_id: user?.id,
+      status: 'published'
+    });
+
+    if (error) {
+      alert("Error al crear curso: " + error.message);
+    } else {
+      alert("¡Curso creado exitosamente!");
+      setNewCourseTitle("");
+      setNewCourseDesc("");
+      fetchAdminData();
+    }
+  };
+
   const handleCreateModule = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!courseId) return alert("Selecciona un curso primero");
+    
     const { error } = await supabase.from("modules").insert({
+      course_id: courseId,
       title: newModuleTitle,
       description: newModuleDescription,
       difficulty_level: parseInt(newModuleDifficulty),
@@ -127,6 +174,18 @@ export default function AdminPage() {
       alert("Error al eliminar: " + error.message);
     } else {
       fetchAdminData();
+    }
+  };
+
+  const handleChangeRole = async (userId: string, newRole: string) => {
+    if (!isAdmin) return;
+    try {
+      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId);
+      if (error) throw error;
+      fetchAdminData();
+    } catch (err) {
+      console.error(err);
+      alert("Error al cambiar rol");
     }
   };
 
@@ -228,23 +287,33 @@ Genera el script SQL completo listo para copiar y pegar.`;
           </div>
 
           {/* Admin Navigation Tabs */}
-          <div className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10 shrink-0">
+          <div className="flex flex-wrap items-center bg-black/60 p-1 rounded-xl border border-white/10 shrink-0 gap-1">
+            <button
+              onClick={() => setActiveTab("courses")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeTab === "courses" ? "bg-indigo-600 text-white shadow-lg" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <GraduationCap size={16} /> Cursos Principales
+            </button>
             <button
               onClick={() => setActiveTab("content")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === "content" ? "bg-primary text-white shadow-lg" : "text-zinc-400 hover:text-white"
               }`}
             >
-              <BookOpen size={16} /> Contenido & Retos
+              <BookOpen size={16} /> Módulos & Retos
             </button>
-            <button
-              onClick={() => setActiveTab("users")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                activeTab === "users" ? "bg-primary text-white shadow-lg" : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              <Users size={16} /> Usuarios & Pruebas
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setActiveTab("users")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === "users" ? "bg-emerald-500 text-white shadow-lg" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Users size={16} /> Usuarios & Roles
+              </button>
+            )}
             <button
               onClick={() => setActiveTab("ai_prompt")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -256,17 +325,74 @@ Genera el script SQL completo listo para copiar y pegar.`;
           </div>
         </header>
 
-        {/* TAB 1: GESTIÓN DE CONTENIDO & RETOS */}
-        {activeTab === "content" && (
+        {userLoading || loading ? (
+          <div className="flex items-center justify-center p-20">
+            <div className="w-8 h-8 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+          </div>
+        ) : (
+          <>
+            {/* TAB 0: CURSOS */}
+            {activeTab === "courses" && (
+              <div className="space-y-8">
+                <Card className="p-6 glass-panel border-t-4 border-t-indigo-500 space-y-4">
+                  <h2 className="text-xl font-bold flex items-center gap-2 text-indigo-400">
+                    <Plus size={20} />
+                    Crear Nuevo Curso Global
+                  </h2>
+                  <form onSubmit={handleCreateCourse} className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-zinc-400 mb-1">Título del Curso</label>
+                      <input required type="text" value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500" placeholder="Ej: Bootcamp Full Stack con Python" />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-zinc-400 mb-1">Descripción</label>
+                      <textarea required value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 h-24" placeholder="Ej: Aprende Python, Django, IA..." />
+                    </div>
+                    <Button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white">
+                      Publicar Curso
+                    </Button>
+                  </form>
+                </Card>
+
+                <Card className="p-6 glass-panel space-y-4">
+                  <h3 className="text-lg font-bold text-white">Cursos Existentes ({courses.length})</h3>
+                  <div className="divide-y divide-white/10">
+                    {courses.map((c) => (
+                      <div key={c.id} className="py-4 flex flex-col gap-2">
+                        <h4 className="font-bold text-white text-lg">{c.title}</h4>
+                        <p className="text-sm text-zinc-400">{c.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* TAB 1: GESTIÓN DE CONTENIDO & RETOS */}
+            {activeTab === "content" && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {/* Form to Create Module */}
               <Card className="p-6 glass-panel h-fit border-t-4 border-t-accent space-y-4">
                 <h2 className="text-xl font-bold flex items-center gap-2 text-accent">
                   <Plus size={20} />
-                  1. Crear Nuevo Módulo (Curso)
+                  1. Crear Nuevo Módulo para un Curso
                 </h2>
                 <form onSubmit={handleCreateModule} className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Curso al que pertenece</label>
+                    <select
+                      value={courseId}
+                      onChange={(e) => setCourseId(e.target.value)}
+                      className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-accent"
+                      required
+                    >
+                      <option value="" disabled>Selecciona un curso...</option>
+                      {courses.map((c) => (
+                        <option key={c.id} value={c.id}>{c.title}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-sm text-zinc-400 mb-1">Título del Módulo</label>
                     <input required type="text" value={newModuleTitle} onChange={(e) => setNewModuleTitle(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-accent" placeholder="Ej: Programación Orientada a Objetos" />
@@ -465,10 +591,35 @@ Genera el script SQL completo listo para copiar y pegar.`;
               <div className="divide-y divide-white/10">
                 {profiles.map((p) => (
                   <div key={p.id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-white">@{p.username}</h4>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-white">@{p.username}</h4>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          p.role === 'admin' ? 'bg-red-500/20 text-red-400' :
+                          p.role === 'profesor' ? 'bg-indigo-500/20 text-indigo-400' :
+                          'bg-zinc-500/20 text-zinc-400'
+                        }`}>
+                          {p.role || 'student'}
+                        </span>
+                      </div>
                       <span className="text-xs text-zinc-400">ID: {p.id.slice(0, 8)}...</span>
                     </div>
+                    
+                    {isAdmin && (
+                      <div className="mr-4">
+                        <select 
+                          className="bg-black/60 border border-white/20 rounded px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                          value={p.role || 'student'}
+                          onChange={(e) => handleChangeRole(p.id, e.target.value)}
+                          disabled={p.id === user?.id}
+                        >
+                          <option value="student">Estudiante</option>
+                          <option value="profesor">Profesor</option>
+                          <option value="admin">Administrador</option>
+                        </select>
+                      </div>
+                    )}
+
                     <div className="text-right">
                       <span className="text-sm font-bold text-primary block">Nivel {p.level}</span>
                       <span className="text-xs text-zinc-400">{p.xp} Puntos XP</span>
@@ -503,6 +654,8 @@ Genera el script SQL completo listo para copiar y pegar.`;
               </div>
             </Card>
           </div>
+        )}
+        </>
         )}
 
       </div>

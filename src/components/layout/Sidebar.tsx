@@ -11,7 +11,9 @@ import {
   PanelLeftOpen,
   User as UserIcon,
   MessageSquare,
-  Star
+  Star,
+  BookOpen,
+  ShieldCheck
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,7 +25,7 @@ import { getLevelInfo } from "@/lib/gamification";
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { profile } = useUser();
+  const { profile, isAdmin, isProfesor } = useUser();
   const { isCollapsed, toggleCollapse, isMobileOpen, setIsMobileOpen } = useSidebar();
 
   const handleLogout = async () => {
@@ -33,9 +35,14 @@ export function Sidebar() {
 
   const navItems = [
     { name: "Dashboard", href: "/", icon: <LayoutDashboard size={20} /> },
+    { name: "Mis Cursos", href: "/cursos", icon: <BookOpen size={20} /> },
     { name: "Laboratorio Web", href: "/web", icon: <Code2 size={20} /> },
     { name: "Foro Comunitario", href: "/foro", icon: <MessageSquare size={20} /> },
   ];
+
+  if (isAdmin || isProfesor) {
+    navItems.push({ name: "Administración", href: "/admin", icon: <ShieldCheck size={20} /> });
+  }
 
   const levelInfo = getLevelInfo(profile?.xp);
   const currentLevel = levelInfo.level;

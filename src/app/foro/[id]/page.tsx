@@ -24,6 +24,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 
 interface Thread {
   id: string;
@@ -36,6 +37,7 @@ interface Thread {
     username: string;
     avatar_url?: string;
     reputation_stars?: number;
+    role?: string;
   };
 }
 
@@ -48,6 +50,7 @@ interface Post {
     username: string;
     avatar_url?: string;
     reputation_stars?: number;
+    role?: string;
   };
   upvotes: number;
   downvotes: number;
@@ -81,7 +84,7 @@ export default function ThreadDetailPage() {
         .from("forum_threads")
         .select(`
           id, title, content, created_at, tags, author_id,
-          author:profiles(id, username, avatar_url, reputation_stars)
+          author:profiles(id, username, avatar_url, reputation_stars, role)
         `)
         .eq("id", id)
         .single();
@@ -95,7 +98,8 @@ export default function ThreadDetailPage() {
           id: threadData.author_id || "",
           username: "Coder",
           avatar_url: "",
-          reputation_stars: 0
+          reputation_stars: 0,
+          role: "student"
         }
       });
 
@@ -104,7 +108,7 @@ export default function ThreadDetailPage() {
         .from("forum_posts")
         .select(`
           id, content, created_at, upvotes, downvotes, is_solution, author_id,
-          author:profiles(id, username, avatar_url, reputation_stars)
+          author:profiles(id, username, avatar_url, reputation_stars, role)
         `)
         .eq("thread_id", id)
         .order("is_solution", { ascending: false })
@@ -126,7 +130,8 @@ export default function ThreadDetailPage() {
             id: p.author_id || "",
             username: "Coder",
             avatar_url: "",
-            reputation_stars: 0
+            reputation_stars: 0,
+            role: "student"
           }
         };
       });
@@ -282,10 +287,20 @@ export default function ThreadDetailPage() {
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center"><User size={12} /></div>
                   )}
-                  <span className="font-bold text-zinc-200">{thread.author?.username || "Usuario"}</span>
-                  <span className="text-yellow-500 font-bold flex items-center bg-yellow-500/10 px-1.5 py-0.5 rounded-md">
-                    <Star size={12} className="fill-yellow-500 mr-1" />{thread.author?.reputation_stars || 0}
-                  </span>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-zinc-200">{thread.author?.username || "Usuario"}</span>
+                      {(thread.author?.role === 'admin' || thread.author?.role === 'profesor') && (
+                        <span className="flex items-center gap-1 text-[10px] uppercase px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 font-bold" title="Staff">
+                          <ShieldCheck size={12} />
+                          {thread.author.role === 'admin' ? 'Admin' : 'Profesor'}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-yellow-500 font-bold flex items-center text-xs mt-0.5">
+                      <Star size={12} className="fill-yellow-500 mr-1" />{thread.author?.reputation_stars || 0}
+                    </span>
+                  </div>
                 </div>
                 <span className="flex items-center gap-1">
                   <Clock size={14} /> {formatDistanceToNow(new Date(thread.created_at), { addSuffix: true, locale: es })}
@@ -361,6 +376,12 @@ export default function ThreadDetailPage() {
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-zinc-200">{post.author?.username || "Usuario"}</span>
+                              {(post.author?.role === 'admin' || post.author?.role === 'profesor') && (
+                                <span className="flex items-center gap-1 text-[10px] uppercase px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 font-bold" title="Staff">
+                                  <ShieldCheck size={12} />
+                                  {post.author.role === 'admin' ? 'Admin' : 'Profesor'}
+                                </span>
+                              )}
                               {isThreadAuthor && (
                                 <span className="text-[10px] uppercase px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded font-bold">Autor</span>
                               )}

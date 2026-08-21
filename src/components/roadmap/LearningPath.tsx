@@ -24,7 +24,7 @@ interface ModuleInfo {
   description: string;
 }
 
-export function LearningPath() {
+export function LearningPath({ courseId }: { courseId?: string }) {
   const { user } = useUser();
   const [modules, setModules] = useState<ModuleInfo[]>([]);
   const [selectedModuleId, setSelectedModuleId] = useState<string>("");
@@ -45,10 +45,12 @@ export function LearningPath() {
   const fetchModulesAndProgress = async () => {
     try {
       // 1. Fetch modules
-      const { data: modulesData, error: modError } = await supabase
-        .from("modules")
-        .select("*")
-        .order("created_at", { ascending: true });
+      let query = supabase.from("modules").select("*").order("created_at", { ascending: true });
+      if (courseId) {
+        query = query.eq("course_id", courseId);
+      }
+      
+      const { data: modulesData, error: modError } = await query;
 
       if (modError) console.error("Error fetching modules:", modError.message || modError);
       

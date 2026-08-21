@@ -13,7 +13,8 @@ import {
   User, 
   Star,
   Clock,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck
 } from "lucide-react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useUser } from "@/hooks/useUser";
@@ -29,10 +30,11 @@ interface Thread {
   content: string;
   created_at: string;
   tags: string[];
-  author: {
+  author?: {
     username: string;
-    avatar_url: string;
-    reputation_stars: number;
+    avatar_url?: string;
+    reputation_stars?: number;
+    role?: string;
   };
   posts_count: number;
 }
@@ -52,7 +54,7 @@ export default function ForoPage() {
         .from("forum_threads")
         .select(`
           id, title, content, created_at, tags,
-          author:profiles(username, avatar_url, reputation_stars),
+          author:profiles(username, avatar_url, reputation_stars, role),
           posts:forum_posts(count)
         `)
         .order("created_at", { ascending: false });
@@ -77,7 +79,8 @@ export default function ForoPage() {
           author: authorObj || {
             username: "Coder",
             avatar_url: "",
-            reputation_stars: 0
+            reputation_stars: 0,
+            role: "student"
           }
         };
       });
@@ -213,8 +216,17 @@ export default function ForoPage() {
                                 ) : (
                                   <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center"><User size={10} /></div>
                                 )}
-                                <span className="font-medium text-zinc-300">{thread.author?.username || "Usuario"}</span>
-                                <span className="text-yellow-500 font-bold flex items-center bg-yellow-500/10 px-1 rounded-sm"><Star size={10} className="fill-yellow-500 mr-0.5" />{thread.author?.reputation_stars || 0}</span>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-medium text-zinc-300">{thread.author?.username || "Usuario"}</span>
+                                    {(thread.author?.role === 'admin' || thread.author?.role === 'profesor') && (
+                                      <span className="text-indigo-400" title={thread.author.role === 'admin' ? 'Administrador' : 'Profesor'}>
+                                        <ShieldCheck size={14} />
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-yellow-500 font-bold flex items-center bg-yellow-500/10 px-1 rounded-sm w-fit mt-0.5"><Star size={10} className="fill-yellow-500 mr-0.5" />{thread.author?.reputation_stars || 0}</span>
+                                </div>
                               </div>
                             </div>
                           </div>

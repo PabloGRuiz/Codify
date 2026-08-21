@@ -107,5 +107,11 @@ export function useUser() {
     };
   }, []);
 
-  return { user, profile, loading };
+  return {
+    user,
+    profile,
+    loading,
+    isAdmin: profile?.role === "admin",
+    isProfesor: profile?.role === "profesor" || profile?.role === "admin",
+  };
 }

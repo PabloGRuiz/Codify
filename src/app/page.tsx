@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { Card } from "@/components/ui/Card";
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
-import { LearningPath } from "@/components/roadmap/LearningPath";
+import { supabase } from "@/lib/supabase";
 import { QuestsHub } from "@/components/dashboard/QuestsHub";
 import { TechNewsFeed } from "@/components/dashboard/TechNewsFeed";
 import { DailyCodingArena } from "@/components/dashboard/DailyCodingArena";
@@ -32,10 +33,38 @@ import Link from "next/link";
 import { Swords } from "lucide-react";
 
 export default function Home() {
-  const { user, profile } = useUser();
+  const { user, profile, loading: userLoading } = useUser();
   const { isCollapsed } = useSidebar();
+  const router = useRouter();
   const [activeDashboardTab, setActiveDashboardTab] = useState<"roadmap" | "arena" | "news" | "quests">("roadmap");
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [loadingEnrollments, setLoadingEnrollments] = useState(true);
+
+  useEffect(() => {
+    if (!userLoading) {
+      if (!user) {
+        setLoadingEnrollments(false);
+        return;
+      }
+      
+      const fetchEnrollments = async () => {
+        const { data } = await supabase
+          .from("course_enrollments")
+          .select("*, courses(*, modules(count))")
+          .eq("user_id", user.id);
+        
+        if (data && data.length > 0) {
+          setEnrollments(data);
+        } else {
+          router.push("/cursos");
+        }
+        setLoadingEnrollments(false);
+      };
+
+      fetchEnrollments();
+    }
+  }, [user, userLoading, router]);
 
   const streak = profile?.streak_days || 1;
   const levelInfo = getLevelInfo(profile?.xp);
@@ -122,7 +151,48 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column: Learning Roadmap & Quick Sandboxes */}
               <div className="lg:col-span-2 space-y-8">
-                <LearningPath />
+                
+                {/* User Active Courses */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-heading font-bold text-white flex items-center gap-2">
+                      <Star className="text-primary fill-primary/20" size={24} /> Mis Cursos Activos
+                    </h3>
+                    <Link href="/cursos" className="text-sm font-bold text-primary hover:text-accent transition-colors flex items-center">
+                      Explorar más <ChevronRight size={16} />
+                    </Link>
+                  </div>
+                  
+                  {loadingEnrollments ? (
+                    <div className="h-40 glass rounded-2xl flex items-center justify-center border border-white/5">
+                      <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {enrollments.map((enr) => {
+                        const course = enr.courses;
+                        const progress = enr.progress_percentage || 0;
+                        return (
+                          <Link href={`/cursos/${course.id}`} key={course.id}>
+                            <Card className="p-5 glass hover:border-primary/50 transition-all cursor-pointer hover:-translate-y-1 h-full flex flex-col group">
+                              <h4 className="font-bold text-white mb-2 group-hover:text-primary transition-colors">{course.title}</h4>
+                              <p className="text-xs text-zinc-400 mb-4 line-clamp-2 flex-1">{course.description}</p>
+                              <div className="mt-auto">
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span className="text-zinc-500 font-bold">{course.modules?.[0]?.count || 0} Módulos</span>
+                                  <span className="text-primary font-bold">{progress}% Completado</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden">
+                                  <div className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-1000" style={{ width: `${progress}%` }} />
+                                </div>
+                              </div>
+                            </Card>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
                 {/* Quick Sandboxes */}
                 <div>
