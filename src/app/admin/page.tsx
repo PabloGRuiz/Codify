@@ -167,6 +167,18 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteCourse = async (id: string, courseTitle: string) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el curso "${courseTitle}"? Se eliminarán también todos sus módulos y retos asociados.`)) {
+      return;
+    }
+    const { error } = await supabase.from("courses").delete().eq("id", id);
+    if (error) {
+      alert("Error al eliminar el curso: " + error.message);
+    } else {
+      fetchAdminData();
+    }
+  };
+
   const handleDeleteChallenge = async (id: string) => {
     if (!confirm("¿Estás seguro de eliminar este reto?")) return;
     const { error } = await supabase.from("challenges").delete().eq("id", id);
@@ -358,9 +370,29 @@ Genera el script SQL completo listo para copiar y pegar.`;
                   <h3 className="text-lg font-bold text-white">Cursos Existentes ({courses.length})</h3>
                   <div className="divide-y divide-white/10">
                     {courses.map((c) => (
-                      <div key={c.id} className="py-4 flex flex-col gap-2">
-                        <h4 className="font-bold text-white text-lg">{c.title}</h4>
-                        <p className="text-sm text-zinc-400">{c.description}</p>
+                      <div key={c.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded uppercase">
+                              {c.status || "published"}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-white text-lg">{c.title}</h4>
+                          <p className="text-sm text-zinc-400 mt-1">{c.description}</p>
+                        </div>
+                        
+                        {(isAdmin || isProfesor) && (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button 
+                              onClick={() => handleDeleteCourse(c.id, c.title)}
+                              className="px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                              title="Eliminar curso"
+                            >
+                              <Trash2 size={16} />
+                              <span>Eliminar Curso</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
