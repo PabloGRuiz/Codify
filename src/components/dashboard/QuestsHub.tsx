@@ -80,8 +80,8 @@ export function QuestsHub() {
     {
       id: "weekly_marathon",
       type: "weekly",
-      title: "Maratón de Código Semanal",
-      description: "Completa un total de 5 lecciones durante esta semana.",
+      title: "Formación Semanal",
+      description: "Completa un total de 5 lecciones de tecnología durante esta semana.",
       xpReward: 250,
       progress: Math.min(5, Math.floor(currentXp / 30)),
       total: 5,
@@ -91,7 +91,7 @@ export function QuestsHub() {
     {
       id: "weekly_streak_3",
       type: "weekly",
-      title: "Constancia de Acero",
+      title: "Constancia IT",
       description: "Mantén una racha ininterrumpida de 3 días consecutivos.",
       xpReward: 200,
       progress: Math.min(3, streakDays),
@@ -100,15 +100,15 @@ export function QuestsHub() {
       claimed: claimedIds.includes("weekly_streak_3"),
     },
     {
-      id: "weekly_poo_master",
+      id: "weekly_specialist",
       type: "weekly",
-      title: "Desarrollador Orientado a Objetos",
-      description: "Avanza en las lecciones de Objetos Literales y Clases del Módulo POO.",
+      title: "Especialista en Formación",
+      description: "Avanza en tus cursos activos acumulando 200 XP de conocimiento aplicado.",
       xpReward: 150,
-      progress: currentXp >= 200 ? 1 : 0,
-      total: 1,
+      progress: Math.min(200, currentXp),
+      total: 200,
       completed: currentXp >= 200,
-      claimed: claimedIds.includes("weekly_poo_master"),
+      claimed: claimedIds.includes("weekly_specialist"),
     },
   ];
 

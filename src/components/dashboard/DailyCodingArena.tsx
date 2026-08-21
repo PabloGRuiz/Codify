@@ -63,23 +63,56 @@ export function DailyCodingArena() {
     const fetchArenaChallenges = async () => {
       setLoading(true);
       try {
-        // 1. Get Arena Module
-        const { data: moduleData } = await supabase
+        // 1. Get default base module (Logic & IT Fundamentals)
+        const { data: defaultModule } = await supabase
           .from("modules")
           .select("id")
-          .eq("title", "Arena Algorítmica & Speed Coding")
+          .eq("title", "Arena de Lógica y Fundamentos")
           .single();
 
-        if (!moduleData) {
+        let allowedModuleIds: string[] = [];
+        if (defaultModule) {
+          allowedModuleIds.push(defaultModule.id);
+        }
+
+        // 2. Get user enrolled courses to unlock advanced challenges
+        if (user) {
+          const { data: enrollments } = await supabase
+            .from("course_enrollments")
+            .select("courses(modules(id))")
+            .eq("user_id", user.id);
+          
+          if (enrollments) {
+            enrollments.forEach((enr: any) => {
+              if (enr.courses?.modules) {
+                enr.courses.modules.forEach((m: any) => {
+                  allowedModuleIds.push(m.id);
+                });
+              }
+            });
+          }
+        }
+
+        // 3. Fallback to Speed Coding only if no logic module exists and user not logged in
+        if (allowedModuleIds.length === 0) {
+           const { data: speedModule } = await supabase
+            .from("modules")
+            .select("id")
+            .eq("title", "Arena Algorítmica & Speed Coding")
+            .single();
+           if (speedModule) allowedModuleIds.push(speedModule.id);
+        }
+
+        if (allowedModuleIds.length === 0) {
           setLoading(false);
           return;
         }
 
-        // 2. Get all arena challenges
+        // 4. Get all allowed challenges
         const { data: challengesData, error } = await supabase
           .from("challenges")
           .select("id, title, description, xp_reward, order_index")
-          .eq("module_id", moduleData.id)
+          .in("module_id", allowedModuleIds)
           .order("order_index", { ascending: true });
 
         if (error || !challengesData || challengesData.length === 0) {
@@ -87,11 +120,11 @@ export function DailyCodingArena() {
           return;
         }
 
-        // 3. Deterministic rotation of 3 challenges for today
+        // 5. Deterministic rotation of 3 challenges for today
         const indices = getDailyChallengeIndices(challengesData.length);
         const selected = indices.map((idx) => challengesData[idx]);
 
-        // 4. Check user completions if logged in
+        // 6. Check user completions if logged in
         if (user) {
           const ids = selected.map((c) => c.id);
           const { data: progressData } = await supabase
@@ -133,13 +166,13 @@ export function DailyCodingArena() {
           <div>
             <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-wider mb-2">
               <Swords size={16} className="animate-pulse" />
-              <span>Speed Coding & Arena Diaria</span>
+              <span>Formación Diaria Activa</span>
             </div>
             <h2 className="text-2xl lg:text-3xl font-heading font-bold text-white mb-2">
-              3 Retos Algorítmicos del Día ⚡
+              3 Retos de Lógica y Especialidad ⚡
             </h2>
             <p className="text-zinc-400 font-sans text-sm max-w-xl">
-              Entrena tu velocidad de resolución con 3 desafíos diarios seleccionados. ¡Completar los 3 te otorgará bonus de XP y mantendrá tu mente afilada para los duelos PvP!
+              Mejora tus habilidades como responsable informático resolviendo cuestionarios de lógica, fundamentos IT y ejercicios prácticos de los cursos en los que estás inscrito.
             </p>
           </div>
 
