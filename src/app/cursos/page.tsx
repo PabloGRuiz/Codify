@@ -98,43 +98,59 @@ export default function CatalogPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.map((course) => (
-                  <Card key={course.id} className="p-6 glass-panel border-white/10 hover:border-indigo-500/50 transition-all flex flex-col hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-default group">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
-                        <BookOpen size={24} />
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {course.tags?.slice(0, 3).map((tag: string) => {
-                          const isTeorico = tag.toLowerCase() === 'teórico' || tag.toLowerCase() === 'teorico';
-                          const isPractico = tag.toLowerCase() === 'práctico' || tag.toLowerCase() === 'practico';
-                          let tagStyle = "bg-white/5 text-zinc-400 border border-white/10";
-                          
-                          if (isTeorico) tagStyle = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]";
-                          else if (isPractico) tagStyle = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.1)]";
+                {courses.map((course) => {
+                  const typeTag = course.tags?.find((t: string) => {
+                    const lower = t.toLowerCase();
+                    return lower === 'teórico' || lower === 'teorico' || lower === 'práctico' || lower === 'practico';
+                  });
+                  const otherTags = (course.tags || []).filter((t: string) => t !== typeTag).slice(0, 3);
+                  const isTeorico = typeTag?.toLowerCase().includes('teor');
 
-                          return (
-                            <span key={tag} className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-md ${tagStyle}`}>
-                              {tag}
+                  return (
+                    <Card key={course.id} className="p-6 glass-panel border-white/10 hover:border-indigo-500/50 transition-all flex flex-col hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-default group">
+                      {/* Top Header: Icon + Primary Type Badge */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isTeorico ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                          <BookOpen size={24} />
+                        </div>
+                        {typeTag && (
+                          <span className={`text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-full border shadow-sm ${
+                            isTeorico
+                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                              : "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
+                          }`}>
+                            {typeTag}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Title & Description */}
+                      <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors line-clamp-1">{course.title}</h3>
+                      <p className="text-sm text-zinc-400 mb-4 line-clamp-3 leading-relaxed flex-1">{course.description}</p>
+                      
+                      {/* Topic Tags */}
+                      {otherTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-5">
+                          {otherTags.map((tag: string) => (
+                            <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/5 text-zinc-400 border border-white/10">
+                              #{tag}
                             </span>
-                          );
-                        })}
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Footer info & action */}
+                      <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto">
+                        <div className="flex items-center gap-2 text-xs text-zinc-400 font-semibold">
+                          <span className="bg-white/5 px-2 py-1 rounded border border-white/5">{course.modules?.[0]?.count || 0} Módulos</span>
+                        </div>
+                        <Button onClick={() => handleEnroll(course.id)} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 py-1.5 px-4 h-auto text-sm">
+                          Iniciar <ChevronRight size={16} className="ml-1" />
+                        </Button>
                       </div>
-                    </div>
-                    
-                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors">{course.title}</h3>
-                    <p className="text-sm text-zinc-400 mb-6 flex-1">{course.description}</p>
-                    
-                    <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto">
-                      <div className="flex items-center gap-2 text-xs text-zinc-500 font-bold">
-                        <span>{course.modules?.[0]?.count || 0} Módulos</span>
-                      </div>
-                      <Button onClick={() => handleEnroll(course.id)} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 py-1.5 px-4 h-auto text-sm">
-                        Iniciar <ChevronRight size={16} className="ml-1" />
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
 

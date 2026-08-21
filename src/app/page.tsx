@@ -49,17 +49,67 @@ export default function Home() {
       }
       
       const fetchEnrollments = async () => {
-        const { data } = await supabase
-          .from("course_enrollments")
-          .select("*, courses(*, modules(count))")
-          .eq("user_id", user.id);
-        
-        if (data && data.length > 0) {
-          setEnrollments(data);
-        } else {
-          router.push("/cursos");
+        try {
+          // 1. Fetch user enrollments with courses, modules and challenges
+          const { data: enrData, error: enrError } = await supabase
+            .from("course_enrollments")
+            .select("*, courses(*, modules(id, title, challenges(id)))")
+            .eq("user_id", user.id);
+
+          if (enrError) throw enrError;
+
+          if (enrData && enrData.length > 0) {
+            // 2. Fetch all completed challenges for this user
+            const { data: userProg } = await supabase
+              .from("user_progress")
+              .select("challenge_id")
+              .eq("user_id", user.id)
+              .eq("status", "completed");
+
+            const completedSet = new Set((userProg || []).map((p) => p.challenge_id));
+
+            // 3. Compute real progress for each course
+            const formatted = enrData.map((enr) => {
+              const course = enr.courses;
+              let totalChallenges = 0;
+              let completedChallenges = 0;
+
+              if (course?.modules && Array.isArray(course.modules)) {
+                course.modules.forEach((mod: any) => {
+                  if (mod.challenges && Array.isArray(mod.challenges)) {
+                    totalChallenges += mod.challenges.length;
+                    mod.challenges.forEach((ch: any) => {
+                      if (completedSet.has(ch.id)) {
+                        completedChallenges++;
+                      }
+                    });
+                  }
+                });
+              }
+
+              const calculatedPercent =
+                totalChallenges > 0
+                  ? Math.round((completedChallenges / totalChallenges) * 100)
+                  : 0;
+
+              return {
+                ...enr,
+                calculated_progress: calculatedPercent,
+                total_modules_count: course?.modules?.length || 0,
+                completed_challenges_count: completedChallenges,
+                total_challenges_count: totalChallenges,
+              };
+            });
+
+            setEnrollments(formatted);
+          } else {
+            router.push("/cursos");
+          }
+        } catch (err) {
+          console.error("Error fetching enrollments:", err);
+        } finally {
+          setLoadingEnrollments(false);
         }
-        setLoadingEnrollments(false);
       };
 
       fetchEnrollments();
@@ -171,19 +221,48 @@ export default function Home() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {enrollments.map((enr) => {
                         const course = enr.courses;
-                        const progress = enr.progress_percentage || 0;
+                        if (!course) return null;
+                        const progress = enr.calculated_progress || 0;
+                        const typeTag = course.tags?.find((t: string) => {
+                          const lower = t.toLowerCase();
+                          return lower === 'teórico' || lower === 'teorico' || lower === 'práctico' || lower === 'practico';
+                        });
+                        const isTeorico = typeTag?.toLowerCase().includes('teor');
+
                         return (
                           <Link href={`/cursos/${course.id}`} key={course.id}>
-                            <Card className="p-5 glass hover:border-primary/50 transition-all cursor-pointer hover:-translate-y-1 h-full flex flex-col group">
-                              <h4 className="font-bold text-white mb-2 group-hover:text-primary transition-colors">{course.title}</h4>
+                            <Card className="p-5 glass hover:border-primary/50 transition-all cursor-pointer hover:-translate-y-1 h-full flex flex-col group relative">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-bold text-white group-hover:text-primary transition-colors line-clamp-1 flex-1 pr-2">
+                                  {course.title}
+                                </h4>
+                                {typeTag && (
+                                  <span className={`text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-md border shrink-0 ${
+                                    isTeorico
+                                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                      : "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
+                                  }`}>
+                                    {typeTag}
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs text-zinc-400 mb-4 line-clamp-2 flex-1">{course.description}</p>
-                              <div className="mt-auto">
-                                <div className="flex justify-between text-xs mb-1">
-                                  <span className="text-zinc-500 font-bold">{course.modules?.[0]?.count || 0} Módulos</span>
-                                  <span className="text-primary font-bold">{progress}% Completado</span>
+                              <div className="mt-auto space-y-1.5">
+                                <div className="flex justify-between text-xs font-semibold">
+                                  <span className="text-zinc-500">{enr.total_modules_count || 0} Módulos</span>
+                                  <span className={progress > 0 ? "text-emerald-400 font-bold" : "text-zinc-400 font-bold"}>
+                                    {progress}% Completado
+                                  </span>
                                 </div>
-                                <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden">
-                                  <div className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-1000" style={{ width: `${progress}%` }} />
+                                <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5">
+                                  <div
+                                    className={`h-full transition-all duration-1000 ${
+                                      progress === 100
+                                        ? "bg-emerald-500"
+                                        : "bg-gradient-to-r from-primary to-accent"
+                                    }`}
+                                    style={{ width: `${progress}%` }}
+                                  />
                                 </div>
                               </div>
                             </Card>
