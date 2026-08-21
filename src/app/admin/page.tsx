@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
-import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap } from "lucide-react";
+import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag } from "lucide-react";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -26,6 +26,13 @@ export default function AdminPage() {
   // New Course Form State
   const [newCourseTitle, setNewCourseTitle] = useState("");
   const [newCourseDesc, setNewCourseDesc] = useState("");
+  const [newCourseTags, setNewCourseTags] = useState("");
+
+  // Edit Course Form State
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [editCourseTitle, setEditCourseTitle] = useState("");
+  const [editCourseDesc, setEditCourseDesc] = useState("");
+  const [editCourseTags, setEditCourseTags] = useState("");
 
   // New Module Form State
   const [courseId, setCourseId] = useState("");
@@ -100,9 +107,15 @@ export default function AdminPage() {
 
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsedTags = newCourseTags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
     const { error } = await supabase.from("courses").insert({
       title: newCourseTitle,
       description: newCourseDesc,
+      tags: parsedTags,
       author_id: user?.id,
       status: 'published'
     });
@@ -113,6 +126,48 @@ export default function AdminPage() {
       alert("¡Curso creado exitosamente!");
       setNewCourseTitle("");
       setNewCourseDesc("");
+      setNewCourseTags("");
+      fetchAdminData();
+    }
+  };
+
+  const startEditingCourse = (course: any) => {
+    setEditingCourseId(course.id);
+    setEditCourseTitle(course.title || "");
+    setEditCourseDesc(course.description || "");
+    setEditCourseTags(Array.isArray(course.tags) ? course.tags.join(", ") : "");
+  };
+
+  const cancelEditingCourse = () => {
+    setEditingCourseId(null);
+    setEditCourseTitle("");
+    setEditCourseDesc("");
+    setEditCourseTags("");
+  };
+
+  const handleUpdateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCourseId) return;
+
+    const parsedTags = editCourseTags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const { error } = await supabase
+      .from("courses")
+      .update({
+        title: editCourseTitle,
+        description: editCourseDesc,
+        tags: parsedTags,
+      })
+      .eq("id", editingCourseId);
+
+    if (error) {
+      alert("Error al actualizar curso: " + error.message);
+    } else {
+      alert("¡Curso actualizado exitosamente!");
+      cancelEditingCourse();
       fetchAdminData();
     }
   };
@@ -360,6 +415,42 @@ Genera el script SQL completo listo para copiar y pegar.`;
                       <label className="block text-sm text-zinc-400 mb-1">Descripción</label>
                       <textarea required value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 h-24" placeholder="Ej: Aprende Python, Django, IA..." />
                     </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-sm text-zinc-400">Etiquetas / Tags (Separadas por coma)</label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = newCourseTags ? newCourseTags.split(",").map(s => s.trim()) : [];
+                              if (!current.includes("Práctico")) current.unshift("Práctico");
+                              setNewCourseTags(current.join(", "));
+                            }}
+                            className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/30 transition-all"
+                          >
+                            + Práctico
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = newCourseTags ? newCourseTags.split(",").map(s => s.trim()) : [];
+                              if (!current.includes("Teórico")) current.unshift("Teórico");
+                              setNewCourseTags(current.join(", "));
+                            }}
+                            className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 transition-all"
+                          >
+                            + Teórico
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        value={newCourseTags}
+                        onChange={(e) => setNewCourseTags(e.target.value)}
+                        className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500"
+                        placeholder="Ej: Teórico, Redes, Telecomunicaciones, Cisco"
+                      />
+                    </div>
                     <Button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white">
                       Publicar Curso
                     </Button>
@@ -370,27 +461,147 @@ Genera el script SQL completo listo para copiar y pegar.`;
                   <h3 className="text-lg font-bold text-white">Cursos Existentes ({courses.length})</h3>
                   <div className="divide-y divide-white/10">
                     {courses.map((c) => (
-                      <div key={c.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded uppercase">
-                              {c.status || "published"}
-                            </span>
-                          </div>
-                          <h4 className="font-bold text-white text-lg">{c.title}</h4>
-                          <p className="text-sm text-zinc-400 mt-1">{c.description}</p>
-                        </div>
-                        
-                        {(isAdmin || isProfesor) && (
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button 
-                              onClick={() => handleDeleteCourse(c.id, c.title)}
-                              className="px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 transition-colors flex items-center gap-1.5 text-xs font-bold"
-                              title="Eliminar curso"
-                            >
-                              <Trash2 size={16} />
-                              <span>Eliminar Curso</span>
-                            </button>
+                      <div key={c.id} className="py-4">
+                        {editingCourseId === c.id ? (
+                          /* Edit Course Form */
+                          <form onSubmit={handleUpdateCourse} className="p-4 rounded-xl bg-black/40 border border-indigo-500/30 space-y-4">
+                            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                              <span className="text-sm font-bold text-indigo-400 flex items-center gap-2">
+                                <Edit2 size={16} /> Editando Curso: {c.title}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={cancelEditingCourse}
+                                className="text-zinc-400 hover:text-white p-1 rounded-md transition-colors"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs text-zinc-400 mb-1">Título</label>
+                              <input
+                                type="text"
+                                required
+                                value={editCourseTitle}
+                                onChange={(e) => setEditCourseTitle(e.target.value)}
+                                className="w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-sm outline-none focus:border-indigo-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs text-zinc-400 mb-1">Descripción</label>
+                              <textarea
+                                required
+                                value={editCourseDesc}
+                                onChange={(e) => setEditCourseDesc(e.target.value)}
+                                className="w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-sm outline-none focus:border-indigo-500 h-20"
+                              />
+                            </div>
+
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-xs text-zinc-400">Etiquetas (Separadas por comas)</label>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const current = editCourseTags ? editCourseTags.split(",").map(s => s.trim()) : [];
+                                      if (!current.includes("Práctico")) current.unshift("Práctico");
+                                      setEditCourseTags(current.join(", "));
+                                    }}
+                                    className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/30 transition-all"
+                                  >
+                                    + Práctico
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const current = editCourseTags ? editCourseTags.split(",").map(s => s.trim()) : [];
+                                      if (!current.includes("Teórico")) current.unshift("Teórico");
+                                      setEditCourseTags(current.join(", "));
+                                    }}
+                                    className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 transition-all"
+                                  >
+                                    + Teórico
+                                  </button>
+                                </div>
+                              </div>
+                              <input
+                                type="text"
+                                value={editCourseTags}
+                                onChange={(e) => setEditCourseTags(e.target.value)}
+                                className="w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-sm outline-none focus:border-indigo-500"
+                                placeholder="Ej: Teórico, Redes, OSI"
+                              />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelEditingCourse}
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                type="submit"
+                                size="sm"
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white"
+                                leftIcon={<Save size={16} />}
+                              >
+                                Guardar Cambios
+                              </Button>
+                            </div>
+                          </form>
+                        ) : (
+                          /* Course Row */
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded uppercase">
+                                  {c.status || "published"}
+                                </span>
+
+                                {Array.isArray(c.tags) && c.tags.map((tag: string) => {
+                                  const isTeorico = tag.toLowerCase() === 'teórico' || tag.toLowerCase() === 'teorico';
+                                  const isPractico = tag.toLowerCase() === 'práctico' || tag.toLowerCase() === 'practico';
+                                  let tagStyle = "bg-white/5 text-zinc-400 border border-white/10";
+                                  if (isTeorico) tagStyle = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                                  else if (isPractico) tagStyle = "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30";
+
+                                  return (
+                                    <span key={tag} className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md ${tagStyle}`}>
+                                      {tag}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                              <h4 className="font-bold text-white text-lg">{c.title}</h4>
+                              <p className="text-sm text-zinc-400 mt-1">{c.description}</p>
+                            </div>
+                            
+                            {(isAdmin || isProfesor) && (
+                              <div className="flex items-center gap-2 shrink-0">
+                                <button 
+                                  onClick={() => startEditingCourse(c)}
+                                  className="px-3 py-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 border border-indigo-500/20 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                                  title="Editar curso y etiquetas"
+                                >
+                                  <Edit2 size={16} />
+                                  <span>Editar</span>
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteCourse(c.id, c.title)}
+                                  className="px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                                  title="Eliminar curso"
+                                >
+                                  <Trash2 size={16} />
+                                  <span>Eliminar</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
