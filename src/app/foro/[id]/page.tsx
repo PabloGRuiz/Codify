@@ -31,11 +31,11 @@ interface Thread {
   content: string;
   created_at: string;
   tags: string[];
-  author: {
+  author?: {
     id: string;
     username: string;
-    avatar_url: string;
-    reputation_stars: number;
+    avatar_url?: string;
+    reputation_stars?: number;
   };
 }
 
@@ -43,11 +43,11 @@ interface Post {
   id: string;
   content: string;
   created_at: string;
-  author: {
+  author?: {
     id: string;
     username: string;
-    avatar_url: string;
-    reputation_stars: number;
+    avatar_url?: string;
+    reputation_stars?: number;
   };
   upvotes: number;
   downvotes: number;
@@ -76,11 +76,11 @@ export default function ThreadDetailPage() {
   const fetchThreadAndPosts = async () => {
     setLoading(true);
     try {
-      // Fetch thread
+      // 1. Fetch thread
       const { data: threadData, error: threadError } = await supabase
         .from("forum_threads")
         .select(`
-          id, title, content, created_at, tags,
+          id, title, content, created_at, tags, author_id,
           author:profiles(id, username, avatar_url, reputation_stars)
         `)
         .eq("id", id)
@@ -88,31 +88,50 @@ export default function ThreadDetailPage() {
 
       if (threadError) throw threadError;
       
+      const threadAuthor = Array.isArray(threadData.author) ? threadData.author[0] : threadData.author;
       setThread({
         ...threadData,
-        author: Array.isArray(threadData.author) ? threadData.author[0] : threadData.author
+        author: threadAuthor || {
+          id: threadData.author_id || "",
+          username: "Coder",
+          avatar_url: "",
+          reputation_stars: 0
+        }
       });
 
-      // Fetch posts
+      // 2. Fetch posts
       const { data: postsData, error: postsError } = await supabase
         .from("forum_posts")
         .select(`
-          id, content, created_at, upvotes, downvotes, is_solution,
+          id, content, created_at, upvotes, downvotes, is_solution, author_id,
           author:profiles(id, username, avatar_url, reputation_stars)
         `)
         .eq("thread_id", id)
-        .order("is_solution", { ascending: false }) // Soluciones primero
+        .order("is_solution", { ascending: false })
         .order("upvotes", { ascending: false })
         .order("created_at", { ascending: true });
 
       if (postsError) throw postsError;
 
-      let formattedPosts = postsData.map(p => ({
-        ...p,
-        author: Array.isArray(p.author) ? p.author[0] : p.author
-      }));
+      let formattedPosts: Post[] = (postsData || []).map((p: any) => {
+        const authorObj = Array.isArray(p.author) ? p.author[0] : p.author;
+        return {
+          id: p.id,
+          content: p.content,
+          created_at: p.created_at,
+          upvotes: p.upvotes || 0,
+          downvotes: p.downvotes || 0,
+          is_solution: Boolean(p.is_solution),
+          author: authorObj || {
+            id: p.author_id || "",
+            username: "Coder",
+            avatar_url: "",
+            reputation_stars: 0
+          }
+        };
+      });
 
-      // Fetch user votes if logged in
+      // 3. Fetch user votes if logged in
       if (user && formattedPosts.length > 0) {
         const postIds = formattedPosts.map(p => p.id);
         const { data: votesData } = await supabase
@@ -132,8 +151,7 @@ export default function ThreadDetailPage() {
 
       setPosts(formattedPosts);
     } catch (err) {
-      console.error("Error fetching thread:", err);
-      // Optional: redirect on error
+      console.error("Error fetching thread details:", err);
     } finally {
       setLoading(false);
     }
@@ -163,47 +181,40 @@ export default function ThreadDetailPage() {
 
   const handleVote = async (postId: string, voteType: 1 | -1, currentVote?: number, authorId?: string) => {
     if (!user) return alert("Debes iniciar sesión para votar.");
-    if (user.id === authorId) return alert("No puedes votar tus propias respuestas.");
+    if (authorId && user.id === authorId) return alert("No puedes votar tus propias respuestas.");
 
     try {
       // Optimistic UI update
       setPosts(currentPosts => currentPosts.map(p => {
         if (p.id === postId) {
-          let newUpvotes = p.upvotes;
-          let newDownvotes = p.downvotes;
+          let newUpvotes = p.upvotes || 0;
+          let newDownvotes = p.downvotes || 0;
           let newUserVote: number | undefined = voteType;
 
-          // Remove old vote
           if (currentVote === 1) newUpvotes--;
           if (currentVote === -1) newDownvotes--;
 
-          // If clicking the same vote, we are removing it
           if (currentVote === voteType) {
             newUserVote = undefined;
           } else {
-            // Add new vote
             if (voteType === 1) newUpvotes++;
             if (voteType === -1) newDownvotes++;
           }
 
-          return { ...p, upvotes: newUpvotes, downvotes: newDownvotes, user_vote: newUserVote };
+          return { ...p, upvotes: Math.max(0, newUpvotes), downvotes: Math.max(0, newDownvotes), user_vote: newUserVote };
         }
         return p;
       }));
 
       if (currentVote === voteType) {
-        // Remove vote
         await supabase.from("forum_votes").delete().match({ post_id: postId, user_id: user.id });
       } else if (currentVote) {
-        // Update vote
         await supabase.from("forum_votes").update({ vote_type: voteType }).match({ post_id: postId, user_id: user.id });
       } else {
-        // Insert vote
         await supabase.from("forum_votes").insert({ post_id: postId, user_id: user.id, vote_type: voteType });
       }
     } catch (err) {
       console.error("Error voting:", err);
-      // Revert optimism on error
       fetchThreadAndPosts();
     }
   };
@@ -229,7 +240,7 @@ export default function ThreadDetailPage() {
         <div className={`${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 flex-1 flex flex-col min-h-screen`}>
           <Topbar />
           <div className="flex-1 p-8 text-center pt-24">
-            <h1 className="text-2xl text-white font-bold">Hilo no encontrado</h1>
+            <h1 className="text-2xl text-white font-bold">Consulta no encontrada</h1>
             <Button onClick={() => router.push("/foro")} className="mt-4">Volver al Foro</Button>
           </div>
         </div>
@@ -271,8 +282,10 @@ export default function ThreadDetailPage() {
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center"><User size={12} /></div>
                   )}
-                  <span className="font-bold text-zinc-200">{thread.author?.username}</span>
-                  <span className="text-yellow-500 font-bold flex items-center bg-yellow-500/10 px-1.5 py-0.5 rounded-md"><Star size={12} className="fill-yellow-500 mr-1" />{thread.author?.reputation_stars || 0}</span>
+                  <span className="font-bold text-zinc-200">{thread.author?.username || "Usuario"}</span>
+                  <span className="text-yellow-500 font-bold flex items-center bg-yellow-500/10 px-1.5 py-0.5 rounded-md">
+                    <Star size={12} className="fill-yellow-500 mr-1" />{thread.author?.reputation_stars || 0}
+                  </span>
                 </div>
                 <span className="flex items-center gap-1">
                   <Clock size={14} /> {formatDistanceToNow(new Date(thread.created_at), { addSuffix: true, locale: es })}
@@ -298,8 +311,9 @@ export default function ThreadDetailPage() {
 
             <div className="space-y-6 mb-12">
               {posts.map((post) => {
-                const totalScore = post.upvotes - post.downvotes;
-                const isAuthor = user?.id === post.author.id;
+                const totalScore = (post.upvotes || 0) - (post.downvotes || 0);
+                const isAuthor = Boolean(user?.id && post.author?.id && user.id === post.author.id);
+                const isThreadAuthor = Boolean(post.author?.id && thread.author?.id && post.author.id === thread.author.id);
                 
                 return (
                   <Card key={post.id} className={`p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 ${post.is_solution ? 'border-emerald-500/40 bg-emerald-900/5' : 'border-white/5'}`}>
@@ -307,7 +321,7 @@ export default function ThreadDetailPage() {
                     {/* Voting Column */}
                     <div className="flex md:flex-col items-center justify-start md:w-16 shrink-0 bg-black/20 p-2 md:p-4 rounded-xl border border-white/5 gap-2">
                       <button 
-                        onClick={() => handleVote(post.id, 1, post.user_vote, post.author.id)}
+                        onClick={() => handleVote(post.id, 1, post.user_vote, post.author?.id)}
                         disabled={isAuthor}
                         className={`p-1.5 rounded-full transition-all ${post.user_vote === 1 ? 'bg-blue-500/20 text-blue-400' : isAuthor ? 'text-zinc-600' : 'text-zinc-400 hover:bg-white/10 hover:text-white'}`}
                         title={isAuthor ? "No puedes votar tu respuesta" : "Buena respuesta"}
@@ -320,7 +334,7 @@ export default function ThreadDetailPage() {
                       </span>
                       
                       <button 
-                        onClick={() => handleVote(post.id, -1, post.user_vote, post.author.id)}
+                        onClick={() => handleVote(post.id, -1, post.user_vote, post.author?.id)}
                         disabled={isAuthor}
                         className={`p-1.5 rounded-full transition-all ${post.user_vote === -1 ? 'bg-red-500/20 text-red-400' : isAuthor ? 'text-zinc-600' : 'text-zinc-400 hover:bg-white/10 hover:text-white'}`}
                         title={isAuthor ? "No puedes votar tu respuesta" : "Mala respuesta"}
@@ -339,19 +353,21 @@ export default function ThreadDetailPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
                         <div className="flex items-center gap-3">
-                          {post.author.avatar_url ? (
+                          {post.author?.avatar_url ? (
                             <img src={post.author.avatar_url} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center"><User size={14} /></div>
                           )}
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-zinc-200">{post.author.username}</span>
-                              {post.author.id === thread.author.id && (
+                              <span className="font-bold text-zinc-200">{post.author?.username || "Usuario"}</span>
+                              {isThreadAuthor && (
                                 <span className="text-[10px] uppercase px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded font-bold">Autor</span>
                               )}
                             </div>
-                            <span className="text-yellow-500 text-xs font-bold flex items-center"><Star size={10} className="fill-yellow-500 mr-1" />{post.author.reputation_stars} Reputación</span>
+                            <span className="text-yellow-500 text-xs font-bold flex items-center">
+                              <Star size={10} className="fill-yellow-500 mr-1" />{post.author?.reputation_stars || 0} Reputación
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-zinc-500">

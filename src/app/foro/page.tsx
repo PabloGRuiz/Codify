@@ -69,11 +69,18 @@ export default function ForoPage() {
 
       if (error) throw error;
 
-      const formattedThreads = data.map((t: any) => ({
-        ...t,
-        posts_count: t.posts[0]?.count || 0,
-        author: Array.isArray(t.author) ? t.author[0] : t.author
-      }));
+      const formattedThreads = (data || []).map((t: any) => {
+        const authorObj = Array.isArray(t.author) ? t.author[0] : t.author;
+        return {
+          ...t,
+          posts_count: t.posts ? (t.posts[0]?.count || 0) : 0,
+          author: authorObj || {
+            username: "Coder",
+            avatar_url: "",
+            reputation_stars: 0
+          }
+        };
+      });
 
       setThreads(formattedThreads);
     } catch (err) {
