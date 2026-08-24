@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
+import type { UserProfile } from "@/types";
 
 export function useUser() {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const checkAndUpdateStreak = async (userProfile: any) => {
+  const checkAndUpdateStreak = async (userProfile: UserProfile | null) => {
     if (!userProfile) return userProfile;
 
     try {

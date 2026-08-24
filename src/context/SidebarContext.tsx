@@ -19,6 +19,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("codify_sidebar_collapsed");
       if (saved === "true") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsCollapsed(true);
       }
     }

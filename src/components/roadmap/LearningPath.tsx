@@ -33,86 +33,86 @@ export function LearningPath({ courseId }: { courseId?: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchModulesAndProgress = async () => {
+      setLoading(true);
+      try {
+        // 1. Fetch modules
+        let query = supabase.from("modules").select("*").order("created_at", { ascending: true });
+        if (courseId) {
+          query = query.eq("course_id", courseId);
+        }
+        
+        const { data: modulesData, error: modError } = await query;
+
+        if (modError) console.error("Error fetching modules:", modError.message || modError);
+        
+        if (modulesData && modulesData.length > 0) {
+          setModules(modulesData);
+          let defaultModId = "";
+          
+          if (typeof window !== "undefined") {
+            const saved = localStorage.getItem(`codify_last_module_${courseId || "default"}`);
+            if (saved && modulesData.some(m => m.id === saved)) {
+              defaultModId = saved;
+            }
+          }
+          
+          if (!defaultModId) {
+            defaultModId = modulesData[0].id;
+          }
+          
+          setSelectedModuleId(defaultModId);
+        } else {
+          setModules([]);
+          setSelectedModuleId("");
+          setChallenges([]);
+        }
+
+        // 2. Fetch user completed challenges if logged in
+        if (user) {
+          const { data: progData, error: prError } = await supabase
+            .from("user_progress")
+            .select("challenge_id")
+            .eq("user_id", user.id)
+            .eq("status", "completed");
+
+          if (prError) console.error("Error fetching progress:", prError.message || prError);
+          if (progData) {
+            setCompletedIds(progData.map((p) => p.challenge_id));
+          }
+        }
+      } catch (e: unknown) {
+        const err = e as Error;
+        console.error("Unexpected error in LearningPath:", err?.message || String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchModulesAndProgress();
   }, [user, courseId]);
 
   useEffect(() => {
-    if (selectedModuleId) {
-      fetchChallengesForModule(selectedModuleId);
-    } else {
-      setChallenges([]);
-    }
+    if (!selectedModuleId) return;
+
+    const fetchChallengesForModule = async (moduleId: string) => {
+      try {
+        const { data: challengesData, error: chError } = await supabase
+          .from("challenges")
+          .select("*")
+          .eq("module_id", moduleId)
+          .order("order_index", { ascending: true });
+
+        if (chError) console.error("Error fetching challenges:", chError.message || chError);
+        if (challengesData) setChallenges(challengesData);
+      } catch (e: unknown) {
+        const err = e as Error;
+        console.error("Error loading module challenges:", err?.message || String(err));
+      }
+    };
+
+    fetchChallengesForModule(selectedModuleId);
   }, [selectedModuleId]);
-
-  const fetchModulesAndProgress = async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch modules
-      let query = supabase.from("modules").select("*").order("created_at", { ascending: true });
-      if (courseId) {
-        query = query.eq("course_id", courseId);
-      }
-      
-      const { data: modulesData, error: modError } = await query;
-
-      if (modError) console.error("Error fetching modules:", modError.message || modError);
-      
-      if (modulesData && modulesData.length > 0) {
-        setModules(modulesData);
-        let defaultModId = "";
-        
-        if (typeof window !== "undefined") {
-          const saved = localStorage.getItem(`codify_last_module_${courseId || "default"}`);
-          if (saved && modulesData.some(m => m.id === saved)) {
-            defaultModId = saved;
-          }
-        }
-        
-        if (!defaultModId) {
-          defaultModId = modulesData[0].id;
-        }
-        
-        setSelectedModuleId(defaultModId);
-      } else {
-        setModules([]);
-        setSelectedModuleId("");
-        setChallenges([]);
-      }
-
-      // 2. Fetch user completed challenges if logged in
-      if (user) {
-        const { data: progData, error: prError } = await supabase
-          .from("user_progress")
-          .select("challenge_id")
-          .eq("user_id", user.id)
-          .eq("status", "completed");
-
-        if (prError) console.error("Error fetching progress:", prError.message || prError);
-        if (progData) {
-          setCompletedIds(progData.map((p) => p.challenge_id));
-        }
-      }
-    } catch (e: any) {
-      console.error("Unexpected error in LearningPath:", e?.message || String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchChallengesForModule = async (moduleId: string) => {
-    try {
-      const { data: challengesData, error: chError } = await supabase
-        .from("challenges")
-        .select("*")
-        .eq("module_id", moduleId)
-        .order("order_index", { ascending: true });
-
-      if (chError) console.error("Error fetching challenges:", chError.message || chError);
-      if (challengesData) setChallenges(challengesData);
-    } catch (e: any) {
-      console.error("Error loading module challenges:", e?.message || String(e));
-    }
-  };
 
   if (loading) {
     return (

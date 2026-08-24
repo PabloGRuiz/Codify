@@ -64,6 +64,7 @@ export function TechNewsFeed() {
 
   useEffect(() => {
     const selected = CATEGORIES.find((c) => c.id === activeCategory);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNews(selected ? selected.tag : "programming");
   }, [activeCategory]);
 
