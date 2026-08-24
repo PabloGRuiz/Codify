@@ -83,5 +83,26 @@ export function useEnrollments(userId: string | undefined, userLoading: boolean)
     fetchEnrollments();
   }, [userId, userLoading]);
 
-  return { enrollments, loading };
+  const unenrollCourse = async (courseId: string) => {
+    if (!userId) return { success: false, error: "No user logged in" };
+
+    try {
+      const { error } = await supabase
+        .from("course_enrollments")
+        .delete()
+        .eq("user_id", userId)
+        .eq("course_id", courseId);
+
+      if (error) throw error;
+
+      // Optimistically update local enrollments state
+      setEnrollments((prev) => prev.filter((enr) => (enr.course_id || enr.courses?.id) !== courseId));
+      return { success: true };
+    } catch (err: unknown) {
+      console.error("Error al desmatricularse del curso:", err);
+      return { success: false, error: err };
+    }
+  };
+
+  return { enrollments, loading, unenrollCourse };
 }

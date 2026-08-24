@@ -40,7 +40,7 @@ export default function Home() {
   const router = useRouter();
   const [activeDashboardTab, setActiveDashboardTab] = useState<"roadmap" | "arena" | "news" | "quests">("roadmap");
   const [showStreakModal, setShowStreakModal] = useState(false);
-  const { enrollments, loading: loadingEnrollments } = useEnrollments(user?.id, userLoading);
+  const { enrollments, loading: loadingEnrollments, unenrollCourse } = useEnrollments(user?.id, userLoading);
 
   useEffect(() => {
     if (!userLoading && !loadingEnrollments && enrollments.length === 0 && user) {
@@ -131,7 +131,11 @@ export default function Home() {
           {/* TAB 1: ROADMAP & DASHBOARD STATS */}
           {activeDashboardTab === "roadmap" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <RoadmapView enrollments={enrollments} loadingEnrollments={loadingEnrollments} />
+              <RoadmapView 
+                enrollments={enrollments} 
+                loadingEnrollments={loadingEnrollments} 
+                onUnenroll={unenrollCourse}
+              />
               <GamificationWidget 
                 setShowStreakModal={setShowStreakModal}
                 streak={streak}

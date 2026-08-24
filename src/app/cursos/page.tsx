@@ -7,24 +7,29 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useSidebar } from "@/context/SidebarContext";
 import { supabase } from "@/lib/supabase";
-import { BookOpen, Star, Users, ChevronRight, GraduationCap } from "lucide-react";
+import { BookOpen, Star, Users, ChevronRight, GraduationCap, CheckCircle2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { UnenrollModal } from "@/components/dashboard/UnenrollModal";
 
 export default function CatalogPage() {
   const { isCollapsed } = useSidebar();
   const { user } = useUser();
   const [courses, setCourses] = useState<any[]>([]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [courseToUnenroll, setCourseToUnenroll] = useState<{ id: string; title: string } | null>(null);
+  const [isUnenrolling, setIsUnenrolling] = useState(false);
 
   useEffect(() => {
-    fetchCourses();
-  }, []);
+    fetchCoursesAndEnrollments();
+  }, [user]);
 
-  const fetchCourses = async () => {
+  const fetchCoursesAndEnrollments = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase
+      // 1. Fetch published courses
+      const { data: coursesData } = await supabase
         .from("courses")
         .select(`
           *,
@@ -33,8 +38,20 @@ export default function CatalogPage() {
         .eq("status", "published")
         .order("created_at", { ascending: false });
 
-      if (data) {
-        setCourses(data);
+      if (coursesData) {
+        setCourses(coursesData);
+      }
+
+      // 2. Fetch user enrollments if logged in
+      if (user) {
+        const { data: enrData } = await supabase
+          .from("course_enrollments")
+          .select("course_id")
+          .eq("user_id", user.id);
+
+        if (enrData) {
+          setEnrolledCourseIds(new Set(enrData.map((e) => e.course_id)));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -46,20 +63,45 @@ export default function CatalogPage() {
   const handleEnroll = async (courseId: string) => {
     if (!user) return alert("Inicia sesión para matricularte.");
     try {
-      // Create enrollment
       const { error } = await supabase.from("course_enrollments").insert({
         user_id: user.id,
         course_id: courseId
       });
-      if (error && error.code !== '23505') { // 23505 is unique violation, meaning already enrolled
+      if (error && error.code !== '23505') {
         throw error;
       }
       
-      // Redirect to course detail (roadmap)
+      setEnrolledCourseIds((prev) => new Set([...prev, courseId]));
       window.location.href = `/cursos/${courseId}`;
     } catch (err) {
       console.error(err);
       alert("Error al matricularte. Intenta de nuevo.");
+    }
+  };
+
+  const handleConfirmUnenroll = async () => {
+    if (!courseToUnenroll || !user) return;
+    setIsUnenrolling(true);
+    try {
+      const { error } = await supabase
+        .from("course_enrollments")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("course_id", courseToUnenroll.id);
+
+      if (error) throw error;
+
+      setEnrolledCourseIds((prev) => {
+        const next = new Set(prev);
+        next.delete(courseToUnenroll.id);
+        return next;
+      });
+      setCourseToUnenroll(null);
+    } catch (err) {
+      console.error("Error al desmatricularse:", err);
+      alert("Error al abandonar el curso.");
+    } finally {
+      setIsUnenrolling(false);
     }
   };
 
@@ -99,6 +141,7 @@ export default function CatalogPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courses.map((course) => {
+                  const isEnrolled = enrolledCourseIds.has(course.id);
                   const typeTag = course.tags?.find((t: string) => {
                     const lower = t.toLowerCase();
                     return lower === 'teórico' || lower === 'teorico' || lower === 'práctico' || lower === 'practico';
@@ -107,21 +150,28 @@ export default function CatalogPage() {
                   const isTeorico = typeTag?.toLowerCase().includes('teor');
 
                   return (
-                    <Card key={course.id} className="p-6 glass-panel border-white/10 hover:border-indigo-500/50 transition-all flex flex-col hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-default group">
-                      {/* Top Header: Icon + Primary Type Badge */}
+                    <Card key={course.id} className="p-6 glass-panel border-white/10 hover:border-indigo-500/50 transition-all flex flex-col hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-default group relative">
+                      {/* Top Header: Icon + Status/Type Badges */}
                       <div className="flex items-center justify-between mb-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isTeorico ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
                           <BookOpen size={24} />
                         </div>
-                        {typeTag && (
-                          <span className={`text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-full border shadow-sm ${
-                            isTeorico
-                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
-                              : "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
-                          }`}>
-                            {typeTag}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {isEnrolled && (
+                            <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-full border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
+                              <CheckCircle2 size={12} /> Activo
+                            </span>
+                          )}
+                          {typeTag && (
+                            <span className={`text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-full border shadow-sm ${
+                              isTeorico
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                                : "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
+                            }`}>
+                              {typeTag}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
                       {/* Title & Description */}
@@ -140,13 +190,33 @@ export default function CatalogPage() {
                       )}
 
                       {/* Footer info & action */}
-                      <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto">
+                      <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto gap-2">
                         <div className="flex items-center gap-2 text-xs text-zinc-400 font-semibold">
                           <span className="bg-white/5 px-2 py-1 rounded border border-white/5">{course.modules?.[0]?.count || 0} Módulos</span>
                         </div>
-                        <Button onClick={() => handleEnroll(course.id)} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 py-1.5 px-4 h-auto text-sm">
-                          Iniciar <ChevronRight size={16} className="ml-1" />
-                        </Button>
+                        
+                        <div className="flex items-center gap-2">
+                          {isEnrolled ? (
+                            <>
+                              <button
+                                onClick={() => setCourseToUnenroll({ id: course.id, title: course.title })}
+                                title="Abandonar curso"
+                                className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                              <Link href={`/cursos/${course.id}`}>
+                                <Button className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 py-1.5 px-4 h-auto text-sm">
+                                  Continuar <ChevronRight size={16} className="ml-1" />
+                                </Button>
+                              </Link>
+                            </>
+                          ) : (
+                            <Button onClick={() => handleEnroll(course.id)} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 py-1.5 px-4 h-auto text-sm">
+                              Iniciar <ChevronRight size={16} className="ml-1" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </Card>
                   );
@@ -157,6 +227,15 @@ export default function CatalogPage() {
           </div>
         </main>
       </div>
+
+      {/* Unenroll confirmation modal */}
+      <UnenrollModal
+        isOpen={Boolean(courseToUnenroll)}
+        onClose={() => setCourseToUnenroll(null)}
+        onConfirm={handleConfirmUnenroll}
+        courseTitle={courseToUnenroll?.title || ""}
+        isProcessing={isUnenrolling}
+      />
     </div>
   );
 }

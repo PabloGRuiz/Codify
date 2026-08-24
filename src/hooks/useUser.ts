@@ -21,7 +21,7 @@ export function useUser() {
       if (lastLoginStr !== todayStr) {
         let newStreak = userProfile.streak_days || 0;
 
-        if (lastLoginStr) {
+        if (lastLoginStr && userProfile.last_login) {
           const lastDate = new Date(userProfile.last_login);
           // Set to midnight for accurate day comparison
           const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
