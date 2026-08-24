@@ -153,9 +153,11 @@ export default function CatalogPage() {
                     <Card key={course.id} className="p-6 glass-panel border-white/10 hover:border-indigo-500/50 transition-all flex flex-col hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-default group relative">
                       {/* Top Header: Icon + Status/Type Badges */}
                       <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isTeorico ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
-                          <BookOpen size={24} />
-                        </div>
+                        <Link href={`/cursos/${course.id}/preview`} className="group-hover:scale-105 transition-transform" title="Ver ficha del curso">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isTeorico ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                            <BookOpen size={24} />
+                          </div>
+                        </Link>
                         <div className="flex items-center gap-2">
                           {isEnrolled && (
                             <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-full border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
@@ -174,9 +176,21 @@ export default function CatalogPage() {
                         </div>
                       </div>
                       
-                      {/* Title & Description */}
-                      <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors line-clamp-1">{course.title}</h3>
-                      <p className="text-sm text-zinc-400 mb-4 line-clamp-3 leading-relaxed flex-1">{course.description}</p>
+                      {/* Title & Description with Link to Preview */}
+                      <Link href={`/cursos/${course.id}/preview`} className="block group/title">
+                        <h3 className="text-xl font-bold text-white mb-2 group-hover/title:text-indigo-400 transition-colors line-clamp-1 flex items-center justify-between">
+                          <span>{course.title}</span>
+                          <span className="text-xs text-zinc-500 font-normal group-hover/title:text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                            Ficha →
+                          </span>
+                        </h3>
+                      </Link>
+                      
+                      <Link href={`/cursos/${course.id}/preview`} className="block flex-1">
+                        <p className="text-sm text-zinc-400 mb-4 line-clamp-3 leading-relaxed hover:text-zinc-300 transition-colors">
+                          {course.description}
+                        </p>
+                      </Link>
                       
                       {/* Topic Tags */}
                       {otherTags.length > 0 && (
@@ -193,6 +207,12 @@ export default function CatalogPage() {
                       <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto gap-2">
                         <div className="flex items-center gap-2 text-xs text-zinc-400 font-semibold">
                           <span className="bg-white/5 px-2 py-1 rounded border border-white/5">{course.modules?.[0]?.count || 0} Módulos</span>
+                          <Link 
+                            href={`/cursos/${course.id}/preview`}
+                            className="text-indigo-400 hover:text-indigo-300 font-medium hover:underline flex items-center gap-0.5"
+                          >
+                            Ver Resumen
+                          </Link>
                         </div>
                         
                         <div className="flex items-center gap-2">

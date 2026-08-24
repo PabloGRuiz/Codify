@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/Card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
-import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag } from "lucide-react";
+import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag, Eye } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -26,12 +27,14 @@ export default function AdminPage() {
   // New Course Form State
   const [newCourseTitle, setNewCourseTitle] = useState("");
   const [newCourseDesc, setNewCourseDesc] = useState("");
+  const [newCourseSummary, setNewCourseSummary] = useState("");
   const [newCourseTags, setNewCourseTags] = useState("");
 
   // Edit Course Form State
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [editCourseTitle, setEditCourseTitle] = useState("");
   const [editCourseDesc, setEditCourseDesc] = useState("");
+  const [editCourseSummary, setEditCourseSummary] = useState("");
   const [editCourseTags, setEditCourseTags] = useState("");
 
   // New Module Form State
@@ -115,6 +118,7 @@ export default function AdminPage() {
     const { error } = await supabase.from("courses").insert({
       title: newCourseTitle,
       description: newCourseDesc,
+      summary: newCourseSummary || null,
       tags: parsedTags,
       author_id: user?.id,
       status: 'published'
@@ -126,6 +130,7 @@ export default function AdminPage() {
       alert("¡Curso creado exitosamente!");
       setNewCourseTitle("");
       setNewCourseDesc("");
+      setNewCourseSummary("");
       setNewCourseTags("");
       fetchAdminData();
     }
@@ -135,6 +140,7 @@ export default function AdminPage() {
     setEditingCourseId(course.id);
     setEditCourseTitle(course.title || "");
     setEditCourseDesc(course.description || "");
+    setEditCourseSummary(course.summary || "");
     setEditCourseTags(Array.isArray(course.tags) ? course.tags.join(", ") : "");
   };
 
@@ -142,6 +148,7 @@ export default function AdminPage() {
     setEditingCourseId(null);
     setEditCourseTitle("");
     setEditCourseDesc("");
+    setEditCourseSummary("");
     setEditCourseTags("");
   };
 
@@ -159,6 +166,7 @@ export default function AdminPage() {
       .update({
         title: editCourseTitle,
         description: editCourseDesc,
+        summary: editCourseSummary || null,
         tags: parsedTags,
       })
       .eq("id", editingCourseId);
@@ -412,8 +420,19 @@ Genera el script SQL completo listo para copiar y pegar.`;
                       <input required type="text" value={newCourseTitle} onChange={(e) => setNewCourseTitle(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500" placeholder="Ej: Bootcamp Full Stack con Python" />
                     </div>
                     <div>
-                      <label className="block text-sm text-zinc-400 mb-1">Descripción</label>
-                      <textarea required value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 h-24" placeholder="Ej: Aprende Python, Django, IA..." />
+                      <label className="block text-sm text-zinc-400 mb-1">Descripción Breve (Catálogo)</label>
+                      <textarea required value={newCourseDesc} onChange={(e) => setNewCourseDesc(e.target.value)} className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 h-20" placeholder="Ej: Aprende Python, FastAPI, IA desde cero..." />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-zinc-400 mb-1">
+                        Resumen Detallado / Ficha Técnica (Markdown para Preview)
+                      </label>
+                      <textarea
+                        value={newCourseSummary}
+                        onChange={(e) => setNewCourseSummary(e.target.value)}
+                        className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 h-32 font-mono text-xs"
+                        placeholder="## 🚀 Acerca del Curso&#10;Explica a fondo los objetivos pedagógicos, prerrequisitos, público objetivo..."
+                      />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-1">
@@ -490,12 +509,24 @@ Genera el script SQL completo listo para copiar y pegar.`;
                             </div>
 
                             <div>
-                              <label className="block text-xs text-zinc-400 mb-1">Descripción</label>
+                              <label className="block text-xs text-zinc-400 mb-1">Descripción Breve</label>
                               <textarea
                                 required
                                 value={editCourseDesc}
                                 onChange={(e) => setEditCourseDesc(e.target.value)}
-                                className="w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-sm outline-none focus:border-indigo-500 h-20"
+                                className="w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-sm outline-none focus:border-indigo-500 h-16"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs text-zinc-400 mb-1">
+                                Resumen Detallado / Ficha Técnica (Markdown)
+                              </label>
+                              <textarea
+                                value={editCourseSummary}
+                                onChange={(e) => setEditCourseSummary(e.target.value)}
+                                className="w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-xs font-mono outline-none focus:border-indigo-500 h-28"
+                                placeholder="## 🚀 Acerca del Curso..."
                               />
                             </div>
 
@@ -583,13 +614,22 @@ Genera el script SQL completo listo para copiar y pegar.`;
                             </div>
                             
                             {(isAdmin || isProfesor) && (
-                              <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                                <Link
+                                  href={`/cursos/${c.id}/preview`}
+                                  target="_blank"
+                                  className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                                  title="Ver ficha de previsualización"
+                                >
+                                  <Eye size={15} />
+                                  <span>Ficha</span>
+                                </Link>
                                 <button 
                                   onClick={() => startEditingCourse(c)}
                                   className="px-3 py-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 border border-indigo-500/20 transition-colors flex items-center gap-1.5 text-xs font-bold"
-                                  title="Editar curso y etiquetas"
+                                  title="Editar curso, resumen y etiquetas"
                                 >
-                                  <Edit2 size={16} />
+                                  <Edit2 size={15} />
                                   <span>Editar</span>
                                 </button>
                                 <button 
@@ -597,7 +637,7 @@ Genera el script SQL completo listo para copiar y pegar.`;
                                   className="px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 transition-colors flex items-center gap-1.5 text-xs font-bold"
                                   title="Eliminar curso"
                                 >
-                                  <Trash2 size={16} />
+                                  <Trash2 size={15} />
                                   <span>Eliminar</span>
                                 </button>
                               </div>
