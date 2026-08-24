@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { useSidebar } from "@/context/SidebarContext";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
+import { useEnrollments } from "@/hooks/useEnrollments";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { 
@@ -26,7 +27,9 @@ import {
   Sparkles,
   Award,
   Code2,
-  FileQuestion
+  FileQuestion,
+  Lock,
+  ShieldAlert
 } from "lucide-react";
 
 export default function CoursePreviewPage() {
@@ -34,7 +37,8 @@ export default function CoursePreviewPage() {
   const id = routeParams?.id as string;
   const router = useRouter();
   const { isCollapsed } = useSidebar();
-  const { user } = useUser();
+  const { user, profile, loading: userLoading } = useUser();
+  const { completedCourseIds, courseProgressMap } = useEnrollments(user?.id, userLoading);
 
   const [course, setCourse] = useState<any>(null);
   const [modules, setModules] = useState<any[]>([]);
@@ -51,10 +55,13 @@ export default function CoursePreviewPage() {
   const fetchCourseDetails = async () => {
     setLoading(true);
     try {
-      // 1. Fetch course details
+      // 1. Fetch course details with prerequisite course info
       const { data: courseData, error: courseErr } = await supabase
         .from("courses")
-        .select("*")
+        .select(`
+          *,
+          prerequisite_course:prerequisite_course_id(id, title)
+        `)
         .eq("id", id)
         .single();
 
@@ -160,6 +167,12 @@ export default function CoursePreviewPage() {
   const otherTags = (course?.tags || []).filter((t: string) => t !== typeTag);
   const isTeorico = typeTag?.toLowerCase().includes("teor");
 
+  const prereqId = course?.prerequisite_course_id;
+  const prereqCompleted = !prereqId || completedCourseIds.has(prereqId);
+  const userLevel = profile?.level || Math.floor((profile?.xp || 0) / 100) + 1;
+  const levelMet = !course?.min_level || userLevel >= course.min_level;
+  const isLocked = !isEnrolled && (!prereqCompleted || !levelMet);
+
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
@@ -216,6 +229,12 @@ export default function CoursePreviewPage() {
                       {isEnrolled && (
                         <span className="text-xs uppercase tracking-wider font-extrabold px-3 py-1 rounded-full border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
                           <CheckCircle2 size={13} /> Curso Activo
+                        </span>
+                      )}
+
+                      {isLocked && (
+                        <span className="text-xs uppercase tracking-wider font-extrabold px-3 py-1 rounded-full border bg-amber-500/20 text-amber-400 border-amber-500/30 flex items-center gap-1">
+                          <Lock size={13} /> Bloqueado por Prerrequisitos
                         </span>
                       )}
                     </div>
@@ -409,18 +428,56 @@ export default function CoursePreviewPage() {
                   <div className="space-y-6 lg:sticky lg:top-8">
                     
                     {/* Action Enrollment Card */}
-                    <Card className="p-6 sm:p-8 glass-panel border-t-4 border-t-indigo-500 space-y-6 shadow-2xl relative overflow-hidden">
+                    <Card className={`p-6 sm:p-8 glass-panel space-y-6 shadow-2xl relative overflow-hidden ${
+                      isLocked ? "border-t-4 border-t-amber-500" : "border-t-4 border-t-indigo-500"
+                    }`}>
                       <div className="space-y-2">
                         <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">
                           Estado de Matrícula
                         </span>
                         <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${isEnrolled ? "bg-emerald-400 animate-ping" : "bg-indigo-400"}`} />
+                          <div className={`w-3 h-3 rounded-full ${
+                            isEnrolled 
+                              ? "bg-emerald-400 animate-ping" 
+                              : isLocked 
+                              ? "bg-amber-400" 
+                              : "bg-indigo-400"
+                          }`} />
                           <span className="text-lg font-bold text-white">
-                            {isEnrolled ? "Curso en tu lista activa" : "Disponible para iniciar"}
+                            {isEnrolled 
+                              ? "Curso en tu lista activa" 
+                              : isLocked 
+                              ? "Curso Bloqueado" 
+                              : "Disponible para iniciar"}
                           </span>
                         </div>
                       </div>
+
+                      {/* Locked Prerequisites Box if applicable */}
+                      {isLocked && (
+                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 space-y-2">
+                          <div className="font-bold flex items-center gap-1.5 text-amber-400">
+                            <Lock size={14} /> Requisitos para desbloquear:
+                          </div>
+                          {!prereqCompleted && course.prerequisite_course && (
+                            <div>
+                              • Completar al 100%:{" "}
+                              <Link 
+                                href={`/cursos/${prereqId}`}
+                                className="underline font-bold hover:text-white"
+                              >
+                                {course.prerequisite_course.title}
+                              </Link>{" "}
+                              (Progreso actual: {courseProgressMap[prereqId!] || 0}%)
+                            </div>
+                          )}
+                          {!levelMet && (
+                            <div>
+                              • Nivel de jugador requerido: <strong>Nivel {course.min_level}</strong> (Tu nivel: {userLevel})
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Quick Meta List */}
                       <div className="space-y-3 pt-2 border-t border-white/10 text-sm">
@@ -454,19 +511,32 @@ export default function CoursePreviewPage() {
                       </div>
 
                       {/* Primary CTA Button */}
-                      <Button
-                        size="lg"
-                        onClick={handleEnrollAndStart}
-                        isLoading={enrolling}
-                        className={`w-full font-bold text-base shadow-xl py-3.5 ${
-                          isEnrolled
-                            ? "bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-500/20"
-                            : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-500/30"
-                        }`}
-                        rightIcon={<ChevronRight size={18} />}
-                      >
-                        {isEnrolled ? "Continuar Aprendizaje" : "Matricularme e Iniciar"}
-                      </Button>
+                      {isLocked ? (
+                        <Link href={prereqId ? `/cursos/${prereqId}` : "/cursos"} className="block w-full">
+                          <Button
+                            size="lg"
+                            variant="secondary"
+                            className="w-full font-bold text-base shadow-xl py-3.5 border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
+                            leftIcon={<Lock size={18} className="text-amber-400" />}
+                          >
+                            Ir al Curso Prerrequisito
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button
+                          size="lg"
+                          onClick={handleEnrollAndStart}
+                          isLoading={enrolling}
+                          className={`w-full font-bold text-base shadow-xl py-3.5 ${
+                            isEnrolled
+                              ? "bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-500/20"
+                              : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-500/30"
+                          }`}
+                          rightIcon={<ChevronRight size={18} />}
+                        >
+                          {isEnrolled ? "Continuar Aprendizaje" : "Matricularme e Iniciar"}
+                        </Button>
+                      )}
 
                       {/* Value props */}
                       <div className="space-y-2 pt-4 border-t border-white/10 text-xs text-zinc-400">

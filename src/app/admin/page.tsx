@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
-import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag, Eye } from "lucide-react";
+import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag, Eye, Lock } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminPage() {
@@ -29,6 +29,8 @@ export default function AdminPage() {
   const [newCourseDesc, setNewCourseDesc] = useState("");
   const [newCourseSummary, setNewCourseSummary] = useState("");
   const [newCourseTags, setNewCourseTags] = useState("");
+  const [newCoursePrereqId, setNewCoursePrereqId] = useState("");
+  const [newCourseMinLevel, setNewCourseMinLevel] = useState("1");
 
   // Edit Course Form State
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
@@ -36,6 +38,8 @@ export default function AdminPage() {
   const [editCourseDesc, setEditCourseDesc] = useState("");
   const [editCourseSummary, setEditCourseSummary] = useState("");
   const [editCourseTags, setEditCourseTags] = useState("");
+  const [editCoursePrereqId, setEditCoursePrereqId] = useState("");
+  const [editCourseMinLevel, setEditCourseMinLevel] = useState("1");
 
   // New Module Form State
   const [courseId, setCourseId] = useState("");
@@ -120,6 +124,8 @@ export default function AdminPage() {
       description: newCourseDesc,
       summary: newCourseSummary || null,
       tags: parsedTags,
+      prerequisite_course_id: newCoursePrereqId || null,
+      min_level: parseInt(newCourseMinLevel) || 1,
       author_id: user?.id,
       status: 'published'
     });
@@ -132,6 +138,8 @@ export default function AdminPage() {
       setNewCourseDesc("");
       setNewCourseSummary("");
       setNewCourseTags("");
+      setNewCoursePrereqId("");
+      setNewCourseMinLevel("1");
       fetchAdminData();
     }
   };
@@ -142,6 +150,8 @@ export default function AdminPage() {
     setEditCourseDesc(course.description || "");
     setEditCourseSummary(course.summary || "");
     setEditCourseTags(Array.isArray(course.tags) ? course.tags.join(", ") : "");
+    setEditCoursePrereqId(course.prerequisite_course_id || "");
+    setEditCourseMinLevel(String(course.min_level || 1));
   };
 
   const cancelEditingCourse = () => {
@@ -150,6 +160,8 @@ export default function AdminPage() {
     setEditCourseDesc("");
     setEditCourseSummary("");
     setEditCourseTags("");
+    setEditCoursePrereqId("");
+    setEditCourseMinLevel("1");
   };
 
   const handleUpdateCourse = async (e: React.FormEvent) => {
@@ -168,6 +180,8 @@ export default function AdminPage() {
         description: editCourseDesc,
         summary: editCourseSummary || null,
         tags: parsedTags,
+        prerequisite_course_id: editCoursePrereqId || null,
+        min_level: parseInt(editCourseMinLevel) || 1,
       })
       .eq("id", editingCourseId);
 
@@ -470,6 +484,40 @@ Genera el script SQL completo listo para copiar y pegar.`;
                         placeholder="Ej: Teórico, Redes, Telecomunicaciones, Cisco"
                       />
                     </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-zinc-400 mb-1">
+                          🔒 Curso Prerrequisito (Opcional)
+                        </label>
+                        <select
+                          value={newCoursePrereqId}
+                          onChange={(e) => setNewCoursePrereqId(e.target.value)}
+                          className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 text-sm"
+                        >
+                          <option value="">-- Sin prerrequisito (Curso Inicial) --</option>
+                          {courses.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm text-zinc-400 mb-1">
+                          ⭐ Nivel de Jugador Mínimo
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={newCourseMinLevel}
+                          onChange={(e) => setNewCourseMinLevel(e.target.value)}
+                          className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white outline-none focus:border-indigo-500 text-sm"
+                        />
+                      </div>
+                    </div>
+
                     <Button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white">
                       Publicar Curso
                     </Button>
@@ -567,6 +615,42 @@ Genera el script SQL completo listo para copiar y pegar.`;
                               />
                             </div>
 
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs text-zinc-400 mb-1">
+                                  🔒 Curso Prerrequisito
+                                </label>
+                                <select
+                                  value={editCoursePrereqId}
+                                  onChange={(e) => setEditCoursePrereqId(e.target.value)}
+                                  className="w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-xs outline-none focus:border-indigo-500"
+                                >
+                                  <option value="">-- Sin prerrequisito --</option>
+                                  {courses
+                                    .filter((co) => co.id !== editingCourseId)
+                                    .map((co) => (
+                                      <option key={co.id} value={co.id}>
+                                        {co.title}
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs text-zinc-400 mb-1">
+                                  ⭐ Nivel Mínimo Requerido
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="100"
+                                  value={editCourseMinLevel}
+                                  onChange={(e) => setEditCourseMinLevel(e.target.value)}
+                                  className="w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-xs outline-none focus:border-indigo-500"
+                                />
+                              </div>
+                            </div>
+
                             <div className="flex justify-end gap-2 pt-2">
                               <Button
                                 type="button"
@@ -594,6 +678,18 @@ Genera el script SQL completo listo para copiar y pegar.`;
                                 <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded uppercase">
                                   {c.status || "published"}
                                 </span>
+
+                                {c.min_level > 1 && (
+                                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                    ⭐ Nivel {c.min_level}
+                                  </span>
+                                )}
+
+                                {c.prerequisite_course_id && (
+                                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                    <Lock size={10} /> Correlativo
+                                  </span>
+                                )}
 
                                 {Array.isArray(c.tags) && c.tags.map((tag: string) => {
                                   const isTeorico = tag.toLowerCase() === 'teórico' || tag.toLowerCase() === 'teorico';

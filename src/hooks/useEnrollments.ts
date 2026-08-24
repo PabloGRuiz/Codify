@@ -104,5 +104,24 @@ export function useEnrollments(userId: string | undefined, userLoading: boolean)
     }
   };
 
-  return { enrollments, loading, unenrollCourse };
+  const courseProgressMap: Record<string, number> = {};
+  const completedCourseIds = new Set<string>();
+
+  enrollments.forEach((enr) => {
+    const cid = enr.course_id || enr.courses?.id;
+    if (cid) {
+      courseProgressMap[cid] = enr.calculated_progress || 0;
+      if (enr.calculated_progress === 100) {
+        completedCourseIds.add(cid);
+      }
+    }
+  });
+
+  return { 
+    enrollments, 
+    loading, 
+    unenrollCourse, 
+    courseProgressMap, 
+    completedCourseIds 
+  };
 }

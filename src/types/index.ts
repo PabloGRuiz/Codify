@@ -3,6 +3,7 @@ export interface UserProfile {
   username: string;
   avatar_url?: string;
   xp: number;
+  level?: number;
   streak_days: number;
   last_login?: string;
   role: string;
@@ -16,6 +17,12 @@ export interface Course {
   summary?: string;
   tags?: string[];
   image_url?: string;
+  prerequisite_course_id?: string | null;
+  min_level?: number;
+  prerequisite_course?: {
+    id: string;
+    title: string;
+  } | null;
 }
 
 export interface Module {

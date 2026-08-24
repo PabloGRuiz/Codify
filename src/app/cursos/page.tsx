@@ -7,14 +7,17 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useSidebar } from "@/context/SidebarContext";
 import { supabase } from "@/lib/supabase";
-import { BookOpen, Star, Users, ChevronRight, GraduationCap, CheckCircle2, Trash2 } from "lucide-react";
+import { BookOpen, Star, Users, ChevronRight, GraduationCap, CheckCircle2, Trash2, Lock, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { useEnrollments } from "@/hooks/useEnrollments";
 import { UnenrollModal } from "@/components/dashboard/UnenrollModal";
 
 export default function CatalogPage() {
   const { isCollapsed } = useSidebar();
-  const { user } = useUser();
+  const { user, profile, loading: userLoading } = useUser();
+  const { completedCourseIds, courseProgressMap } = useEnrollments(user?.id, userLoading);
+  
   const [courses, setCourses] = useState<any[]>([]);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -28,12 +31,13 @@ export default function CatalogPage() {
   const fetchCoursesAndEnrollments = async () => {
     setLoading(true);
     try {
-      // 1. Fetch published courses
+      // 1. Fetch published courses with prerequisite info
       const { data: coursesData } = await supabase
         .from("courses")
         .select(`
           *,
-          modules(count)
+          modules(count),
+          prerequisite_course:prerequisite_course_id(id, title)
         `)
         .eq("status", "published")
         .order("created_at", { ascending: false });
@@ -142,6 +146,12 @@ export default function CatalogPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courses.map((course) => {
                   const isEnrolled = enrolledCourseIds.has(course.id);
+                  const prereqId = course.prerequisite_course_id;
+                  const prereqCompleted = !prereqId || completedCourseIds.has(prereqId);
+                  const userLevel = profile?.level || Math.floor((profile?.xp || 0) / 100) + 1;
+                  const levelMet = !course.min_level || userLevel >= course.min_level;
+                  const isLocked = !isEnrolled && (!prereqCompleted || !levelMet);
+
                   const typeTag = course.tags?.find((t: string) => {
                     const lower = t.toLowerCase();
                     return lower === 'teórico' || lower === 'teorico' || lower === 'práctico' || lower === 'practico';
@@ -150,18 +160,36 @@ export default function CatalogPage() {
                   const isTeorico = typeTag?.toLowerCase().includes('teor');
 
                   return (
-                    <Card key={course.id} className="p-6 glass-panel border-white/10 hover:border-indigo-500/50 transition-all flex flex-col hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-default group relative">
+                    <Card 
+                      key={course.id} 
+                      className={`p-6 glass-panel transition-all flex flex-col hover:-translate-y-1 hover:shadow-2xl cursor-default group relative ${
+                        isLocked 
+                          ? "border-amber-500/20 hover:border-amber-500/40 bg-zinc-950/60 opacity-90" 
+                          : "border-white/10 hover:border-indigo-500/50 hover:shadow-indigo-500/10"
+                      }`}
+                    >
                       {/* Top Header: Icon + Status/Type Badges */}
                       <div className="flex items-center justify-between mb-4">
                         <Link href={`/cursos/${course.id}/preview`} className="group-hover:scale-105 transition-transform" title="Ver ficha del curso">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isTeorico ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
-                            <BookOpen size={24} />
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                            isLocked
+                              ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                              : isTeorico 
+                              ? "bg-emerald-500/20 text-emerald-400" 
+                              : "bg-indigo-500/20 text-indigo-400"
+                          }`}>
+                            {isLocked ? <Lock size={22} /> : <BookOpen size={24} />}
                           </div>
                         </Link>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
                           {isEnrolled && (
                             <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-full border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
                               <CheckCircle2 size={12} /> Activo
+                            </span>
+                          )}
+                          {isLocked && (
+                            <span className="text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-full border bg-amber-500/15 text-amber-400 border-amber-500/30 flex items-center gap-1">
+                              <Lock size={12} /> Bloqueado
                             </span>
                           )}
                           {typeTag && (
@@ -192,6 +220,26 @@ export default function CatalogPage() {
                         </p>
                       </Link>
                       
+                      {/* Prerequisites Banner if locked */}
+                      {isLocked && (
+                        <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 space-y-1">
+                          {!prereqCompleted && course.prerequisite_course && (
+                            <div className="flex items-center gap-1.5">
+                              <Lock size={13} className="shrink-0 text-amber-400" />
+                              <span>
+                                Requiere completar: <strong>{course.prerequisite_course.title}</strong> ({courseProgressMap[prereqId!] || 0}%)
+                              </span>
+                            </div>
+                          )}
+                          {!levelMet && (
+                            <div className="flex items-center gap-1.5">
+                              <ShieldAlert size={13} className="shrink-0 text-amber-400" />
+                              <span>Requiere alcanzar el <strong>Nivel {course.min_level}</strong> (Tu nivel: {userLevel})</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Topic Tags */}
                       {otherTags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-5">
@@ -231,6 +279,12 @@ export default function CatalogPage() {
                                 </Button>
                               </Link>
                             </>
+                          ) : isLocked ? (
+                            <Link href={prereqId ? `/cursos/${prereqId}` : `/cursos/${course.id}/preview`}>
+                              <Button variant="secondary" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10 py-1.5 px-3 h-auto text-xs">
+                                <Lock size={14} className="mr-1 text-amber-400" /> Requisitos
+                              </Button>
+                            </Link>
                           ) : (
                             <Button onClick={() => handleEnroll(course.id)} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 py-1.5 px-4 h-auto text-sm">
                               Iniciar <ChevronRight size={16} className="ml-1" />
