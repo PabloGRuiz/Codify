@@ -22,6 +22,12 @@ interface ModuleInfo {
   id: string;
   title: string;
   description: string;
+  challenges?: ChallengeNode[];
+  totalChallenges?: number;
+  completedChallenges?: number;
+  isCompleted?: boolean;
+  isUnlocked?: boolean;
+  prevModuleTitle?: string;
 }
 
 export function LearningPath({ courseId }: { courseId?: string }) {
@@ -36,39 +42,8 @@ export function LearningPath({ courseId }: { courseId?: string }) {
     const fetchModulesAndProgress = async () => {
       setLoading(true);
       try {
-        // 1. Fetch modules
-        let query = supabase.from("modules").select("*").order("created_at", { ascending: true });
-        if (courseId) {
-          query = query.eq("course_id", courseId);
-        }
-        
-        const { data: modulesData, error: modError } = await query;
-
-        if (modError) console.error("Error fetching modules:", modError.message || modError);
-        
-        if (modulesData && modulesData.length > 0) {
-          setModules(modulesData);
-          let defaultModId = "";
-          
-          if (typeof window !== "undefined") {
-            const saved = localStorage.getItem(`codify_last_module_${courseId || "default"}`);
-            if (saved && modulesData.some(m => m.id === saved)) {
-              defaultModId = saved;
-            }
-          }
-          
-          if (!defaultModId) {
-            defaultModId = modulesData[0].id;
-          }
-          
-          setSelectedModuleId(defaultModId);
-        } else {
-          setModules([]);
-          setSelectedModuleId("");
-          setChallenges([]);
-        }
-
-        // 2. Fetch user completed challenges if logged in
+        // 1. Fetch user completed challenges if logged in
+        let completedSet = new Set<string>();
         if (user) {
           const { data: progData, error: prError } = await supabase
             .from("user_progress")
@@ -78,8 +53,79 @@ export function LearningPath({ courseId }: { courseId?: string }) {
 
           if (prError) console.error("Error fetching progress:", prError.message || prError);
           if (progData) {
-            setCompletedIds(progData.map((p) => p.challenge_id));
+            const cIds = progData.map((p) => p.challenge_id);
+            setCompletedIds(cIds);
+            completedSet = new Set(cIds);
           }
+        }
+
+        // 2. Fetch modules with nested challenges ordered chronologically
+        let query = supabase
+          .from("modules")
+          .select("id, title, description, created_at, challenges(id, module_id, title, description, order_index, xp_reward, theory)")
+          .order("created_at", { ascending: true });
+
+        if (courseId) {
+          query = query.eq("course_id", courseId);
+        }
+        
+        const { data: modulesData, error: modError } = await query;
+
+        if (modError) console.error("Error fetching modules:", modError.message || modError);
+        
+        if (modulesData && modulesData.length > 0) {
+          let canUnlockNext = true;
+          const processedModules: ModuleInfo[] = modulesData.map((mod: any, index: number) => {
+            const sortedChallenges = (mod.challenges || []).sort(
+              (a: ChallengeNode, b: ChallengeNode) => (a.order_index || 0) - (b.order_index || 0)
+            );
+            const total = sortedChallenges.length;
+            const completed = sortedChallenges.filter((c: ChallengeNode) => completedSet.has(c.id)).length;
+            const isCompleted = total > 0 && completed === total;
+            const isUnlocked = index === 0 || canUnlockNext;
+
+            // Bloquear módulos siguientes si este módulo aún no se ha completado al 100%
+            if (!isCompleted) {
+              canUnlockNext = false;
+            }
+
+            return {
+              id: mod.id,
+              title: mod.title,
+              description: mod.description,
+              challenges: sortedChallenges,
+              totalChallenges: total,
+              completedChallenges: completed,
+              isCompleted,
+              isUnlocked,
+              prevModuleTitle: index > 0 ? modulesData[index - 1].title : undefined,
+            };
+          });
+
+          setModules(processedModules);
+
+          let defaultModId = "";
+          if (typeof window !== "undefined") {
+            const saved = localStorage.getItem(`codify_last_module_${courseId || "default"}`);
+            if (saved) {
+              const found = processedModules.find(m => m.id === saved);
+              if (found && found.isUnlocked) {
+                defaultModId = saved;
+              }
+            }
+          }
+          
+          if (!defaultModId) {
+            // Seleccionar el primer módulo desbloqueado pendiente o el primero
+            const activeOrFirst = processedModules.find(m => m.isUnlocked && !m.isCompleted) || processedModules[0];
+            defaultModId = activeOrFirst?.id || processedModules[0].id;
+          }
+          
+          setSelectedModuleId(defaultModId);
+        } else {
+          setModules([]);
+          setSelectedModuleId("");
+          setChallenges([]);
         }
       } catch (e: unknown) {
         const err = e as Error;
@@ -93,26 +139,15 @@ export function LearningPath({ courseId }: { courseId?: string }) {
   }, [user, courseId]);
 
   useEffect(() => {
-    if (!selectedModuleId) return;
+    if (!selectedModuleId || modules.length === 0) return;
 
-    const fetchChallengesForModule = async (moduleId: string) => {
-      try {
-        const { data: challengesData, error: chError } = await supabase
-          .from("challenges")
-          .select("*")
-          .eq("module_id", moduleId)
-          .order("order_index", { ascending: true });
-
-        if (chError) console.error("Error fetching challenges:", chError.message || chError);
-        if (challengesData) setChallenges(challengesData);
-      } catch (e: unknown) {
-        const err = e as Error;
-        console.error("Error loading module challenges:", err?.message || String(err));
-      }
-    };
-
-    fetchChallengesForModule(selectedModuleId);
-  }, [selectedModuleId]);
+    const currentMod = modules.find(m => m.id === selectedModuleId);
+    if (currentMod && currentMod.challenges) {
+      setChallenges(currentMod.challenges);
+    } else {
+      setChallenges([]);
+    }
+  }, [selectedModuleId, modules]);
 
   if (loading) {
     return (
@@ -144,6 +179,7 @@ export function LearningPath({ courseId }: { courseId?: string }) {
   const completedCount = challenges.filter((c) => completedIds.includes(c.id)).length;
   const totalCount = challenges.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const isModuleLocked = activeModule && !activeModule.isUnlocked;
 
   return (
     <Card className="p-8 glass-panel border-t-4 border-t-primary relative overflow-hidden space-y-8 shadow-2xl">
@@ -164,14 +200,15 @@ export function LearningPath({ courseId }: { courseId?: string }) {
                 const newId = e.target.value;
                 setSelectedModuleId(newId);
                 if (typeof window !== "undefined") {
-                  localStorage.setItem("codify_last_module", newId);
+                  localStorage.setItem(`codify_last_module_${courseId || "default"}`, newId);
                 }
               }}
               className="bg-black/60 text-white font-heading font-bold text-lg sm:text-xl p-2.5 rounded-xl border border-white/20 outline-none focus:border-primary w-full max-w-full lg:max-w-xl truncate cursor-pointer shadow-inner"
             >
               {modules.map((m) => (
                 <option key={m.id} value={m.id} className="bg-zinc-900 text-white">
-                  {m.title}
+                  {m.isCompleted ? "✅ " : m.isUnlocked ? "📖 " : "🔒 "}
+                  {m.title} {m.isUnlocked ? `(${m.completedChallenges}/${m.totalChallenges})` : "(Bloqueado)"}
                 </option>
               ))}
             </select>
@@ -200,114 +237,137 @@ export function LearningPath({ courseId }: { courseId?: string }) {
         </div>
       </div>
 
-      {/* Timeline Roadmap View */}
-      <div className="space-y-4 max-w-3xl mx-auto py-2">
-        {challenges.length === 0 ? (
-          <div className="text-center text-zinc-400 py-12 space-y-3">
-            <BookOpen size={36} className="mx-auto text-zinc-600" />
-            <p className="text-base font-semibold">No se encontraron niveles en este módulo.</p>
-            <p className="text-xs text-zinc-500">Ejecuta el script SQL `beginner_curriculum.sql` en tu panel de Supabase.</p>
+      {/* Locked Module View vs Challenges Roadmap */}
+      {isModuleLocked ? (
+        <div className="py-14 px-6 rounded-2xl bg-black/40 border border-amber-500/20 text-center space-y-6 max-w-2xl mx-auto shadow-2xl my-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-pulse">
+            <Lock size={32} />
           </div>
-        ) : (
-          challenges.map((node, index) => {
-            const isCompleted = completedIds.includes(node.id);
-            const isUnlocked = index === 0 || completedIds.includes(challenges[index - 1].id);
-            const isTrophy = index === challenges.length - 1;
+          <div className="space-y-2">
+            <h3 className="text-2xl font-heading font-bold text-white">Módulo Bloqueado 🔒</h3>
+            <p className="text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
+              Para desbloquear este módulo, primero debes completar el 100% de los retos del módulo anterior:
+            </p>
+            <div className="inline-block px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-amber-300 font-bold text-sm shadow-inner mt-2">
+              📖 {activeModule?.prevModuleTitle || "Módulo Anterior"}
+            </div>
+          </div>
+          <div className="pt-2">
+            <Button
+              onClick={() => {
+                const currentIndex = modules.findIndex((m) => m.id === activeModule?.id);
+                if (currentIndex > 0) {
+                  const prevMod = modules[currentIndex - 1];
+                  setSelectedModuleId(prevMod.id);
+                }
+              }}
+              className="bg-primary hover:bg-primary/80 text-white shadow-lg shadow-primary/20 px-6 py-2.5 h-auto text-sm font-bold"
+              leftIcon={<ArrowRight size={16} />}
+            >
+              Completar Módulo Anterior 🚀
+            </Button>
+          </div>
+        </div>
+      ) : (
+        /* Timeline Roadmap View */
+        <div className="space-y-4 max-w-3xl mx-auto py-2">
+          {challenges.length === 0 ? (
+            <div className="text-center text-zinc-400 py-12 space-y-3">
+              <BookOpen size={36} className="mx-auto text-zinc-600" />
+              <p className="text-base font-semibold">No se encontraron niveles en este módulo.</p>
+              <p className="text-xs text-zinc-500">Ejecuta el script SQL correspondiente en tu panel de Supabase.</p>
+            </div>
+          ) : (
+            challenges.map((node, index) => {
+              const isCompleted = completedIds.includes(node.id);
+              const isUnlocked = index === 0 || completedIds.includes(challenges[index - 1].id);
+              const isTrophy = index === challenges.length - 1;
 
-            return (
-              <div key={node.id} className="relative flex items-start gap-6 group">
-                
-                {/* Left Timeline Column: Icon Node + Connector Line */}
-                <div className="flex flex-col items-center shrink-0 pt-1">
-                  {/* Node Circle Icon */}
-                  {isUnlocked ? (
-                    <Link href={`/ide/${node.id}`}>
-                      <button
-                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 transform group-hover:scale-110 shadow-xl relative ${
-                          isCompleted
-                            ? "bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.3)]"
-                            : "bg-primary/20 border-2 border-primary text-primary shadow-[0_0_20px_rgba(139,92,246,0.4)] animate-pulse"
-                        }`}
-                      >
-                        {isCompleted ? (
-                          <Check size={26} className="stroke-[3]" />
-                        ) : isTrophy ? (
-                          <Trophy size={26} className="text-yellow-400 fill-yellow-400" />
-                        ) : (
-                          <Zap size={24} className="fill-primary" />
-                        )}
-                      </button>
-                    </Link>
-                  ) : (
-                    /* Locked Node Circle */
-                    <div className="w-14 h-14 rounded-2xl bg-zinc-900/80 border border-zinc-800 text-zinc-600 flex items-center justify-center cursor-not-allowed opacity-60">
-                      <Lock size={20} />
-                    </div>
-                  )}
-
-                  {/* Vertical Connector Line to Next Node */}
-                  {index < challenges.length - 1 && (
-                    <div className={`w-0.5 h-14 my-2 transition-colors ${isCompleted ? 'bg-emerald-400/50' : 'bg-white/10'}`} />
-                  )}
-                </div>
-
-                {/* Right Column: Interactive Level Card */}
-                <div
-                  className={`flex-1 p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg ${
-                    isCompleted
-                      ? "bg-emerald-950/10 border-emerald-500/20"
-                      : isUnlocked
-                      ? "bg-black/50 border-white/10 hover:border-primary/50 hover:bg-black/70"
-                      : "bg-black/20 border-white/5 opacity-50 cursor-not-allowed"
-                  }`}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5">
-                        Nivel {index + 1}
-                      </span>
-                      {isTrophy && (
-                        <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                          🏆 Reto Final
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-heading font-bold text-lg text-white group-hover:text-primary transition-colors">
-                      {node.title}
-                    </h3>
-                    <p className="text-xs text-zinc-400 line-clamp-2">
-                      {node.description}
-                    </p>
-                  </div>
-
-                  <div className="shrink-0 flex items-center gap-3">
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-                      +{node.xp_reward} XP
-                    </span>
-
+              return (
+                <div key={node.id} className="relative flex items-start gap-6 group">
+                  
+                  {/* Left Timeline Column: Icon Node + Connector Line */}
+                  <div className="flex flex-col items-center shrink-0 pt-1">
+                    {/* Node Circle Icon */}
                     {isUnlocked ? (
                       <Link href={`/ide/${node.id}`}>
-                        <Button
-                          size="sm"
-                          rightIcon={<ArrowRight size={14} />}
-                          className={isCompleted ? "bg-emerald-500 hover:bg-emerald-600 text-black font-bold border-none" : ""}
+                        <button
+                          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 transform group-hover:scale-110 shadow-xl relative ${
+                            isCompleted
+                              ? "bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.3)]"
+                              : "bg-primary/20 border-2 border-primary text-primary shadow-[0_0_20px_rgba(139,92,246,0.4)] animate-pulse"
+                          }`}
                         >
-                          {isCompleted ? "Repasar" : "Comenzar"}
-                        </Button>
+                          {isCompleted ? (
+                            <Check size={26} className="stroke-[3]" />
+                          ) : isTrophy ? (
+                            <Trophy size={26} className="text-yellow-400 fill-yellow-400" />
+                          ) : (
+                            <Zap size={24} className="fill-primary" />
+                          )}
+                        </button>
                       </Link>
                     ) : (
-                      <Button size="sm" variant="secondary" disabled className="opacity-50">
-                        Bloqueado
-                      </Button>
+                      /* Locked Node Circle */
+                      <div className="w-14 h-14 rounded-2xl bg-zinc-900/80 border border-zinc-800 text-zinc-600 flex items-center justify-center cursor-not-allowed opacity-60">
+                        <Lock size={20} />
+                      </div>
+                    )}
+
+                    {/* Vertical Connector Line to Next Node */}
+                    {index < challenges.length - 1 && (
+                      <div className={`w-0.5 h-14 my-2 transition-colors ${isCompleted ? 'bg-emerald-400/50' : 'bg-white/10'}`} />
                     )}
                   </div>
-                </div>
 
-              </div>
-            );
-          })
-        )}
-      </div>
+                  {/* Right Column: Interactive Level Card */}
+                  <div
+                    className={`flex-1 p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg ${
+                      isCompleted
+                        ? "bg-emerald-950/10 border-emerald-500/20"
+                        : isUnlocked
+                        ? "bg-black/50 border-white/10 hover:border-primary/50 hover:bg-black/70"
+                        : "bg-black/20 border-white/5 opacity-50 cursor-not-allowed"
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5">
+                          Nivel {index + 1}
+                        </span>
+                        {isTrophy && (
+                          <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                            🏆 Reto Final
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-heading font-bold text-lg text-white group-hover:text-primary transition-colors">
+                        {node.title}
+                      </h3>
+                      <p className="text-xs text-zinc-400 line-clamp-2">
+                        {node.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                      <span className="text-xs font-bold font-mono text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20">
+                        +{node.xp_reward} XP
+                      </span>
+                      {isUnlocked && (
+                        <Link href={`/ide/${node.id}`}>
+                          <Button size="sm" className={isCompleted ? "bg-white/10 hover:bg-white/20 text-white" : "bg-primary hover:bg-primary/80 text-white shadow-lg shadow-primary/20"}>
+                            {isCompleted ? "Repasar" : "Comenzar"}
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
 
     </Card>
   );
