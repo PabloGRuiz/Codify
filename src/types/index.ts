@@ -40,3 +40,14 @@ export interface Challenge {
   order_index: number;
   xp_reward: number;
 }
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: "course" | "forum" | "system" | "achievement";
+  title: string;
+  message: string;
+  link?: string | null;
+  read: boolean;
+  created_at: string;
+}

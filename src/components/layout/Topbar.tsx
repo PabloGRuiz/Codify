@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Flame, User, Star } from "lucide-react";
+import { Flame, User, Star } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { StreakModal } from "@/components/dashboard/StreakModal";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 
 export function Topbar() {
   const { profile } = useUser();
@@ -38,11 +39,8 @@ export function Topbar() {
             <span className="text-sm font-bold font-mono">{streak} {streak === 1 ? "Día" : "Días"}</span>
           </button>
 
-          {/* Notifications Icon Placeholder */}
-          <button className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-white/5">
-            <Bell size={20} />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-          </button>
+          {/* Realtime Interactive Notifications Dropdown */}
+          <NotificationDropdown />
 
           {/* User Profile Avatar Link */}
           <Link href="/profile">

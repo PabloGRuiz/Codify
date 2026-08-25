@@ -8,14 +8,14 @@ import { Card } from "@/components/ui/Card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
-import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag, Eye, Lock } from "lucide-react";
+import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag, Bell, Send, Megaphone, Eye, Lock } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminPage() {
   const router = useRouter();
   const { isCollapsed } = useSidebar();
   const { user, isProfesor, isAdmin, loading: userLoading } = useUser();
-  const [activeTab, setActiveTab] = useState<"courses" | "content" | "users" | "ai_prompt">("courses");
+  const [activeTab, setActiveTab] = useState<"courses" | "content" | "users" | "notifications" | "ai_prompt">("courses");
   
   // Data States
   const [courses, setCourses] = useState<any[]>([]);
@@ -63,6 +63,12 @@ export default function AdminPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [addXpAmount, setAddXpAmount] = useState("100");
   const [selectedChallengeToComplete, setSelectedChallengeToComplete] = useState("");
+
+  // Broadcast Announcement State
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [announcementLink, setAnnouncementLink] = useState("");
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
@@ -322,6 +328,58 @@ export default function AdminPage() {
     }
   };
 
+  // Broadcast Notification to All Users
+  const handleBroadcastNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!announcementTitle.trim() || !announcementMessage.trim()) {
+      return alert("El título y el mensaje son obligatorios");
+    }
+
+    setIsBroadcasting(true);
+    try {
+      // 1. Intentar llamar al stored procedure
+      const { data, error } = await supabase.rpc("broadcast_system_notification", {
+        p_title: announcementTitle.trim(),
+        p_message: announcementMessage.trim(),
+        p_link: announcementLink.trim() || null,
+      });
+
+      if (error) throw error;
+      alert(`¡Notificación enviada exitosamente a ${data || "todos los"} usuarios! 📢`);
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
+      setAnnouncementLink("");
+    } catch (err: any) {
+      console.warn("RPC broadcast_system_notification fallback:", err?.message);
+      // 2. Fallback manual con insert múltiple
+      try {
+        const { data: profs } = await supabase.from("profiles").select("id");
+        if (profs && profs.length > 0) {
+          const rows = profs.map((p) => ({
+            user_id: p.id,
+            type: "system",
+            title: announcementTitle.trim(),
+            message: announcementMessage.trim(),
+            link: announcementLink.trim() || null,
+          }));
+          const { error: insertErr } = await supabase.from("notifications").insert(rows);
+          if (insertErr) throw insertErr;
+
+          alert(`¡Notificación emitida a ${profs.length} usuarios exitosamente! 📢`);
+          setAnnouncementTitle("");
+          setAnnouncementMessage("");
+          setAnnouncementLink("");
+        } else {
+          alert("No se encontraron usuarios para notificar");
+        }
+      } catch (fallbackErr: any) {
+        alert("Error al emitir notificación: " + (fallbackErr.message || err.message));
+      }
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
+
   // AI Prompt Template
   const aiPromptText = `Actúa como un Diseñador Curricular de Programación y Experto en JavaScript para la plataforma gamificada "Codify".
 
@@ -403,6 +461,14 @@ Genera el script SQL completo listo para copiar y pegar.`;
                 <Users size={16} /> Usuarios & Roles
               </button>
             )}
+            <button
+              onClick={() => setActiveTab("notifications")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeTab === "notifications" ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <Bell size={16} /> Difusión & Anuncios
+            </button>
             <button
               onClick={() => setActiveTab("ai_prompt")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -1011,7 +1077,89 @@ Genera el script SQL completo listo para copiar y pegar.`;
           </div>
         )}
 
-        {/* TAB 3: PROMPT MAESTRO PARA IA (GEMINI / CHATGPT) */}
+        {/* TAB 3: DIFUSIÓN Y ANUNCIOS GLOBALES */}
+        {activeTab === "notifications" && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <Card className="p-8 glass-panel border-t-4 border-t-amber-500 space-y-6 shadow-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                  <Megaphone size={24} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Difusión de Anuncios del Sistema</h2>
+                  <p className="text-sm text-zinc-400">Envía un comunicado o notificación instantánea a toda la comunidad de Codify.</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleBroadcastNotification} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-zinc-300 font-semibold mb-1">Título del Comunicado</label>
+                  <input
+                    type="text"
+                    required
+                    value={announcementTitle}
+                    onChange={(e) => setAnnouncementTitle(e.target.value)}
+                    placeholder="Ej: ¡Nueva actualización en la plataforma! 🚀"
+                    className="w-full p-3.5 rounded-xl bg-black/50 border border-white/10 text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-zinc-300 font-semibold mb-1">Mensaje Detallado</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={announcementMessage}
+                    onChange={(e) => setAnnouncementMessage(e.target.value)}
+                    placeholder="Ej: Hemos renovado el catálogo de cursos y añadido el nuevo módulo de Telecomunicaciones. ¡Entra a explorarlo!"
+                    className="w-full p-3.5 rounded-xl bg-black/50 border border-white/10 text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-zinc-300 font-semibold mb-1">Enlace de Destino (Opcional)</label>
+                  <input
+                    type="text"
+                    value={announcementLink}
+                    onChange={(e) => setAnnouncementLink(e.target.value)}
+                    placeholder="Ej: /cursos o /foro"
+                    className="w-full p-3.5 rounded-xl bg-black/50 border border-white/10 text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+
+                {/* Vista previa en vivo */}
+                {announcementTitle && (
+                  <div className="p-4 rounded-xl bg-black/40 border border-amber-500/30 space-y-2">
+                    <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
+                      Vista previa de cómo lo verán los usuarios:
+                    </span>
+                    <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                        <Sparkles size={16} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">{announcementTitle}</h4>
+                        <p className="text-xs text-zinc-400 mt-0.5">{announcementMessage || "Mensaje del anuncio..."}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={isBroadcasting}
+                  isLoading={isBroadcasting}
+                  leftIcon={<Send size={18} />}
+                  className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/20"
+                >
+                  {isBroadcasting ? "Transmitiendo a todos los usuarios..." : "Emitir Notificación Global 📢"}
+                </Button>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {/* TAB 4: PROMPT MAESTRO PARA IA (GEMINI / CHATGPT) */}
         {activeTab === "ai_prompt" && (
           <div className="max-w-4xl mx-auto space-y-6">
             <Card className="p-8 glass-panel border-l-4 border-l-accent space-y-6 shadow-2xl">
