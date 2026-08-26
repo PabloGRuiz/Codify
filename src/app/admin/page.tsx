@@ -8,14 +8,15 @@ import { Card } from "@/components/ui/Card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
-import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag, Bell, Send, Megaphone, Eye, Lock } from "lucide-react";
+import { ShieldAlert, Plus, Users, BookOpen, Sparkles, Check, Trash2, Award, Zap, Copy, GraduationCap, Edit2, Save, X, Tag, Bell, Send, Megaphone, Eye, Lock, Flag, AlertTriangle, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { ContentReport, ReportStatus, ReportType } from "@/types";
 
 export default function AdminPage() {
   const router = useRouter();
   const { isCollapsed } = useSidebar();
   const { user, isProfesor, isAdmin, loading: userLoading } = useUser();
-  const [activeTab, setActiveTab] = useState<"courses" | "content" | "users" | "notifications" | "ai_prompt">("courses");
+  const [activeTab, setActiveTab] = useState<"courses" | "content" | "users" | "notifications" | "reports" | "ai_prompt">("courses");
   
   // Data States
   const [courses, setCourses] = useState<any[]>([]);
@@ -70,6 +71,12 @@ export default function AdminPage() {
   const [announcementLink, setAnnouncementLink] = useState("");
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
+  // Content Reports State
+  const [reports, setReports] = useState<any[]>([]);
+  const [reportFilter, setReportFilter] = useState<"all" | "pending" | "in_review" | "resolved">("all");
+  const [adminNoteInputs, setAdminNoteInputs] = useState<{ [id: string]: string }>({});
+  const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
+
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
   useEffect(() => {
@@ -110,6 +117,20 @@ export default function AdminPage() {
       if (profData) {
         setProfiles(profData);
         if (profData.length > 0 && !selectedUserId) setSelectedUserId(profData[0].id);
+      }
+
+      // 4. Fetch content reports
+      const { data: repData } = await supabase
+        .from("content_reports")
+        .select("*, profiles(username, avatar_url), challenges(id, title, challenge_type, modules(courses(title)))")
+        .order("created_at", { ascending: false });
+      if (repData) {
+        setReports(repData);
+        const initialNotes: { [id: string]: string } = {};
+        repData.forEach((r: any) => {
+          if (r.admin_notes) initialNotes[r.id] = r.admin_notes;
+        });
+        setAdminNoteInputs(initialNotes);
       }
     } catch (e: any) {
       console.error("Error fetching admin data:", e?.message || String(e));
@@ -380,6 +401,37 @@ export default function AdminPage() {
     }
   };
 
+  // Update Report Status and Notes
+  const handleUpdateReport = async (reportId: string, newStatus: ReportStatus) => {
+    setUpdatingReportId(reportId);
+    const note = adminNoteInputs[reportId] || "";
+
+    // Optimistic update
+    setReports((prev) =>
+      prev.map((r) => (r.id === reportId ? { ...r, status: newStatus, admin_notes: note } : r))
+    );
+
+    try {
+      const { error } = await supabase
+        .from("content_reports")
+        .update({
+          status: newStatus,
+          admin_notes: note,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", reportId);
+
+      if (error) throw error;
+      alert(`Reporte actualizado a "${newStatus === 'resolved' ? 'Resuelto' : newStatus === 'in_review' ? 'En Revisión' : newStatus}" con éxito.`);
+    } catch (err: any) {
+      console.error("Error actualizando reporte:", err);
+      alert("Error al actualizar reporte: " + err.message);
+      fetchAdminData();
+    } finally {
+      setUpdatingReportId(null);
+    }
+  };
+
   // AI Prompt Template
   const aiPromptText = `Actúa como un Diseñador Curricular de Programación y Experto en JavaScript para la plataforma gamificada "Codify".
 
@@ -468,6 +520,19 @@ Genera el script SQL completo listo para copiar y pegar.`;
               }`}
             >
               <Bell size={16} /> Difusión & Anuncios
+            </button>
+            <button
+              onClick={() => setActiveTab("reports")}
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeTab === "reports" ? "bg-red-500 text-white shadow-lg shadow-red-500/20" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <Flag size={16} /> Reportes de Contenido
+              {reports.filter((r) => r.status === "pending").length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 bg-white text-red-600 text-[10px] font-black rounded-full shadow">
+                  {reports.filter((r) => r.status === "pending").length}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab("ai_prompt")}
@@ -1159,7 +1224,203 @@ Genera el script SQL completo listo para copiar y pegar.`;
           </div>
         )}
 
-        {/* TAB 4: PROMPT MAESTRO PARA IA (GEMINI / CHATGPT) */}
+        {/* TAB 4: GESTIÓN DE REPORTES DE CONTENIDO */}
+        {activeTab === "reports" && (
+          <div className="space-y-6">
+            {/* Header y Filtros */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/40 p-4 rounded-2xl border border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center">
+                  <Flag size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Incidencias y Reportes de Contenido</h2>
+                  <p className="text-xs text-zinc-400">Revisa avisos enviados por estudiantes sobre errores en teoría, quizzes o evaluadores.</p>
+                </div>
+              </div>
+
+              {/* Botones de Filtro */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-black/60 p-1 rounded-xl border border-white/10 text-xs font-semibold">
+                <button
+                  onClick={() => setReportFilter("all")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    reportFilter === "all" ? "bg-white/15 text-white shadow" : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  Todos ({reports.length})
+                </button>
+                <button
+                  onClick={() => setReportFilter("pending")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    reportFilter === "pending" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  Pendientes ({reports.filter((r) => r.status === "pending").length})
+                </button>
+                <button
+                  onClick={() => setReportFilter("in_review")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    reportFilter === "in_review" ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  En Revisión ({reports.filter((r) => r.status === "in_review").length})
+                </button>
+                <button
+                  onClick={() => setReportFilter("resolved")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    reportFilter === "resolved" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  Resueltos ({reports.filter((r) => r.status === "resolved").length})
+                </button>
+              </div>
+            </div>
+
+            {/* Lista de Reportes */}
+            {reports.filter((r) => reportFilter === "all" || r.status === reportFilter).length === 0 ? (
+              <Card className="p-12 text-center space-y-3 glass-panel">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-zinc-500">
+                  <CheckCircle size={28} />
+                </div>
+                <h3 className="text-lg font-bold text-white">No hay reportes en esta sección</h3>
+                <p className="text-xs text-zinc-400">Todos los cursos y lecciones se encuentran al día y sin incidencias reportadas.</p>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {reports
+                  .filter((r) => reportFilter === "all" || r.status === reportFilter)
+                  .map((rep) => {
+                    const statusColor =
+                      rep.status === "resolved"
+                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                        : rep.status === "in_review"
+                        ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                        : rep.status === "dismissed"
+                        ? "bg-zinc-500/20 text-zinc-400 border-zinc-500/30"
+                        : "bg-amber-500/20 text-amber-300 border-amber-500/30";
+
+                    const typeLabels: { [k: string]: { label: string; color: string } } = {
+                      theory_error: { label: "Error en Teoría", color: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" },
+                      quiz_error: { label: "Error en Quiz", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
+                      test_code_error: { label: "Error en Tests", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" },
+                      typo: { label: "Redacción/Tipografía", color: "bg-sky-500/20 text-sky-300 border-sky-500/30" },
+                      other: { label: "Otro Problema", color: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
+                    };
+
+                    const typeInfo = typeLabels[rep.report_type] || { label: rep.report_type, color: "bg-zinc-500/20 text-zinc-300 border-zinc-500/30" };
+                    const courseTitle = rep.challenges?.modules?.courses?.title || "Curso General";
+
+                    return (
+                      <Card key={rep.id} className="p-6 glass-panel border border-white/10 space-y-4 shadow-xl">
+                        {/* Header de la tarjeta */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Status badge */}
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider ${statusColor}`}>
+                              {rep.status === "pending" ? "Pendiente" : rep.status === "in_review" ? "En Revisión" : rep.status === "resolved" ? "Resuelto" : "Descartado"}
+                            </span>
+
+                            {/* Category badge */}
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${typeInfo.color}`}>
+                              {typeInfo.label}
+                            </span>
+                          </div>
+
+                          <div className="text-xs text-zinc-400 flex items-center gap-1.5 font-mono">
+                            <Clock size={13} />
+                            <span>{new Date(rep.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                          </div>
+                        </div>
+
+                        {/* Contenido del reporte */}
+                        <div className="space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <h3 className="text-base font-bold text-white">{rep.title}</h3>
+                            
+                            {/* Link directo al reto */}
+                            {rep.challenge_id && (
+                              <Link
+                                href={`/ide/${rep.challenge_id}`}
+                                target="_blank"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 border border-primary/30 text-xs font-bold transition-all shrink-0"
+                              >
+                                <span>Abrir Reto en IDE</span>
+                                <ExternalLink size={13} />
+                              </Link>
+                            )}
+                          </div>
+
+                          {/* Info del reto afectado */}
+                          <div className="text-xs text-zinc-400 flex flex-wrap items-center gap-x-3 gap-y-1 bg-black/40 p-2.5 rounded-xl border border-white/5">
+                            <span>📚 <strong>Curso:</strong> {courseTitle}</span>
+                            <span>🎯 <strong>Reto:</strong> {rep.challenges?.title || "Lección"}</span>
+                            <span>👤 <strong>Reportado por:</strong> @{rep.profiles?.username || "Usuario"}</span>
+                          </div>
+
+                          <div className="p-3.5 rounded-xl bg-black/60 border border-white/10 text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                            {rep.description}
+                          </div>
+                        </div>
+
+                        {/* Gestión del Estado y Notas del Admin */}
+                        <div className="pt-2 border-t border-white/10 flex flex-col md:flex-row items-start md:items-center gap-3">
+                          <div className="flex-1 w-full">
+                            <input
+                              type="text"
+                              value={adminNoteInputs[rep.id] ?? ""}
+                              onChange={(e) => setAdminNoteInputs({ ...adminNoteInputs, [rep.id]: e.target.value })}
+                              placeholder="Notas de resolución del administrador (opcional)..."
+                              className="w-full p-2.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white outline-none focus:border-indigo-500"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {rep.status !== "in_review" && rep.status !== "resolved" && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                disabled={updatingReportId === rep.id}
+                                onClick={() => handleUpdateReport(rep.id, "in_review")}
+                                className="text-xs text-blue-400 hover:text-blue-300"
+                              >
+                                En Revisión
+                              </Button>
+                            )}
+
+                            {rep.status !== "resolved" && (
+                              <Button
+                                size="sm"
+                                disabled={updatingReportId === rep.id}
+                                onClick={() => handleUpdateReport(rep.id, "resolved")}
+                                className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs"
+                                leftIcon={<CheckCircle size={14} />}
+                              >
+                                Marcar Resuelto ✅
+                              </Button>
+                            )}
+
+                            {rep.status !== "dismissed" && rep.status === "resolved" && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                disabled={updatingReportId === rep.id}
+                                onClick={() => handleUpdateReport(rep.id, "pending")}
+                                className="text-xs text-zinc-400"
+                              >
+                                Reabrir
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 5: PROMPT MAESTRO PARA IA (GEMINI / CHATGPT) */}
         {activeTab === "ai_prompt" && (
           <div className="max-w-4xl mx-auto space-y-6">
             <Card className="p-8 glass-panel border-l-4 border-l-accent space-y-6 shadow-2xl">

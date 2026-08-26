@@ -51,3 +51,33 @@ export interface Notification {
   read: boolean;
   created_at: string;
 }
+
+export type ReportType = "theory_error" | "quiz_error" | "test_code_error" | "typo" | "other";
+export type ReportStatus = "pending" | "in_review" | "resolved" | "dismissed";
+
+export interface ContentReport {
+  id: string;
+  user_id: string;
+  challenge_id?: string | null;
+  course_id?: string | null;
+  report_type: ReportType;
+  title: string;
+  description: string;
+  status: ReportStatus;
+  admin_notes?: string | null;
+  created_at: string;
+  updated_at?: string;
+  profile?: {
+    username: string;
+    avatar_url?: string;
+  };
+  challenge?: {
+    id: string;
+    title: string;
+    challenge_type: string;
+  };
+  course?: {
+    id: string;
+    title: string;
+  };
+}

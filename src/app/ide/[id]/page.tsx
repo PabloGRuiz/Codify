@@ -21,7 +21,8 @@ import {
   PanelLeftOpen,
   Globe,
   RefreshCw,
-  Eye
+  Eye,
+  Flag
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
@@ -31,6 +32,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { QuizRunner } from "@/components/ide/QuizRunner";
+import { ReportIssueModal } from "@/components/ide/ReportIssueModal";
 import { getLevelInfo } from "@/lib/gamification";
 
 // Deshabilitar SSR para Monaco Editor con Loading State amigable
@@ -151,12 +153,13 @@ export default function ChallengeIDEPage() {
   const [activeTab, setActiveTab] = useState<"theory" | "code">("theory");
   const [bottomTab, setBottomTab] = useState<"console" | "preview">("console");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const fetchChallenge = async () => {
-      const { data } = await supabase.from("challenges").select("*").eq("id", id).single();
+      const { data } = await supabase.from("challenges").select("*, modules(id, course_id, title)").eq("id", id).single();
       if (data) {
         setChallenge(data);
         setCode(data.initial_code || "");
@@ -365,7 +368,17 @@ export default function ChallengeIDEPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Report Problem Button */}
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-zinc-400 hover:text-amber-400 hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 transition-all flex items-center gap-1.5 text-xs font-semibold"
+              title="Reportar un error o problema en este reto"
+            >
+              <Flag size={15} />
+              <span className="hidden sm:inline">Reportar</span>
+            </button>
+
             <span className="text-primary font-bold text-xs lg:text-sm bg-primary/10 px-2 lg:px-3 py-1 lg:py-1.5 rounded-full border border-primary/20 hidden sm:block">
               +{challenge.xp_reward} XP
             </span>
@@ -544,6 +557,18 @@ export default function ChallengeIDEPage() {
           </main>
         )}
       </div>
+
+      {/* Report Issue Modal */}
+      {challenge && (
+        <ReportIssueModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          challengeId={challenge.id}
+          challengeTitle={challenge.title}
+          challengeType={challenge.challenge_type}
+          courseId={challenge.modules?.course_id}
+        />
+      )}
 
       {/* SUCCESS CELEBRATION MODAL */}
       <AnimatePresence>
