@@ -40,7 +40,12 @@ export default function Home() {
   const router = useRouter();
   const [activeDashboardTab, setActiveDashboardTab] = useState<"roadmap" | "arena" | "news" | "quests">("roadmap");
   const [showStreakModal, setShowStreakModal] = useState(false);
-  const { enrollments, loading: loadingEnrollments, unenrollCourse } = useEnrollments(user?.id, userLoading);
+  const { 
+    enrollments, 
+    loading: loadingEnrollments, 
+    unenrollCourse,
+    certifiedCourseIds 
+  } = useEnrollments(user?.id, userLoading);
 
   useEffect(() => {
     if (!userLoading && !loadingEnrollments && enrollments.length === 0 && user) {
@@ -135,6 +140,7 @@ export default function Home() {
                 enrollments={enrollments} 
                 loadingEnrollments={loadingEnrollments} 
                 onUnenroll={unenrollCourse}
+                certifiedCourseIds={certifiedCourseIds}
               />
               <GamificationWidget 
                 setShowStreakModal={setShowStreakModal}

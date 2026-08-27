@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useSidebar } from "@/context/SidebarContext";
 import { supabase } from "@/lib/supabase";
-import { BookOpen, Star, Users, ChevronRight, GraduationCap, CheckCircle2, Trash2, Lock, ShieldAlert } from "lucide-react";
+import { BookOpen, Star, Users, ChevronRight, GraduationCap, CheckCircle2, Trash2, Lock, ShieldAlert, Award } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { useEnrollments } from "@/hooks/useEnrollments";
@@ -20,6 +20,7 @@ export default function CatalogPage() {
   
   const [courses, setCourses] = useState<any[]>([]);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
+  const [certifiedCourseIds, setCertifiedCourseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [courseToUnenroll, setCourseToUnenroll] = useState<{ id: string; title: string } | null>(null);
   const [isUnenrolling, setIsUnenrolling] = useState(false);
@@ -46,7 +47,7 @@ export default function CatalogPage() {
         setCourses(coursesData);
       }
 
-      // 2. Fetch user enrollments if logged in
+      // 2. Fetch user enrollments and certifications if logged in
       if (user) {
         const { data: enrData } = await supabase
           .from("course_enrollments")
@@ -55,6 +56,18 @@ export default function CatalogPage() {
 
         if (enrData) {
           setEnrolledCourseIds(new Set(enrData.map((e) => e.course_id)));
+        }
+
+        const { data: certsData } = await supabase
+          .from("user_certifications")
+          .select("certification:certifications(course_id)")
+          .eq("user_id", user.id);
+
+        if (certsData) {
+          const certCourseIds = certsData
+            .map((c: any) => c.certification?.course_id)
+            .filter(Boolean);
+          setCertifiedCourseIds(new Set(certCourseIds));
         }
       }
     } catch (err) {
@@ -151,6 +164,7 @@ export default function CatalogPage() {
                   const userLevel = profile?.level || Math.floor((profile?.xp || 0) / 100) + 1;
                   const levelMet = !course.min_level || userLevel >= course.min_level;
                   const isLocked = !isEnrolled && (!prereqCompleted || !levelMet);
+                  const isCertified = certifiedCourseIds.has(course.id);
 
                   const typeTag = course.tags?.find((t: string) => {
                     const lower = t.toLowerCase();
@@ -199,6 +213,12 @@ export default function CatalogPage() {
                                 : "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
                             }`}>
                               {typeTag}
+                            </span>
+                          )}
+                          {isCertified && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
+                              <Award size={12} />
+                              Certificado
                             </span>
                           )}
                         </div>

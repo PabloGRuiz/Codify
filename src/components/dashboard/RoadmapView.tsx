@@ -8,9 +8,10 @@ interface RoadmapViewProps {
   loadingEnrollments: boolean;
   enrollments: any[];
   onUnenroll?: (courseId: string) => Promise<{ success: boolean; error?: any } | void>;
+  certifiedCourseIds?: Set<string>;
 }
 
-export function RoadmapView({ loadingEnrollments, enrollments, onUnenroll }: RoadmapViewProps) {
+export function RoadmapView({ loadingEnrollments, enrollments, onUnenroll, certifiedCourseIds = new Set() }: RoadmapViewProps) {
   const [courseToUnenroll, setCourseToUnenroll] = useState<{ id: string; title: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -75,15 +76,22 @@ export function RoadmapView({ loadingEnrollments, enrollments, onUnenroll }: Roa
                         <h4 className="font-bold text-white group-hover:text-primary transition-colors line-clamp-1 flex-1 pr-2">
                           {course.title}
                         </h4>
-                        {typeTag && (
-                          <span className={`text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-md border shrink-0 ${
-                            isTeorico
-                              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                              : "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
-                          }`}>
-                            {typeTag}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {typeTag && (
+                            <span className={`text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-md border ${
+                              isTeorico
+                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                : "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
+                            }`}>
+                              {typeTag}
+                            </span>
+                          )}
+                          {certifiedCourseIds.has(courseId) && (
+                            <span className="text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-md border bg-amber-500/20 text-amber-400 border-amber-500/30 flex items-center gap-1">
+                              <Star size={10} className="fill-amber-400" /> Certificado
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-xs text-zinc-400 mb-4 line-clamp-2 flex-1">{course.description}</p>
                       <div className="mt-auto space-y-1.5">

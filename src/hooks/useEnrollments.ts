@@ -4,6 +4,7 @@ import type { Course, Module, Challenge } from "@/types";
 
 export function useEnrollments(userId: string | undefined, userLoading: boolean) {
   const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [certifiedCourseIds, setCertifiedCourseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +24,19 @@ export function useEnrollments(userId: string | undefined, userLoading: boolean)
           .from("course_enrollments")
           .select("*, courses(*, modules(id, title, challenges(id)))")
           .eq("user_id", userId);
+
+        // Fetch User Certifications
+        const { data: certsData } = await supabase
+          .from("user_certifications")
+          .select("certification:certifications(course_id)")
+          .eq("user_id", userId);
+
+        if (certsData) {
+          const certCourseIds = certsData
+            .map((c: any) => c.certification?.course_id)
+            .filter(Boolean);
+          setCertifiedCourseIds(new Set(certCourseIds));
+        }
 
         if (enrError) throw enrError;
 
@@ -104,24 +118,25 @@ export function useEnrollments(userId: string | undefined, userLoading: boolean)
     }
   };
 
-  const courseProgressMap: Record<string, number> = {};
-  const completedCourseIds = new Set<string>();
-
-  enrollments.forEach((enr) => {
-    const cid = enr.course_id || enr.courses?.id;
-    if (cid) {
-      courseProgressMap[cid] = enr.calculated_progress || 0;
-      if (enr.calculated_progress === 100) {
-        completedCourseIds.add(cid);
-      }
+  const courseProgressMap = enrollments.reduce((acc, curr) => {
+    const courseId = curr.course_id || curr.courses?.id;
+    if (courseId) {
+      acc[courseId] = curr.calculated_progress || 0;
     }
-  });
+    return acc;
+  }, {} as Record<string, number>);
 
-  return { 
-    enrollments, 
-    loading, 
-    unenrollCourse, 
-    courseProgressMap, 
-    completedCourseIds 
+  return {
+    enrollments,
+    loading,
+    unenrollCourse,
+    completedCourseIds: new Set(
+      enrollments
+        .filter((e) => e.calculated_progress === 100)
+        .map((e) => e.course_id || e.courses?.id)
+        .filter(Boolean)
+    ),
+    courseProgressMap,
+    certifiedCourseIds
   };
 }
