@@ -1,9 +1,8 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 14 / 27 - CURSO COMPLETO: FUNDAMENTOS IT Y LÓGICA
+-- 🚀 CODIFY SEED: 27 - MIGRACIÓN / ACTUALIZACIÓN: CURSO FUNDAMENTOS IT Y LÓGICA
 -- ==============================================================================
--- Este script crea/actualiza el curso base:
--- "Fundamentos IT y Lógica"
--- adaptándolo 100% al Examen Integrador y Certificación Profesional (CERT-IT-101).
+-- Este script actualiza el curso existente "Fundamentos IT y Lógica"
+-- sincronizándolo de forma 100% coherente con el Examen Integrador (CERT-IT-101).
 --
 -- Estructura: 3 Módulos Progresivos con 12 Lecciones Interactivas completas.
 -- ==============================================================================
