@@ -5,8 +5,10 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Check, Lock, Play, Star, Trophy, Zap, ShieldCheck, ArrowRight, BookOpen } from "lucide-react";
+import { Check, Lock, Play, Star, Trophy, Zap, ShieldCheck, ArrowRight, BookOpen, GraduationCap, Award, Sparkles, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { Certification, UserCertification } from "@/types";
+import { ExamModal } from "@/components/certifications/ExamModal";
 
 interface ChallengeNode {
   id: string;
@@ -37,6 +39,11 @@ export function LearningPath({ courseId }: { courseId?: string }) {
   const [challenges, setChallenges] = useState<ChallengeNode[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Certifications State
+  const [certification, setCertification] = useState<Certification | null>(null);
+  const [userCert, setUserCert] = useState<UserCertification | null>(null);
+  const [isExamOpen, setIsExamOpen] = useState(false);
 
   useEffect(() => {
     const fetchModulesAndProgress = async () => {
@@ -79,12 +86,15 @@ export function LearningPath({ courseId }: { courseId?: string }) {
             const sortedChallenges = (mod.challenges || []).sort(
               (a: ChallengeNode, b: ChallengeNode) => (a.order_index || 0) - (b.order_index || 0)
             );
-            const total = sortedChallenges.length;
-            const completed = sortedChallenges.filter((c: ChallengeNode) => completedSet.has(c.id)).length;
-            const isCompleted = total > 0 && completed === total;
-            const isUnlocked = index === 0 || canUnlockNext;
 
-            // Bloquear módulos siguientes si este módulo aún no se ha completado al 100%
+            const totalChallenges = sortedChallenges.length;
+            const completedChallenges = sortedChallenges.filter((c: ChallengeNode) =>
+              completedSet.has(c.id)
+            ).length;
+
+            const isCompleted = totalChallenges > 0 && completedChallenges === totalChallenges;
+            const isUnlocked = canUnlockNext;
+
             if (!isCompleted) {
               canUnlockNext = false;
             }
@@ -94,8 +104,8 @@ export function LearningPath({ courseId }: { courseId?: string }) {
               title: mod.title,
               description: mod.description,
               challenges: sortedChallenges,
-              totalChallenges: total,
-              completedChallenges: completed,
+              totalChallenges,
+              completedChallenges,
               isCompleted,
               isUnlocked,
               prevModuleTitle: index > 0 ? modulesData[index - 1].title : undefined,
@@ -116,7 +126,6 @@ export function LearningPath({ courseId }: { courseId?: string }) {
           }
           
           if (!defaultModId) {
-            // Seleccionar el primer módulo desbloqueado pendiente o el primero
             const activeOrFirst = processedModules.find(m => m.isUnlocked && !m.isCompleted) || processedModules[0];
             defaultModId = activeOrFirst?.id || processedModules[0].id;
           }
@@ -126,6 +135,33 @@ export function LearningPath({ courseId }: { courseId?: string }) {
           setModules([]);
           setSelectedModuleId("");
           setChallenges([]);
+        }
+
+        // 3. Fetch Certification if courseId exists
+        if (courseId) {
+          const { data: certData } = await supabase
+            .from("certifications")
+            .select("*, certification_questions(*)")
+            .eq("course_id", courseId)
+            .maybeSingle();
+
+          if (certData) {
+            setCertification(certData as any);
+
+            // Check if user already holds this certification
+            if (user) {
+              const { data: uCertData } = await supabase
+                .from("user_certifications")
+                .select("*, certification:certifications(*)")
+                .eq("user_id", user.id)
+                .eq("certification_id", certData.id)
+                .maybeSingle();
+
+              if (uCertData) {
+                setUserCert(uCertData as any);
+              }
+            }
+          }
         }
       } catch (e: unknown) {
         const err = e as Error;
@@ -367,6 +403,92 @@ export function LearningPath({ courseId }: { courseId?: string }) {
             })
           )}
         </div>
+      )}
+
+      {/* BANNER DE CERTIFICACIÓN OFICIAL */}
+      {certification && (
+        <div className="pt-4 border-t border-white/10">
+          {userCert ? (
+            /* CERTIFICADO YA OBTENIDO */
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-amber-500/15 border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+              <div className="flex items-center gap-4 text-center sm:text-left">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20">
+                  <Award size={30} />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                      Certificación Obtenida ✅
+                    </span>
+                    <span className="text-xs text-zinc-400 font-mono">
+                      Nota: <strong className="text-emerald-400">{userCert.score}%</strong>
+                    </span>
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-white mt-1">
+                    {certification.title}
+                  </h4>
+                  <p className="text-xs text-zinc-400 font-mono">
+                    ID de Verificación: {userCert.verification_code}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Link href={`/certificados/${userCert.verification_code}`}>
+                  <Button
+                    size="sm"
+                    className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/20 text-xs"
+                    leftIcon={<GraduationCap size={15} />}
+                  >
+                    Ver Diploma Oficial 📜
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : modules.length > 0 && modules.every((m) => m.isCompleted) ? (
+            /* CURSO 100% COMPLETADO - LISTO PARA EXAMEN */
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/20 via-primary/20 to-amber-500/20 border-2 border-amber-500/50 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl animate-pulse-slow">
+              <div className="flex items-center gap-4 text-center sm:text-left">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-[0_0_25px_rgba(245,158,11,0.3)] animate-bounce">
+                  <GraduationCap size={32} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/40">
+                    ¡Has completado todos los módulos! 🏆
+                  </span>
+                  <h4 className="text-base sm:text-lg font-bold text-white mt-1">
+                    Rinde tu Examen de Certificación Oficial
+                  </h4>
+                  <p className="text-xs text-zinc-300 max-w-md">
+                    Demuestra tu dominio técnico, obtén tu insignia y acredita tus competencias en tu perfil (+{certification.xp_reward} XP).
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                size="sm"
+                onClick={() => setIsExamOpen(true)}
+                leftIcon={<Sparkles size={16} />}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-black text-xs shadow-xl shadow-amber-500/30 px-4 py-2.5 shrink-0"
+              >
+                Rendir Examen 🚀
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Modal de Examen */}
+      {certification && (
+        <ExamModal
+          isOpen={isExamOpen}
+          onClose={() => setIsExamOpen(false)}
+          certification={certification}
+          courseTitle={modules[0]?.title || "Curso"}
+          onCertificationAchieved={(newCert) => {
+            setUserCert(newCert);
+          }}
+        />
       )}
 
     </Card>

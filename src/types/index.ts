@@ -81,3 +81,59 @@ export interface ContentReport {
     title: string;
   };
 }
+
+export interface Certification {
+  id: string;
+  course_id: string;
+  title: string;
+  code: string;
+  description: string;
+  min_passing_score: number;
+  time_limit_minutes: number;
+  xp_reward: number;
+  badge_theme: "gold" | "emerald" | "cyan" | "purple" | "crimson";
+  skills_validated: string[];
+  created_at: string;
+  questions?: CertificationQuestion[];
+  courses?: {
+    id: string;
+    title: string;
+    description: string;
+    tags?: string[];
+  };
+}
+
+export interface CertificationQuestion {
+  id: string;
+  certification_id: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation?: string;
+  created_at: string;
+}
+
+export interface UserCertification {
+  id: string;
+  user_id: string;
+  certification_id: string;
+  verification_code: string;
+  score: number;
+  issued_at: string;
+  certification?: Certification;
+  profile?: {
+    username: string;
+    avatar_url?: string;
+  };
+}
+
+export interface ExamAttempt {
+  id: string;
+  user_id: string;
+  certification_id: string;
+  score: number;
+  passed: boolean;
+  total_questions: number;
+  correct_answers: number;
+  created_at: string;
+}

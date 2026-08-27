@@ -28,6 +28,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import Link from "next/link";
+import { UserCertification } from "@/types";
 
 interface TargetProfile {
   id: string;
@@ -60,6 +61,7 @@ export default function PublicProfilePage() {
 
   const [targetProfile, setTargetProfile] = useState<TargetProfile | null>(null);
   const [completedChallenges, setCompletedChallenges] = useState<CompletedChallenge[]>([]);
+  const [userCerts, setUserCerts] = useState<UserCertification[]>([]);
   const [coursesStats, setCoursesStats] = useState<{ totalEnrolled: number; completedCourses: number }>({
     totalEnrolled: 0,
     completedCourses: 0,
@@ -152,6 +154,17 @@ export default function PublicProfilePage() {
           totalEnrolled: enrollmentsData.length,
           completedCourses: finishedCount,
         });
+      }
+
+      // 4. Fetch User Certifications
+      const { data: certsData } = await supabase
+        .from("user_certifications")
+        .select("*, certification:certifications(*)")
+        .eq("user_id", targetUserId)
+        .order("issued_at", { ascending: false });
+
+      if (certsData) {
+        setUserCerts(certsData as any);
       }
 
     } catch (err) {
@@ -368,6 +381,65 @@ export default function PublicProfilePage() {
               <span className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Cursos Completados</span>
             </Card>
           </div>
+
+          {/* Official Certifications Section */}
+          {userCerts.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-heading font-bold text-white flex items-center gap-2">
+                  <GraduationCap className="text-amber-400" size={24} />
+                  <span>Certificaciones Oficiales de Codify</span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold font-mono border border-amber-500/30">
+                    {userCerts.length}
+                  </span>
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {userCerts.map((uc) => (
+                  <Card
+                    key={uc.id}
+                    className="p-5 glass-panel border-2 border-amber-500/30 hover:border-amber-500/60 transition-all space-y-4 shadow-xl relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400 text-amber-400 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20">
+                          <Award size={26} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                            Aprobado • {uc.score}%
+                          </span>
+                          <h4 className="font-bold text-white text-base mt-1 line-clamp-1">
+                            {uc.certification?.title || "Certificado Oficial"}
+                          </h4>
+                          <p className="text-[11px] text-zinc-400 font-mono">
+                            Emitido el {new Date(uc.issued_at).toLocaleDateString("es-ES")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+                      <span className="text-zinc-500 font-mono text-[11px]">
+                        ID: <strong className="text-zinc-300">{uc.verification_code}</strong>
+                      </span>
+                      <Link href={`/certificados/${uc.verification_code}`}>
+                        <Button
+                          size="sm"
+                          className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs shadow-lg shadow-amber-500/20"
+                        >
+                          Ver Diploma 📜
+                        </Button>
+                      </Link>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
