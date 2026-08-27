@@ -351,7 +351,7 @@ En lugar de cortar por número ciego de caracteres, partimos por **secciones Mar
   VALUES (
     v_m3_id,
     '1. La Arquitectura Transformer y el Mecanismo de Auto-Atención',
-    'Descubre el paper \'Attention Is All You Need\' y cómo las matrices Q, K y V revolucionaron la IA.',
+    'Descubre el paper "Attention Is All You Need" y cómo las matrices Q, K y V revolucionaron la IA.',
     'quiz',
     125,
     $THEORY$# La Arquitectura Transformer (2017)
