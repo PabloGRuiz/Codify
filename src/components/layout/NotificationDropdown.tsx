@@ -15,8 +15,7 @@ import {
   X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
+import { formatTimeAgo } from "@/lib/formatTime";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Notification } from "@/types";
 
@@ -191,12 +190,7 @@ export function NotificationDropdown() {
                 </div>
               ) : (
                 filteredNotifications.map((n) => {
-                  let timeAgo = "";
-                  try {
-                    timeAgo = formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: es });
-                  } catch (e) {
-                    timeAgo = "recientemente";
-                  }
+                  const timeAgo = formatTimeAgo(n.created_at);
 
                   return (
                     <div
