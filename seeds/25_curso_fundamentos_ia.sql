@@ -7,7 +7,7 @@
 -- 3. Tres módulos secuenciales con 12 lecciones completas (Teoría + Quizzes)
 -- ==============================================================================
 
-DO $$
+DO $COURSE_SEED$
 DECLARE
   v_author_id UUID;
   v_prereq_id UUID;
@@ -52,7 +52,7 @@ En este curso aprenderás qué es una red neuronal, cómo se calcula la probabil
 - **Machine Learning vs Programación Clásica:** Redes neuronales, funciones de activación, pesos, sesgos y entrenamiento.
 - **Modelos de Lenguaje (LLMs):** Qué es un LLM, predicción probabilística de tokens, context window, temperatura y top-p.
 - **Embeddings y Espacios Vectoriales:** Representación geométrica del significado semántico en 1536+ dimensiones.
-- **Matemáticas de Similitud:** Similitud Coseno ($\cos \theta$), Distancia Euclidiana ($L2$) y Producto Punto.
+- **Matemáticas de Similitud:** Similitud Coseno (cos θ), Distancia Euclidiana (L2) y Producto Punto.
 - **Bases de Datos Vectoriales:** Indexación con HNSW, IVF y motores como ChromaDB, Pinecone y `pgvector`.
 - **Arquitectura Transformer:** El revolucionario mecanismo de auto-atención (*Self-Attention*).
 - **RAG (Retrieval-Augmented Generation):** Conexión de LLMs a bases de conocimiento privadas para eliminar alucinaciones.
@@ -154,9 +154,9 @@ Los modelos de IA no procesan letras ni palabras directamente: procesan **tokens
 
 ### 1. ¿Qué es un Token?
 Un token es una unidad básica de texto (un fragmento de palabra, palabra completa o signo de puntuación) que se asigna a un identificador numérico entero.
-- En promedio: **1 token $\approx$ 4 caracteres en inglés o 0.75 palabras**.
+- En promedio: **1 token equivale a aprox. 4 caracteres en inglés o 0.75 palabras**.
 - Palabras comunes como `"gato"` suelen ser 1 token (`[4120]`).
-- Palabras poco comunes, código o idiomas con alfabetos no latinos pueden dividirse en múltiples subtokens (ej: `"desoxirribonucleico"` $\to$ 4 tokens).
+- Palabras poco comunes, código o idiomas con alfabetos no latinos pueden dividirse en múltiples subtokens (ej: `"desoxirribonucleico"` se divide en 4 tokens).
 
 ### 2. La Ventana de Contexto (*Context Window*):
 Es el límite máximo de tokens (entrada + salida generada) que el modelo puede "ver" y procesar simultáneamente en una sola conversación.
@@ -164,8 +164,8 @@ Es el límite máximo de tokens (entrada + salida generada) que el modelo puede 
 - **GPT-4 Turbo**: 128,000 tokens (~300 páginas).
 - **Gemini 1.5 Pro**: 1,000,000+ tokens (~2,500 páginas de código o libros enteros).
 
-> **Impacto computacional**: El mecanismo de atención tradicional tiene una complejidad computacional cuadrática $O(N^2)$, lo que significa que duplicar la ventana de contexto multiplica por cuatro el coste de memoria y cálculo si no se usan optimizaciones.$THEORY$,
-    $JSON$[{"id":"q1","question":"¿Por qué los LLMs utilizan tokenización (como Byte-Pair Encoding) en lugar de procesar palabras completas del diccionario?","options":["Porque los diccionarios ocupan demasiado espacio en disco","Para manejar palabras compuestas, errores ortográficos, neologismos y código desconocido dividiéndolos en sub-palabras eficientes","Porque las computadoras no pueden procesar letras","Para hacer las respuestas intencionadamente más lentas"],"correctIndex":1,"explanation":"La tokenización por sub-palabras permite un vocabulario de tamaño fijo que puede descomponer cualquier texto sin fallar por palabras fuera de vocabulario."},{"id":"q2","question":"Aproximadamente, ¿cuántas palabras en español o inglés equivalen a 1,000 tokens?","options":["10,000 palabras","Aproximadamente 750 palabras","Exactamente 1 palabra","100,000 palabras"],"correctIndex":1,"explanation":"Como regla general de la industria, 1 token equivale a unas 0.75 palabras (o ~4 caracteres). Por tanto 1,000 tokens $\\approx$ 750 palabras."},{"id":"q3","question":"¿Qué ocurre cuando una conversación excede el límite máximo de la ventana de contexto del modelo?","options":["La computadora del usuario se apaga","El modelo no puede 'recordar' ni atender a los tokens más antiguos a menos que se resuman o descarten","El modelo cobra el doble por token","El modelo genera código binario exclusivamente"],"correctIndex":1,"explanation":"Los tokens que caen fuera de la ventana de contexto activa son invisibles para el mecanismo de atención del modelo."}]$JSON$,
+> **Impacto computacional**: El mecanismo de atención tradicional tiene una complejidad computacional cuadrática O(N^2), lo que significa que duplicar la ventana de contexto multiplica por cuatro el coste de memoria y cálculo si no se usan optimizaciones.$THEORY$,
+    $JSON$[{"id":"q1","question":"¿Por qué los LLMs utilizan tokenización (como Byte-Pair Encoding) en lugar de procesar palabras completas del diccionario?","options":["Porque los diccionarios ocupan demasiado espacio en disco","Para manejar palabras compuestas, errores ortográficos, neologismos y código desconocido dividiéndolos en sub-palabras eficientes","Porque las computadoras no pueden procesar letras","Para hacer las respuestas intencionadamente más lentas"],"correctIndex":1,"explanation":"La tokenización por sub-palabras permite un vocabulario de tamaño fijo que puede descomponer cualquier texto sin fallar por palabras fuera de vocabulario."},{"id":"q2","question":"Aproximadamente, ¿cuántas palabras en español o inglés equivalen a 1,000 tokens?","options":["10,000 palabras","Aproximadamente 750 palabras","Exactamente 1 palabra","100,000 palabras"],"correctIndex":1,"explanation":"Como regla general de la industria, 1 token equivale a unas 0.75 palabras (o ~4 caracteres). Por tanto 1,000 tokens equivalen aprox. a 750 palabras."},{"id":"q3","question":"¿Qué ocurre cuando una conversación excede el límite máximo de la ventana de contexto del modelo?","options":["La computadora del usuario se apaga","El modelo no puede 'recordar' ni atender a los tokens más antiguos a menos que se resuman o descarten","El modelo cobra el doble por token","El modelo genera código binario exclusivamente"],"correctIndex":1,"explanation":"Los tokens que caen fuera de la ventana de contexto activa son invisibles para el mecanismo de atención del modelo."}]$JSON$,
     3
   );
 
@@ -224,15 +224,15 @@ Un **Embedding** es una representación numérica (un vector o arreglo de númer
 Un modelo de embedding (como `text-embedding-3-small` de OpenAI o modelos de HuggingFace) convierte un texto en un vector de, por ejemplo, **1,536 dimensiones**:
 
 ```
-"Perro"  --> [0.024, -0.045, 0.812, ..., -0.119] (1536 números)
-"Cachorro"--> [0.021, -0.041, 0.798, ..., -0.115] (Muy cercano a "Perro")
-"Automóvil"-> [-0.612, 0.401, -0.120, ..., 0.840] (Muy lejano en el espacio)
+"Perro"    --> [0.024, -0.045, 0.812, ..., -0.119] (1536 números)
+"Cachorro" --> [0.021, -0.041, 0.798, ..., -0.115] (Muy cercano a "Perro")
+"Automóvil"--> [-0.612, 0.401, -0.120, ..., 0.840] (Muy lejano en el espacio)
 ```
 
 ### 2. Propiedades Mágicas de los Embeddings:
 1. **Cercanía por Significado, no por Letras**: `"Médico"` y `"Doctor"` tienen letras distintas pero sus vectores están a milímetros de distancia en el espacio vectorial.
 2. **Aritmética Semántica**:
-   $$\vec{Rey} - \vec{Hombre} + \vec{Mujer} \approx \vec{Reina}$$
+   `Vector("Rey") - Vector("Hombre") + Vector("Mujer") ≈ Vector("Reina")`
 3. **Compresión Universal**: Permite indexar manuales, libros, código fuente y consultas de usuarios para búsqueda semántica.$THEORY$,
     $JSON$[{"id":"q1","question":"¿Cuál es la función principal de un modelo de Embeddings en el procesamiento del lenguaje natural?","options":["Comprimir un archivo ZIP","Convertir un texto en un vector numérico multidimensional que representa su significado conceptual y semántico","Traducir automáticamente texto de español a código binario de 8 bits","Corregir faltas de ortografía únicamente"],"correctIndex":1,"explanation":"Los embeddings ubican los textos como puntos en un espacio geométrico donde la cercanía física refleja similitud de significado."},{"id":"q2","question":"Si calculamos los embeddings de las frases 'El paciente tiene fiebre' y 'El enfermo presenta temperatura elevada', ¿cómo serán sus vectores?","options":["Estarán extremadamente alejados porque no comparten palabras iguales","Estarán muy cercanos en el espacio vectorial porque expresan el mismo significado semántico","Serán vectores de longitud cero","Darán un error matemático"],"correctIndex":1,"explanation":"Los modelos de embeddings entienden la semántica; por tanto, sinónimos y frases con significado idéntico generan vectores muy próximos."},{"id":"q3","question":"¿Qué tamaño típico suele tener un vector de embeddings en modelos modernos?","options":["1 solo número","Cientos o miles de dimensiones (ej. 768, 1536 o 3072 números de coma flotante)","Exactamente 2 dimensiones (X e Y)","Infinitas dimensiones"],"correctIndex":1,"explanation":"Los embeddings modernos utilizan espacios densos de entre 768 y 3072 dimensiones para capturar matices lingüísticos complejos."}]$JSON$,
     1
@@ -251,13 +251,15 @@ Un modelo de embedding (como `text-embedding-3-small` de OpenAI o modelos de Hug
 Para saber qué tan parecidos son dos textos, comparamos la orientación de sus vectores de embeddings en el espacio.
 
 ### 1. Similitud Coseno (*Cosine Similarity*):
-Es la métrica reina en IA. Mide el **coseno del ángulo $\theta$** entre dos vectores, ignorando su longitud (magnitud):
+Es la métrica reina en IA. Mide el **coseno del ángulo θ** entre dos vectores, ignorando su longitud (magnitud):
 
-$$\text{Similitud Coseno}(A, B) = \cos(\theta) = \frac{A \cdot B}{\|A\| \|B\|}$$
+```
+Similitud Coseno(A, B) = cos(θ) = (A · B) / (||A|| * ||B||)
+```
 
-- **$\cos(\theta) = 1.0$ ($0^\circ$)**: Vectores apuntan exactamente en la misma dirección $\to$ **Significado idéntico**.
-- **$\cos(\theta) = 0.0$ ($90^\circ$)**: Vectores ortogonales $\to$ **Conceptos independientes / No relacionados**.
-- **$\cos(\theta) = -1.0$ ($180^\circ$)**: Vectores en direcciones opuestas $\to$ **Significados opuestos**.
+- **cos(θ) = 1.0 (0°)**: Vectores apuntan exactamente en la misma dirección -> **Significado idéntico**.
+- **cos(θ) = 0.0 (90°)**: Vectores ortogonales -> **Conceptos independientes / No relacionados**.
+- **cos(θ) = -1.0 (180°)**: Vectores en direcciones opuestas -> **Significados opuestos**.
 
 ```
 Vector A (Pregunta): "¿Cómo reiniciar el router?"
@@ -266,7 +268,7 @@ Vector C (Doc 2):    "Receta para preparar tarta de manzana."       --> Similitu
 ```
 
 ### 2. Otras Métricas:
-- **Distancia Euclidiana ($L2$)**: Mide la distancia geométrica en línea recta entre los dos puntos. Sensible a la longitud del texto.
+- **Distancia Euclidiana (L2)**: Mide la distancia geométrica en línea recta entre los dos puntos. Sensible a la longitud del texto.
 - **Producto Punto (*Dot Product*)**: Si los vectores están normalizados (longitud = 1), el producto punto es idéntico a la similitud coseno y es ultra rápido de calcular en hardware.$THEORY$,
     $JSON$[{"id":"q1","question":"¿Por qué la Similitud Coseno es preferida sobre la Distancia Euclidiana para comparar embeddings de texto?","options":["Porque la similitud coseno solo mide el ángulo y la dirección semántica, sin verse distorsionada por la longitud o magnitud del texto","Porque la distancia euclidiana no se puede programar","Porque la similitud coseno da siempre números enteros","Porque la similitud coseno solo funciona en dos dimensiones"],"correctIndex":0,"explanation":"La similitud coseno evalúa la orientación del vector semántico; dos textos sobre el mismo tema tendrán un ángulo muy pequeño aunque uno sea más largo."},{"id":"q2","question":"Si la similitud coseno entre la búsqueda de un usuario y un documento da un resultado de 0.95, ¿qué significa?","options":["Que los dos textos son completamente opuestos","Que el documento tiene una relevancia semántica altísima con la consulta del usuario","Que hubo un error de cálculo","Que el documento está corrupto"],"correctIndex":1,"explanation":"Un valor cercano a 1.0 (ángulo cercano a 0 grados) indica máxima coincidencia semántica entre la búsqueda y el documento."},{"id":"q3","question":"¿Cuál es el rango de valores posibles de la función Similitud Coseno?","options":["De 0 a 100","De -1.0 a +1.0","De 0 a infinito","De -100 a +100"],"correctIndex":1,"explanation":"El coseno trigonométrico de cualquier ángulo varía siempre en el intervalo cerrado [-1.0, 1.0]."}]$JSON$,
     2
@@ -282,9 +284,9 @@ Vector C (Doc 2):    "Receta para preparar tarta de manzana."       --> Similitu
     100,
     $THEORY$# Bases de Datos Vectoriales
 
-Las bases de datos relacionales tradicionales usan índices B-Tree para buscar números o textos ordenados ($A < B < C$). Pero no pueden ordenar puntos en un espacio de 1,536 dimensiones.
+Las bases de datos relacionales tradicionales usan índices B-Tree para buscar números o textos ordenados (A < B < C). Pero no pueden ordenar puntos en un espacio de 1,536 dimensiones.
 
-### 1. El Problema de la Fuerza Bruta ($k$-NN):
+### 1. El Problema de la Fuerza Bruta (k-NN):
 Si tienes 1 millón de documentos, calcular la similitud coseno de tu pregunta contra cada uno de ellos requiere 1 millón de productos de vectores en cada consulta (demasiado lento).
 
 ### 2. Algoritmos de Búsqueda Aproximada (*ANN - Approximate Nearest Neighbors*):
@@ -366,11 +368,13 @@ Ejemplo:
 
 ¿A qué se refiere *"estaba"*? ¿Al animal o a la calle?
 Mediante matrices de atención:
-1. **Query ($Q$)**: Lo que la palabra busca.
-2. **Key ($K$)**: Lo que cada palabra ofrece como etiqueta.
-3. **Value ($V$)**: El contenido informativo real de la palabra.
+1. **Query (Q)**: Lo que la palabra busca.
+2. **Key (K)**: Lo que cada palabra ofrece como etiqueta.
+3. **Value (V)**: El contenido informativo real de la palabra.
 
-$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V$$
+```
+Attention(Q, K, V) = softmax((Q * K^T) / sqrt(d_k)) * V
+```
 
 El mecanismo asigna un peso altísimo entre *"estaba"* y *"animal"*, resolviendo la ambigüedad al instante y de forma paralelizable en miles de GPUs.$THEORY$,
     $JSON$[{"id":"q1","question":"¿Cuál fue la principal ventaja del Transformer sobre las redes recurrentes anteriores (RNN / LSTM)?","options":["Que consumía menos memoria RAM en teléfonos","Que eliminó el procesamiento secuencial, permitiendo procesar todas las palabras a la vez y entrenar masivamente en paralelo sobre miles de GPUs","Que no utilizaba números flotantes","Que solo funcionaba para traducir inglés"],"correctIndex":1,"explanation":"El paralelismo del Transformer permitió entrenar con billones de tokens de texto, escalando el aprendizaje a niveles nunca antes vistos."},{"id":"q2","question":"En la fórmula de atención de Transformers, ¿qué representan los tres componentes Q, K y V?","options":["Query (Consulta), Key (Clave) y Value (Valor)","Quantum, Kinetic y Velocity","Quick, Kernel y Vector","Question, Knowledge y Variable"],"correctIndex":0,"explanation":"Inspirado en sistemas de búsqueda: Query (lo que se busca), Key (índice identificador) y Value (el valor ponderado final)."},{"id":"q3","question":"¿Qué problema lingüístico resuelve el mecanismo de atención al analizar una frase compleja?","options":["La velocidad de tipeo del teclado","Identificar a qué sujetos o conceptos previos se refieren los pronombres y adjetivos según el contexto de toda la oración","La compresión de archivos de audio","El cálculo del precio de la energía"],"correctIndex":1,"explanation":"La atención dinámica pondera las dependencias a larga distancia entre palabras, resolviendo ambigüedades semánticas con precisión."}]}$JSON$,
@@ -445,7 +449,7 @@ Una **alucinación** ocurre cuando un LLM genera información factualmente falsa
 ### 🛡️ Técnicas de Mitigación en Producción:
 1. **RAG (Grounding)**: Obligar al modelo en las *System Instructions* a responder **únicamente** con el contexto provisto y decir *"No dispongo de esa información"* si no está en el texto.
 2. **Cadena de Pensamiento (*Chain-of-Thought / CoT*)**: Indicar al modelo *"Piensa paso a paso antes de responder"*, lo que le permite generar tokens de razonamiento intermedio.
-3. **Temperatura Baja ($0.0 - 0.2$)**: Reduce la dispersión estocástica en respuestas que requieran precisión.
+3. **Temperatura Baja (0.0 - 0.2)**: Reduce la dispersión estocástica en respuestas que requieran precisión.
 4. **Validación de Esquema Estructurado**: Uso de *Function Calling* o *Structured Outputs* (JSON Schema) para evitar respuestas libres descontroladas.$THEORY$,
     $JSON$[{"id":"q1","question":"¿Cuál es la causa técnica principal por la que un LLM puede generar 'alucinaciones'?","options":["Un virus informático en el servidor","Porque los LLMs optimizan la plausibilidad lingüística y probabilística de los tokens, no la verificación de la verdad fáctica","Porque la pantalla del usuario tiene baja resolución","Porque el modelo se queda sin memoria RAM"],"correctIndex":1,"explanation":"El LLM genera la continuación más coherente según sus patrones estadísticos, lo que puede resultar en textos muy convincentes pero falsos."},{"id":"q2","question":"¿Qué instrucción en el System Prompt es una práctica estándar para reducir alucinaciones en un asistente de soporte?","options":["'Responde lo primero que se te ocurra'","'Basa tu respuesta estrictamente en el contexto proporcionado; si la respuesta no se encuentra en el texto, indica claramente que no tienes esa información'","'Inventa una respuesta si no estás seguro'","'Habla como un pirata'"],"correctIndex":1,"explanation":"Restringir el dominio de respuesta (Grounding) y dar permiso explícito para admitir desconocimiento reduce drásticamente las alucinaciones."},{"id":"q3","question":"¿En qué consiste la técnica de 'Chain of Thought' (Cadena de Pensamiento)?","options":["En conectar varias computadoras en anillo","En forzar al modelo a verbalizar y desglosar su razonamiento paso a paso antes de emitir la conclusión final","En encadenar múltiples modelos en paralelo","En borrar la memoria de contexto"],"correctIndex":1,"explanation":"Chain of Thought permite que el modelo use tokens intermedios de cálculo y deducción, aumentando notablemente el acierto en problemas lógicos."}]}$JSON$,
     3
@@ -473,8 +477,8 @@ Como arquitecto o desarrollador de software con IA, elegir la herramienta correc
 
 ### 🎯 La Regla de Decisión Práctica:
 1. **Empieza siempre con Prompt Engineering** (Few-Shot, System Prompts claros).
-2. **Si necesitas que la IA conozca documentos propios o datos actualizados $\to$ Implementa RAG**.
-3. **Si necesitas que el modelo hable con una jerga muy particular, aprenda un formato de salida complejo o clasifique datos a alta velocidad con un modelo pequeño $\to$ Realiza Fine-Tuning**.$THEORY$,
+2. **Si necesitas que la IA conozca documentos propios o datos actualizados -> Implementa RAG**.
+3. **Si necesitas que el modelo hable con una jerga muy particular, aprenda un formato de salida complejo o clasifique datos a alta velocidad con un modelo pequeño -> Realiza Fine-Tuning**.$THEORY$,
     $JSON$[{"id":"q1","question":"Si tu empresa tiene 5,000 manuales internos en PDF que cambian semanalmente y necesitas un chatbot para que los empleados consulten políticas, ¿cuál es la solución técnica adecuada?","options":["Fine-Tuning de un modelo open-source cada semana","Implementar un sistema RAG con una base de datos vectorial para indexar los manuales","Escribir los 5,000 PDFs a mano en el System Prompt","Desarrollar un nuevo LLM desde cero"],"correctIndex":1,"explanation":"RAG es la arquitectura ideal para datos dinámicos y documentos privados extensos que cambian con frecuencia."},{"id":"q2","question":"¿Para qué escenario resulta ideal aplicar Fine-Tuning a un modelo de lenguaje?","options":["Para enseñarle noticias de hoy que acaban de ocurrir","Para especializar a un modelo en un estilo de redacción médico particular, un formato de salida compacto o una tarea repetitiva específica","Para evitar pagar licencias de software","Para cambiar el procesador de la máquina"],"correctIndex":1,"explanation":"Fine-Tuning modifica los pesos internos para ajustar el estilo, tono, sintaxis o especialización en una tarea concreta."},{"id":"q3","question":"¿Cuál es el primer paso recomendado según las mejores prácticas antes de invertir recursos en Fine-Tuning o infraestructuras complejas?","options":["Comprar servidores de 50,000 dólares","Comenzar explorando técnicas avanzadas de Prompt Engineering y Few-Shot Learning con modelos existentes","Reescribir toda la aplicación en C++","Entrenar un modelo de 100 billones de parámetros"],"correctIndex":1,"explanation":"El Prompt Engineering es rápido, económico y permite validar si el caso de uso se resuelve antes de incurrir en costes de ingeniería mayores."}]}$JSON$,
     4
   );
@@ -486,4 +490,4 @@ Como arquitecto o desarrollador de software con IA, elegir la herramienta correc
     '/cursos/' || v_course_id || '/preview'
   );
 
-END $$;
+END $COURSE_SEED$;
