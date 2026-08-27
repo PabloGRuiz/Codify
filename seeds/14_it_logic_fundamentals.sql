@@ -325,24 +325,29 @@ Una lista enlazada está compuesta por **Nodos dispersos en memoria**. Cada nodo
     80,
     $THEORY$# Complejidad Algorítmica y Notación Big O
 
-La **Notación Big O** mide cómo escala el tiempo de ejecución o el uso de memoria de un algoritmo a medida que el tamaño de los datos de entrada ($N$) crece hacia el infinito.
+La **Notación Big O** mide cómo escala el tiempo de ejecución o el uso de memoria de un algoritmo a medida que el tamaño de los datos de entrada (*N*) crece hacia el infinito.
 
-```
-Eficiencia:  O(1) [Excelente] < O(log N) [Muy Bueno] < O(N) [Aceptable] < O(N^2) [Inviable a gran escala]
-```
+### 📊 Escala de Eficiencia Temporal (de mejor a peor):
+| Complejidad | Nombre | Rendimiento | Caso Típico |
+| :--- | :--- | :--- | :--- |
+| `O(1)` | Constante | 🟢 Excelente | Acceso por índice en un Arreglo |
+| `O(log N)` | Logarítmica | 🟢 Muy Bueno | Búsqueda Binaria en lista ordenada |
+| `O(N)` | Lineal | 🟡 Aceptable | Búsqueda Lineal / Recorrer una lista |
+| `O(N log N)` | Cuasilineal | 🟡 Bueno | Algoritmos de ordenación (MergeSort) |
+| `O(N²)` | Cuadrática | 🔴 Inviable a gran escala | Bucles anidados / BubbleSort |
 
 ---
 
 ### 🔍 Comparativa de Algoritmos de Búsqueda:
 
-#### 1. Búsqueda Lineal ($O(N)$):
+#### 1. Búsqueda Lineal (`O(N)`):
 - Revisa elemento por elemento desde el primero hasta el último.
-- En una lista de $1.000.000$ de elementos, en el peor caso requiere **$1.000.000$ de comparaciones**.
+- En una lista de 1.000.000 de elementos, en el peor caso requiere **1.000.000 de comparaciones**.
 
-#### 2. Búsqueda Binaria ($O(\log N)$):
+#### 2. Búsqueda Binaria (`O(log N)`):
 - **Requisito Obligatorio:** El arreglo debe estar previamente **ORDENADO**.
 - **Funcionamiento:** Compara el elemento buscado con el valor central del arreglo. Si es menor, descarta toda la mitad derecha; si es mayor, descarta la mitad izquierda. Repite el proceso dividiendo el espacio a la mitad en cada paso.
-- En una lista de $1.000.000$ de elementos, ¡requiere como máximo **solo 20 comparaciones**! ($\log_2(1.000.000) \approx 20$).$THEORY$,
+- En una lista de 1.000.000 de elementos, ¡requiere como máximo **solo 20 comparaciones**! (`log₂(1.000.000) ≈ 20`).$THEORY$,
     $JSON$[{"id":"q1","question":"¿Cuál es la complejidad temporal de una búsqueda binaria sobre un arreglo ordenado de N elementos?","options":["O(N)","O(log N)","O(N^2)","O(1)"],"correctIndex":1,"explanation":"La búsqueda binaria divide el espacio de búsqueda a la mitad en cada paso iterativo, logrando una complejidad logarítmica O(log N)."},{"id":"q2","question":"¿Cuál es el requisito indispensable e ineludible para poder aplicar el algoritmo de Búsqueda Binaria?","options":["Que la lista tenga números negativos","Que el arreglo de datos esté estrictamente ordenado","Que la lista tenga menos de 100 elementos","Que los datos estén guardados en una base de datos SQL"],"correctIndex":1,"explanation":"Si los datos no están ordenados, no es posible descartar con certeza la mitad de los elementos al comparar contra el elemento central."},{"id":"q3","question":"Si un algoritmo tiene una complejidad temporal de O(1), ¿qué significa respecto a su tiempo de ejecución?","options":["Que tarda exactamente 1 segundo en terminar","Que el tiempo de ejecución es constante e independiente del tamaño de la entrada de datos (N)","Que solo puede ejecutarse una sola vez","Que realiza N operaciones lineales"],"correctIndex":1,"explanation":"O(1) representa tiempo constante: la operación tarda lo mismo sin importar si el conjunto de datos tiene 10 o 10.000.000 de elementos."}]$JSON$,
     8
   );

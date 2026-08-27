@@ -49,13 +49,36 @@ const CodeEditor = dynamic(
   }
 );
 
+function formatMathAndMarkdown(content: string): string {
+  if (!content) return "";
+
+  return content
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    // Mathematical & Big-O notation cleanups
+    .replace(/\$\\log_2\(([^)]+)\)\s*\\approx\s*([^$]+)\$/g, "log₂($1) ≈ $2")
+    .replace(/\$O\(\\log\s*N\)\$/gi, "`O(log N)`")
+    .replace(/\$O\(N\s*\\log\s*N\)\$/gi, "`O(N log N)`")
+    .replace(/\$O\(([^$]+)\)\$/g, "`O($1)`")
+    .replace(/\$1\.000\.000\$/g, "1.000.000")
+    .replace(/\$2\^8\s*=\s*256\$/g, "2⁸ = 256")
+    .replace(/\$2\^(\w+)\$/g, "2^$1")
+    .replace(/\$N\$/g, "*N*")
+    .replace(/\\approx/g, "≈")
+    .replace(/\\log_2/g, "log₂")
+    .replace(/\\log/g, "log")
+    .replace(/\\cdot/g, "·")
+    .replace(/\\times/g, "×")
+    .replace(/\\le(q)?/g, "≤")
+    .replace(/\\ge(q)?/g, "≥")
+    .replace(/\\ne(q)?/g, "≠")
+    .replace(/\$([^$]+)\$/g, "$1");
+}
+
 function TheoryRenderer({ content }: { content: string }) {
   if (!content) return null;
 
-  // Unescape literal \n or \r\n if stored as raw escaped strings in db
-  const formattedContent = content
-    .replace(/\\r\\n/g, "\n")
-    .replace(/\\n/g, "\n");
+  const formattedContent = formatMathAndMarkdown(content);
 
   return (
     <div className="space-y-4 font-sans text-zinc-300">
@@ -82,7 +105,7 @@ function TheoryRenderer({ content }: { content: string }) {
             </h4>
           ),
           strong: ({ children }) => (
-            <strong className="text-primary font-bold bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+            <strong className="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/15">
               {children}
             </strong>
           ),
@@ -102,6 +125,43 @@ function TheoryRenderer({ content }: { content: string }) {
               <span className="text-primary font-bold shrink-0 mt-0.5">•</span>
               <div className="flex-1">{children}</div>
             </li>
+          ),
+          table: ({ children }) => (
+            <div className="my-4 overflow-x-auto rounded-xl border border-white/10 bg-black/40 shadow-xl">
+              <table className="w-full text-left text-sm text-zinc-300 border-collapse">
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children }) => (
+            <thead className="bg-white/5 border-b border-white/10 text-xs font-bold uppercase tracking-wider text-indigo-300">
+              {children}
+            </thead>
+          ),
+          tbody: ({ children }) => (
+            <tbody className="divide-y divide-white/5">
+              {children}
+            </tbody>
+          ),
+          tr: ({ children }) => (
+            <tr className="hover:bg-white/5 transition-colors">
+              {children}
+            </tr>
+          ),
+          th: ({ children }) => (
+            <th className="px-4 py-3 font-bold text-white">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="px-4 py-2.5 text-zinc-300 text-xs sm:text-sm">
+              {children}
+            </td>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="my-4 border-l-4 border-indigo-500 bg-indigo-500/10 px-4 py-3 rounded-r-xl text-zinc-200 text-sm italic">
+              {children}
+            </blockquote>
           ),
           pre: ({ children }) => <>{children}</>,
           code({ node, className, children, ...props }: any) {
@@ -126,7 +186,7 @@ function TheoryRenderer({ content }: { content: string }) {
             }
 
             return (
-              <code className="bg-primary/20 text-purple-300 border border-primary/30 px-1.5 py-0.5 rounded font-mono text-xs font-semibold mx-0.5 inline-block">
+              <code className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono text-xs font-bold mx-0.5 inline-block shadow-sm">
                 {children}
               </code>
             );
