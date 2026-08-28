@@ -99,11 +99,13 @@ DECLARE
   v_cpp_course_id UUID;
   v_net_course_id UUID;
   v_it_course_id UUID;
+  v_git_course_id UUID;
   
   v_ai_cert_id UUID;
   v_cpp_cert_id UUID;
   v_net_cert_id UUID;
   v_it_cert_id UUID;
+  v_git_cert_id UUID;
 BEGIN
 
   -- 1. Buscar cursos
@@ -111,6 +113,7 @@ BEGIN
   SELECT id INTO v_cpp_course_id FROM public.courses WHERE title ILIKE '%C++%' LIMIT 1;
   SELECT id INTO v_net_course_id FROM public.courses WHERE title ILIKE '%Redes%' LIMIT 1;
   SELECT id INTO v_it_course_id FROM public.courses WHERE title ILIKE '%Fundamentos IT%' LIMIT 1;
+  SELECT id INTO v_git_course_id FROM public.courses WHERE title ILIKE '%Git%' LIMIT 1;
 
   -- ----------------------------------------------------------------------------
   -- CERTIFICACIÓN 1: Inteligencia Artificial y LLMs
@@ -226,6 +229,35 @@ BEGIN
     (v_it_cert_id, '¿Qué tipo de dato booleano representa la expresión (true && false) || (!false)?', ARRAY['false', 'true', 'null', 'undefined'], 1, '(true && false) es false; (!false) es true; false || true resulta en true.'),
     (v_it_cert_id, '¿Cuál es el propósito fundamental de una función pura en programación?', ARRAY['Modificar variables globales del sistema', 'Devolver siempre el mismo resultado para los mismos argumentos sin causar efectos secundarios externos', 'Imprimir texto en la consola de depuración', 'Conectarse a una base de datos externa'], 1, 'Las funciones puras son deterministas y no alteran el estado fuera de su propio ámbito.'),
     (v_it_cert_id, '¿Qué problema resuelve el uso de Git y sistemas de control de versiones?', ARRAY['Aumentar la velocidad de la memoria RAM', 'Rastrear el historial de cambios en el código, facilitar la colaboración en equipo y permitir ramificaciones (branches)', 'Compilar código JavaScript en tiempo real', 'Eliminar automáticamente bugs del código'], 1, 'Git permite gestionar versiones, colaborar concurrentemente y revertir cambios cuando sea necesario.');
+  END IF;
+
+  -- ----------------------------------------------------------------------------
+  -- CERTIFICACIÓN 5: Control de Versiones con Git y GitHub
+  -- ----------------------------------------------------------------------------
+  IF v_git_course_id IS NOT NULL THEN
+    DELETE FROM public.certifications WHERE code = 'CERT-GIT-101';
+
+    INSERT INTO public.certifications (
+      course_id, title, code, description, min_passing_score, time_limit_minutes, xp_reward, badge_theme, skills_validated
+    ) VALUES (
+      v_git_course_id,
+      'Certificado Profesional: Control de Versiones con Git y GitHub',
+      'CERT-GIT-101',
+      'Acredita dominio de repositorios locales y remotos, ciclo de 3 áreas, ramas, resolución de conflictos, buenas prácticas de commits y publicación en GitHub.',
+      80,
+      20,
+      500,
+      'crimson',
+      ARRAY['Git CLI', 'GitHub', 'Gestión de Ramas', 'Resolución de Conflictos', 'Conventional Commits', 'Repositorios Remotos']
+    ) RETURNING id INTO v_git_cert_id;
+
+    -- Preguntas del Examen de Git
+    INSERT INTO public.certification_questions (certification_id, question, options, correct_index, explanation) VALUES
+    (v_git_cert_id, '¿Cuál es la función del Staging Area (Index) en el modelo de trabajo de Git?', ARRAY['Publicar los cambios directamente en los servidores de producción', 'Servir de área intermedia donde se seleccionan y preparan exactamente los cambios que formarán parte del siguiente commit', 'Restaurar archivos eliminados por accidente del sistema operativo', 'Compilar el código fuente antes de guardarlo'], 1, 'El Staging Area permite organizar commits atómicos seleccionando con precisión qué archivos modificados incluir.'),
+    (v_git_cert_id, '¿Por qué es indispensable incluir un archivo .gitignore en la raíz de un repositorio de desarrollo?', ARRAY['Para mejorar la velocidad de procesamiento de la CPU', 'Para evitar que se rastreen o suban accidentalmente dependencias pesadas, archivos de build y secretos o variables de entorno (.env)', 'Para impedir que otros programadores descarguen el código', 'Para obligar a Git a usar ramas únicamente'], 1, 'El archivo .gitignore protege secretos sensibles y evita subir gigabytes de dependencias innecesarias.'),
+    (v_git_cert_id, '¿Qué sucede durante un Fast-Forward Merge al integrar una rama secundaria a la rama principal?', ARRAY['Git genera un nuevo commit con dos padres obligatoriamente', 'Git simplemente avanza el puntero de la rama receptora hasta el último commit de la rama secundaria sin crear un nuevo commit de unión', 'Git elimina permanentemente el historial anterior', 'Git solicita resolver un conflicto manual'], 1, 'Si no hubo commits divergentes en la rama base, Git simplemente avanza el puntero hacia adelante (Fast-Forward).'),
+    (v_git_cert_id, '¿Qué comando vincula tu repositorio local con un repositorio remoto en GitHub asignándole el alias estándar "origin"?', ARRAY['git link origin <url>', 'git remote add origin <url>', 'git connect --origin <url>', 'git attach <url> origin'], 1, 'git remote add origin <url> asocia la URL remota de GitHub con el nombre por defecto origin.'),
+    (v_git_cert_id, 'Cuando ocurre un conflicto de fusión (merge conflict) entre dos ramas, ¿qué pasos debe realizar el desarrollador para concluirlo correctamente?', ARRAY['Borrar el repositorio y volver a empezar', 'Editar los archivos en conflicto, elegir el código final eliminando los marcadores <<<<<<< y >>>>>>>, hacer "git add" y finalmente "git commit"', 'Ejecutar git push --force sin editar nada', 'Desconectar la conexión a internet'], 1, 'Los conflictos se resuelven manualmente eliminando los marcadores, preparando los archivos con git add y confirmando con git commit.');
   END IF;
 
 END $SEED_CERTS$;
