@@ -64,6 +64,9 @@ export default function AdminPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [addXpAmount, setAddXpAmount] = useState("100");
   const [selectedChallengeToComplete, setSelectedChallengeToComplete] = useState("");
+  const [selectedCourseToComplete, setSelectedCourseToComplete] = useState("");
+  const [grantCertOnComplete, setGrantCertOnComplete] = useState(true);
+  const [isApprovingCourse, setIsApprovingCourse] = useState(false);
 
   // Broadcast Announcement State
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -98,7 +101,10 @@ export default function AdminPage() {
       const { data: cData } = await supabase.from("courses").select("*").order("created_at", { ascending: true });
       if (cData) {
         setCourses(cData);
-        if (cData.length > 0 && !courseId) setCourseId(cData[0].id);
+        if (cData.length > 0) {
+          if (!courseId) setCourseId(cData[0].id);
+          if (!selectedCourseToComplete) setSelectedCourseToComplete(cData[0].id);
+        }
       }
 
       // 1. Fetch modules
@@ -346,6 +352,97 @@ export default function AdminPage() {
       alert("Error al completar reto: " + error.message);
     } else {
       alert("¡Reto marcado como completado para pruebas! Puedes ver el tablero desbloqueado.");
+    }
+  };
+
+  // Test Actions: Force Complete Entire Course (1-Click)
+  const handleForceCompleteCourse = async (
+    targetCourseId?: string,
+    targetUserId?: string,
+    includeCert?: boolean
+  ) => {
+    const cId = targetCourseId || selectedCourseToComplete;
+    const uId = targetUserId || selectedUserId;
+    const withCert = includeCert !== undefined ? includeCert : grantCertOnComplete;
+
+    if (!uId || !cId) return alert("Selecciona un usuario y un curso");
+
+    setIsApprovingCourse(true);
+    try {
+      // 1. Fetch all challenges of this course
+      const { data: mods, error: modErr } = await supabase
+        .from("modules")
+        .select("id, challenges(id)")
+        .eq("course_id", cId);
+
+      if (modErr) throw modErr;
+
+      const challengeIds: string[] = [];
+      mods?.forEach((m: any) => {
+        m.challenges?.forEach((ch: any) => {
+          challengeIds.push(ch.id);
+        });
+      });
+
+      if (challengeIds.length === 0) {
+        return alert("Este curso no tiene retos o lecciones creadas todavía.");
+      }
+
+      // 2. Ensure course enrollment
+      await supabase.from("course_enrollments").upsert({
+        user_id: uId,
+        course_id: cId,
+      }, { onConflict: "user_id,course_id" });
+
+      // 3. Mark all challenges as completed
+      const progressRows = challengeIds.map((cid) => ({
+        user_id: uId,
+        challenge_id: cid,
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      }));
+
+      const { error: progErr } = await supabase
+        .from("user_progress")
+        .upsert(progressRows, { onConflict: "user_id,challenge_id" });
+
+      if (progErr) throw progErr;
+
+      // 4. Optionally grant official certification
+      if (withCert) {
+        const { data: certData } = await supabase
+          .from("certifications")
+          .select("id, code")
+          .eq("course_id", cId)
+          .maybeSingle();
+
+        if (certData) {
+          const randHash = Math.random().toString(36).substring(2, 8).toUpperCase();
+          const cleanCode = certData.code ? certData.code.replace("CERT-", "") : "CERT";
+          const vCode = `CDFY-${cleanCode}-${randHash}`;
+
+          await supabase.from("user_certifications").upsert({
+            user_id: uId,
+            certification_id: certData.id,
+            score: 100,
+            verification_code: vCode,
+            issued_at: new Date().toISOString(),
+          }, { onConflict: "user_id,certification_id" });
+        }
+      }
+
+      const targetUser = profiles.find((p) => p.id === uId);
+      const targetCourse = courses.find((c) => c.id === cId);
+      const userName = targetUser?.username || "usuario";
+      const courseTitle = targetCourse?.title || "Curso";
+
+      alert(`🎉 ¡Curso "${courseTitle}" aprobado al 100% exitosamente para @${userName}! ${withCert ? "\n📜 Certificación y diploma oficial emitidos." : ""}`);
+      fetchAdminData();
+    } catch (err: any) {
+      console.error("Error al aprobar curso:", err);
+      alert("Error al aprobar curso: " + (err.message || String(err)));
+    } finally {
+      setIsApprovingCourse(false);
     }
   };
 
@@ -842,6 +939,15 @@ Genera el script SQL completo listo para copiar y pegar.`;
                             
                             {(isAdmin || isProfesor) && (
                               <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                                <button
+                                  onClick={() => handleForceCompleteCourse(c.id, user?.id, true)}
+                                  disabled={isApprovingCourse}
+                                  className="px-3 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/20 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                                  title="Aprobar 100% y certificar este curso para mi usuario actual con 1 clic"
+                                >
+                                  <GraduationCap size={15} />
+                                  <span>Aprobar para mí (100%)</span>
+                                </button>
                                 <Link
                                   href={`/cursos/${c.id}/preview`}
                                   target="_blank"
@@ -1066,10 +1172,55 @@ Genera el script SQL completo listo para copiar y pegar.`;
                 </Button>
               </form>
 
+              {/* Force Complete Entire Course (1-Click) */}
+              <h2 className="text-xl font-bold flex items-center gap-2 text-indigo-400 pt-4 border-t border-white/10">
+                <GraduationCap size={20} />
+                Aprobar Curso Completo en 1 Clic (Sandbox & Pruebas)
+              </h2>
+
+              <div className="space-y-4 bg-black/40 p-4 rounded-xl border border-indigo-500/20">
+                <p className="text-xs text-zinc-400">
+                  Matricula al usuario seleccionado y marca automáticamente el 100% de las lecciones como completadas.
+                </p>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Seleccionar Curso a Aprobar</label>
+                  <select
+                    value={selectedCourseToComplete}
+                    onChange={(e) => setSelectedCourseToComplete(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-black/60 border border-white/10 text-white outline-none focus:border-indigo-400"
+                  >
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={grantCertOnComplete}
+                    onChange={(e) => setGrantCertOnComplete(e.target.checked)}
+                    className="w-4 h-4 rounded text-indigo-500 bg-black/60 border-white/20 focus:ring-0"
+                  />
+                  <span>Emitir también Certificación Oficial y Diploma (100% Score)</span>
+                </label>
+
+                <Button
+                  type="button"
+                  onClick={() => handleForceCompleteCourse()}
+                  disabled={isApprovingCourse}
+                  className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold shadow-lg shadow-indigo-500/20"
+                >
+                  {isApprovingCourse ? "Aprobando curso..." : "🎓 Aprobar Curso Completo (100%)"}
+                </Button>
+              </div>
+
               {/* Force Complete Challenge for Testing Roadmap */}
               <h2 className="text-xl font-bold flex items-center gap-2 text-yellow-400 pt-4 border-t border-white/10">
                 <Zap size={20} />
-                Completar Retos Forzado (Para Pruebas del Tablero)
+                Completar Retos Forzado (Individual)
               </h2>
 
               <form onSubmit={handleForceCompleteChallenge} className="space-y-4 bg-black/40 p-4 rounded-xl border border-white/10">
