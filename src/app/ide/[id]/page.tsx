@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/Button";
 import { 
@@ -55,6 +56,9 @@ function formatMathAndMarkdown(content: string): string {
   return content
     .replace(/\\r\\n/g, "\n")
     .replace(/\\n/g, "\n")
+    // Fix collapsed markdown table rows (where newlines were lost as "| |" or "||")
+    .replace(/\|\s*\|\s*/g, "|\n| ")
+    .replace(/\|\s*:\-\-/g, "\n| :--")
     // Mathematical & Big-O notation cleanups
     .replace(/\$\\log_2\(([^)]+)\)\s*\\approx\s*([^$]+)\$/g, "log₂($1) ≈ $2")
     .replace(/\$O\(\\log\s*N\)\$/gi, "`O(log N)`")
@@ -83,6 +87,7 @@ function TheoryRenderer({ content }: { content: string }) {
   return (
     <div className="space-y-4 font-sans text-zinc-300">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
             <h1 className="text-2xl sm:text-3xl font-heading font-black text-white mt-4 mb-3 border-b border-white/10 pb-2">

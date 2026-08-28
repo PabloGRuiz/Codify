@@ -12,6 +12,7 @@ import { useUser } from "@/hooks/useUser";
 import { useEnrollments } from "@/hooks/useEnrollments";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -281,6 +282,7 @@ export default function CoursePreviewPage() {
                       {course.summary ? (
                         <div className="prose prose-invert prose-indigo max-w-none text-zinc-300 space-y-4 font-sans leading-relaxed">
                           <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
                             components={{
                               h2: ({ children }) => (
                                 <h2 className="text-xl sm:text-2xl font-heading font-bold text-white mt-6 mb-3 flex items-center gap-2">
