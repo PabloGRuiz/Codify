@@ -50,13 +50,11 @@ BEGIN
   -- ==============================================================================
   -- MÓDULO 1: Concepto de Repositorio y Flujo de Trabajo Local
   -- ==============================================================================
-  INSERT INTO public.modules (course_id, title, description, difficulty_level, order_index)
+  INSERT INTO public.modules (course_id, title, description)
   VALUES (
     v_course_id,
     'Módulo 1: Repositorios, Estados y Comandos Esenciales',
-    'Comprende qué es un repositorio, la arquitectura interna de Git y los comandos del día a día.',
-    '1',
-    1
+    'Comprende qué es un repositorio, la arquitectura interna de Git y los comandos del día a día.'
   ) RETURNING id INTO v_mod1_id;
 
   -- LECCIÓN 1.1: ¿Qué es un Repositorio y el Control de Versiones?
@@ -383,13 +381,11 @@ $THEORY$,
   -- ==============================================================================
   -- MÓDULO 2: Ramas, Resolución de Conflictos y GitHub
   -- ==============================================================================
-  INSERT INTO public.modules (course_id, title, description, difficulty_level, order_index)
+  INSERT INTO public.modules (course_id, title, description)
   VALUES (
     v_course_id,
     'Módulo 2: Ramas, Conflictos y Trabajo Remoto en GitHub',
-    'Aprende a trabajar con branches, resolver conflictos y dominar el flujo con GitHub.',
-    '2',
-    2
+    'Aprende a trabajar con branches, resolver conflictos y dominar el flujo con GitHub.'
   ) RETURNING id INTO v_mod2_id;
 
   -- LECCIÓN 2.1: Gestión de Ramas (Branches) y Fusiones (Merges)
