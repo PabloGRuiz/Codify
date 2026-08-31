@@ -23,7 +23,11 @@ import {
   Globe,
   RefreshCw,
   Eye,
-  Flag
+  Flag,
+  Paintbrush,
+  Braces,
+  RotateCcw,
+  Database
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
@@ -204,6 +208,51 @@ function TheoryRenderer({ content }: { content: string }) {
   );
 }
 
+const detectChallengeLanguage = (data: any): "html" | "css" | "javascript" | "python" | "cpp" | "sql" => {
+  if (!data) return "javascript";
+  if (data.language) return data.language;
+  if (data.challenge_type === "web" || data.challenge_type === "html") return "html";
+  if (data.challenge_type === "css") return "css";
+  if (data.challenge_type === "python") return "python";
+  if (data.challenge_type === "cpp") return "cpp";
+  if (data.challenge_type === "sql") return "sql";
+
+  const initial = (data.initial_code || "").trim();
+  const title = (data.title || "").toLowerCase();
+  const modTitle = (data.modules?.title || "").toLowerCase();
+
+  if (
+    initial.startsWith("<!DOCTYPE") ||
+    initial.startsWith("<html") ||
+    initial.startsWith("<div") ||
+    initial.startsWith("<header") ||
+    initial.startsWith("<main") ||
+    initial.startsWith("<form") ||
+    title.includes("html") ||
+    modTitle.includes("html")
+  ) {
+    return "html";
+  }
+  if (
+    initial.includes("@media") ||
+    (initial.includes("{") && initial.includes(":") && !initial.includes("function") && !initial.includes("const") && !initial.includes("let")) ||
+    title.includes("css") ||
+    modTitle.includes("css")
+  ) {
+    return "css";
+  }
+  if (initial.includes("#include") || initial.includes("std::") || title.includes("c++") || modTitle.includes("c++")) {
+    return "cpp";
+  }
+  if (initial.startsWith("def ") || initial.startsWith("import ") || title.includes("python") || modTitle.includes("python")) {
+    return "python";
+  }
+  if (initial.toUpperCase().startsWith("SELECT") || title.includes("sql") || modTitle.includes("sql")) {
+    return "sql";
+  }
+  return "javascript";
+};
+
 export default function ChallengeIDEPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -211,6 +260,7 @@ export default function ChallengeIDEPage() {
   const { isCollapsed, toggleCollapse } = useSidebar();
   const [challenge, setChallenge] = useState<any>(null);
   const [code, setCode] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState<"html" | "css" | "javascript" | "python" | "cpp" | "sql">("javascript");
   const [logs, setLogs] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
@@ -228,10 +278,12 @@ export default function ChallengeIDEPage() {
       if (data) {
         setChallenge(data);
         setCode(data.initial_code || "");
+        const lang = detectChallengeLanguage(data);
+        setSelectedLanguage(lang);
         if (!data.theory) {
           setActiveTab("code");
         }
-        if (data.challenge_type === "web") {
+        if (data.challenge_type === "web" || lang === "html" || lang === "css") {
           setBottomTab("preview");
         }
       }
@@ -339,12 +391,41 @@ export default function ChallengeIDEPage() {
     try {
       // Initialize fresh sandbox isolated DOM
       const { doc: sandboxDoc, win: sandboxWin } = initSandboxIframe();
+      const isHtml = selectedLanguage === "html" || code.trim().startsWith("<");
+      const isCss = selectedLanguage === "css";
 
-      const fullCode = `${code}\n\n${challenge.test_code || ""}`;
-      
-      // Execute in isolated sandbox scope passing sandbox document and window
-      const runFn = new Function("document", "window", fullCode);
-      runFn(sandboxDoc, sandboxWin);
+      if (isHtml) {
+        // 1. Inject HTML directly into the sandbox
+        if (code.includes("<!DOCTYPE") || code.includes("<html")) {
+          sandboxDoc.open();
+          sandboxDoc.write(code);
+          sandboxDoc.close();
+        } else {
+          sandboxDoc.body.innerHTML = code;
+        }
+
+        // 2. Run challenge tests against the rendered DOM if provided
+        if (challenge.test_code) {
+          const runFn = new Function("document", "window", challenge.test_code);
+          runFn(sandboxDoc, sandboxWin);
+        }
+      } else if (isCss) {
+        // 1. Inject CSS into head
+        const styleTag = sandboxDoc.createElement("style");
+        styleTag.textContent = code;
+        sandboxDoc.head.appendChild(styleTag);
+
+        // 2. Run challenge tests if provided
+        if (challenge.test_code) {
+          const runFn = new Function("document", "window", challenge.test_code);
+          runFn(sandboxDoc, sandboxWin);
+        }
+      } else {
+        // JavaScript / Standard Logic Execution
+        const fullCode = `${code}\n\n${challenge.test_code || ""}`;
+        const runFn = new Function("document", "window", fullCode);
+        runFn(sandboxDoc, sandboxWin);
+      }
       
       setLogs([...capturedLogs, "✅ ¡Todos los tests pasaron exitosamente!"]);
       setStatus("success");
@@ -522,9 +603,78 @@ export default function ChallengeIDEPage() {
                 <button onClick={() => setActiveTab("theory")} className="font-bold underline shrink-0 ml-2">Ver Teoría</button>
               </div>
 
-              {/* Top Right: Monaco Editor */}
-              <div className="flex-1 relative lg:rounded-2xl overflow-hidden border-y lg:border border-white/10 shadow-lg min-h-[220px]">
-                <CodeEditor language="javascript" value={code} onChange={(v) => setCode(v || "")} />
+              {/* Top Right: Monaco Editor with Multi-language Toolbar */}
+              <div className="flex-1 relative lg:rounded-2xl overflow-hidden border-y lg:border border-white/10 shadow-lg min-h-[260px] flex flex-col bg-[#09090b]">
+                
+                {/* Editor Tab & Language Switcher Header */}
+                <div className="h-10 bg-black/60 border-b border-white/10 px-3 flex items-center justify-between text-xs shrink-0 select-none">
+                  {/* File Tab Indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-white/10 text-white font-mono font-semibold border border-white/10 shadow-sm">
+                      {selectedLanguage === "html" && <Code2 size={14} className="text-orange-400" />}
+                      {selectedLanguage === "css" && <Paintbrush size={14} className="text-blue-400" />}
+                      {selectedLanguage === "javascript" && <Braces size={14} className="text-yellow-400" />}
+                      {selectedLanguage === "python" && <TerminalSquare size={14} className="text-emerald-400" />}
+                      {selectedLanguage === "cpp" && <Code2 size={14} className="text-purple-400" />}
+                      {selectedLanguage === "sql" && <Database size={14} className="text-cyan-400" />}
+                      
+                      <span>
+                        {selectedLanguage === "html" && "index.html"}
+                        {selectedLanguage === "css" && "styles.css"}
+                        {selectedLanguage === "javascript" && "script.js"}
+                        {selectedLanguage === "python" && "main.py"}
+                        {selectedLanguage === "cpp" && "main.cpp"}
+                        {selectedLanguage === "sql" && "query.sql"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions & Language Selector */}
+                  <div className="flex items-center gap-2">
+                    {/* Reset Code Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm("¿Deseas reiniciar el código al estado inicial?")) {
+                          setCode(challenge.initial_code || "");
+                        }
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                      title="Reiniciar código inicial"
+                    >
+                      <RotateCcw size={12} />
+                      <span className="hidden sm:inline">Reiniciar</span>
+                    </button>
+
+                    {/* Language Dropdown */}
+                    <div className="flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-lg border border-white/10">
+                      <span className="text-[10px] uppercase font-bold text-zinc-500 hidden sm:inline">Modo:</span>
+                      <select
+                        value={selectedLanguage}
+                        onChange={(e) => {
+                          const lang = e.target.value as any;
+                          setSelectedLanguage(lang);
+                          if (lang === "html" || lang === "css") {
+                            setBottomTab("preview");
+                          }
+                        }}
+                        className="bg-transparent text-xs font-mono font-bold text-indigo-300 outline-none cursor-pointer"
+                      >
+                        <option value="html" className="bg-[#18181b] text-white">HTML5</option>
+                        <option value="css" className="bg-[#18181b] text-white">CSS3</option>
+                        <option value="javascript" className="bg-[#18181b] text-white">JavaScript</option>
+                        <option value="python" className="bg-[#18181b] text-white">Python</option>
+                        <option value="cpp" className="bg-[#18181b] text-white">C++</option>
+                        <option value="sql" className="bg-[#18181b] text-white">SQL</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Monaco Editor Container */}
+                <div className="flex-1 w-full h-full">
+                  <CodeEditor language={selectedLanguage} value={code} onChange={(v) => setCode(v || "")} />
+                </div>
               </div>
 
               {/* Bottom Right: Interactive Terminal Console & Web Sandbox */}

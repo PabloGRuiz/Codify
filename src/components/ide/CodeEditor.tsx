@@ -42,11 +42,21 @@ export function CodeEditor({ language, value, onChange, readOnly = false }: Code
           minimap: { enabled: false },
           fontSize: 15,
           fontFamily: "'Geist Mono', 'Fira Code', monospace",
-          padding: { top: 20, bottom: 20 },
+          padding: { top: 16, bottom: 16 },
           readOnly,
           smoothScrolling: true,
           cursorBlinking: "smooth",
           formatOnPaste: true,
+          formatOnType: true,
+          autoClosingBrackets: "always",
+          autoClosingQuotes: "always",
+          autoIndent: "full",
+          tabCompletion: "on",
+          suggestOnTriggerCharacters: true,
+          quickSuggestions: { other: true, comments: true, strings: true },
+          wordWrap: "on",
+          bracketPairColorization: { enabled: true },
+          linkedEditing: true, // Enables simultaneous editing of matching opening/closing HTML tags
         }}
         loading={
           <div className="flex items-center justify-center h-full text-primary font-sans animate-pulse">
