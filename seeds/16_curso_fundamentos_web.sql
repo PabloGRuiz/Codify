@@ -130,20 +130,18 @@ Antes de HTML5, todo se creaba con etiquetas genéricas `<div>`. El **HTML Semá
 ### 🎯 Tu Misión de Hoy:
 Escribe la estructura semántica en HTML directamente:
 1. Un elemento `<header>` con un `<h1>` interior con el texto `"Codify Academy"`.
-2. Un elemento `<main>` con un párrafo `<p>` con `id="resumen"` y el texto `"Aprende desarrollo web paso a paso"`.
-3. Un elemento `<footer>` con `id="pie"` y el texto `"© 2026 Codify"`.
+2. Un elemento `<main>` con un párrafo `<p id="resumen">` con el texto `"Aprende desarrollo web paso a paso"`.
+3. Un elemento `<footer id="pie">` con el texto `"© 2026 Codify"`.
 
 > 💡 **Nota:** ¡Escribe directamente el código HTML en el editor! El navegador lo renderizará en vivo en la pestaña de Vista Previa.$THEORY$,
-        $CODE$<!-- Escribe tu estructura HTML5 semántica aquí -->
-<header>
-  <h1>Codify Academy</h1>
-</header>
+        $CODE$<!-- 1. Crea el <header> con su <h1> "Codify Academy" -->
 
-<main>
-  <p id="resumen">Aprende desarrollo web paso a paso</p>
-</main>
 
-<footer id="pie">© 2026 Codify</footer>$CODE$,
+<!-- 2. Crea el <main> con su <p id="resumen"> -->
+
+
+<!-- 3. Crea el <footer id="pie"> -->
+$CODE$,
         $CODE$<header>
   <h1>Codify Academy</h1>
 </header>
@@ -192,15 +190,17 @@ Los formularios (`<form>`) permiten al usuario interactuar y enviar información
 
 ### 🎯 Tu Misión de Hoy:
 Escribe el formulario directamente en HTML:
-1. Una etiqueta `<form>` con `id="registroForm"`.
+1. Una etiqueta `<form id="registroForm">`.
 2. Dentro del formulario:
-   - Un campo `<input>` con `type="email"`, `id="emailInput"` y `placeholder="tu@correo.com"`.
-   - Un `<button>` con `type="submit"`, `id="btnEnviar"` y el texto `"Registrarse"`.
+   - Un campo `<input type="email" id="emailInput" placeholder="tu@correo.com" />`.
+   - Un `<button type="submit" id="btnEnviar">Registrarse</button>`.
 $THEORY$,
-        $CODE$<!-- Construye el formulario con su input y botón de envío -->
+        $CODE$<!-- Construye el formulario con id="registroForm", su input email y botón submit -->
 <form id="registroForm">
-  <input type="email" id="emailInput" placeholder="tu@correo.com" />
-  <button type="submit" id="btnEnviar">Registrarse</button>
+  <!-- Agrega tu input con type="email", id="emailInput" y placeholder="tu@correo.com" -->
+
+  <!-- Agrega tu botón con type="submit", id="btnEnviar" y texto "Registrarse" -->
+
 </form>$CODE$,
         $CODE$<form id="registroForm">
   <input type="email" id="emailInput" placeholder="tu@correo.com" />
@@ -241,15 +241,17 @@ Una web profesional debe ser inclusiva para todas las personas:
 
 ### 🎯 Tu Misión de Hoy:
 Escribe la tarjeta multimedia en HTML directamente:
-1. Un contenedor `<div>` con `id="card"`.
+1. Un contenedor `<div id="card">`.
 2. Dentro de la tarjeta:
    - Una imagen `<img>` con `id="avatar"`, `src="https://picsum.photos/200"` y `alt="Foto de perfil del desarrollador"`.
    - Un enlace `<a>` con `id="portfolioLink"`, `href="https://github.com"`, `target="_blank"` y el texto `"Ver Repositorio"`.
 $THEORY$,
         $CODE$<!-- Crea la tarjeta multimedia con imagen accesible y enlace externo -->
 <div id="card">
-  <img id="avatar" src="https://picsum.photos/200" alt="Foto de perfil del desarrollador" />
-  <a id="portfolioLink" href="https://github.com" target="_blank">Ver Repositorio</a>
+  <!-- Agrega la etiqueta <img> con src, alt="Foto de perfil del desarrollador" e id="avatar" -->
+
+  <!-- Agrega la etiqueta <a> con href, target="_blank", id="portfolioLink" y texto "Ver Repositorio" -->
+
 </div>$CODE$,
         $CODE$<div id="card">
   <img id="avatar" src="https://picsum.photos/200" alt="Foto de perfil del desarrollador" />
@@ -299,7 +301,7 @@ Cada elemento HTML en una página web es una **caja rectangular** compuesta por 
 4. **Margin (Margen externo):** Espacio que separa a este elemento de los elementos vecinos.
 
 ```css
-#miCaja {
+#boxHero {
   background-color: #1e1e2e;
   padding: 20px;
   margin: 10px;
@@ -320,12 +322,8 @@ Crea un `<div id="boxHero">` y añade un bloque `<style>` aplicando los siguient
 $THEORY$,
         $CODE$<style>
   #boxHero {
-    /* Define los estilos del Box Model aquí */
-    background-color: #1e1e2e;
-    padding: 20px;
-    margin: 10px;
-    border-radius: 12px;
-    border: 2px solid #8b5cf6;
+    /* TODO: Define background-color (#1e1e2e), padding (20px), margin (10px), border-radius (12px) y border (2px solid #8b5cf6) */
+
   }
 </style>
 
@@ -389,10 +387,8 @@ Crea una barra de navegación con Flexbox:
 $THEORY$,
         $CODE$<style>
   #navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
+    /* TODO: Aplica display flex, justify-content space-between, align-items center y gap 12px */
+
   }
 </style>
 
@@ -455,22 +451,19 @@ Mientras que Flexbox trabaja en 1 dimensión, **CSS Grid** organiza filas y colu
 $THEORY$,
         $CODE$<style>
   #cursosGrid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+    /* TODO: Aplica display grid, grid-template-columns repeat(3, 1fr) y gap 16px */
+
   }
   .curso-card {
     background: #18181b;
     padding: 16px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
   }
 </style>
 
 <div id="cursosGrid">
-  <div class="curso-card">Curso 1: HTML5</div>
-  <div class="curso-card">Curso 2: CSS3</div>
-  <div class="curso-card">Curso 3: JavaScript</div>
+  <!-- TODO: Agrega 3 tarjetas con clase "curso-card" -->
+
 </div>$CODE$,
         $CODE$<style>
   #cursosGrid {
@@ -537,13 +530,13 @@ Las variables CSS permiten centralizar valores (colores, tipografía, espacios) 
 $THEORY$,
         $CODE$<style>
   :root {
-    --bg-color: #09090b;
-    --text-color: #fafafa;
+    /* TODO: Define las variables --bg-color (#09090b) y --text-color (#fafafa) */
+
   }
 
   #statusTema {
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    /* TODO: Aplica las variables con var(--bg-color) y var(--text-color) */
+
     padding: 12px;
     border-radius: 8px;
   }
@@ -610,15 +603,11 @@ Crea una función `actualizarPerfilUsuario(nuevoNombre)` que:
 3. Le añada la clase CSS `"perfil-verificado"`.
 $THEORY$,
         $CODE$function actualizarPerfilUsuario(nuevoNombre) {
-  // Busca o crea #username, actualiza su texto y agrégale la clase 'perfil-verificado':
-  let userHeading = document.getElementById("username");
-  if (!userHeading) {
-    userHeading = document.createElement("h1");
-    userHeading.id = "username";
-    document.body.appendChild(userHeading);
-  }
-  userHeading.textContent = nuevoNombre;
-  userHeading.classList.add("perfil-verificado");
+  // TODO:
+  // 1. Busca o crea #username
+  // 2. Asigna el nuevoNombre a su textContent
+  // 3. Agrégale la clase CSS 'perfil-verificado'
+
 }$CODE$,
         $CODE$function actualizarPerfilUsuario(nuevoNombre) {
   let userHeading = document.getElementById("username");
@@ -669,17 +658,11 @@ Crea una función `inicializarContadorLikes()` que inserte en `document.body`:
 3. Un `addEventListener` para `"click"` que en cada pulsación incremente el contador y actualice el texto a `"Me gusta (X)"`.
 $THEORY$,
         $CODE$function inicializarContadorLikes() {
-  let count = 0;
-  const btn = document.createElement("button");
-  btn.id = "btnLike";
-  btn.textContent = "Me gusta (0)";
+  // TODO:
+  // 1. Crea el botón #btnLike con texto "Me gusta (0)"
+  // 2. Crea la variable interna de conteo
+  // 3. Agrega addEventListener("click", ...) para incrementar y actualizar el texto
 
-  btn.addEventListener("click", () => {
-    count++;
-    btn.textContent = `Me gusta (${count})`;
-  });
-
-  document.body.appendChild(btn);
 }$CODE$,
         $CODE$function inicializarContadorLikes() {
   let count = 0;
@@ -739,17 +722,11 @@ Crea una función `renderizarListaHabilidades(habilidades)` que:
 3. Inserte el `<ul>` en `document.body`.
 $THEORY$,
         $CODE$function renderizarListaHabilidades(habilidades) {
-  const ul = document.createElement("ul");
-  ul.id = "skillsList";
+  // TODO:
+  // 1. Crea <ul id="skillsList">
+  // 2. Itera sobre habilidades y agrega cada <li class="skill-badge">
+  // 3. Añade la lista al DOM
 
-  habilidades.forEach((skill) => {
-    const li = document.createElement("li");
-    li.className = "skill-badge";
-    li.textContent = skill;
-    ul.appendChild(li);
-  });
-
-  document.body.appendChild(ul);
 }$CODE$,
         $CODE$function renderizarListaHabilidades(habilidades) {
   const ul = document.createElement("ul");
@@ -803,34 +780,10 @@ Crea una función `iniciarAppTareas()` que inserte en `document.body`:
    - Si `#taskInput` tiene texto (no vacío), crea un `<li>` con ese texto, agrégalo a `#taskList` y limpia el campo de texto (`input.value = ""`).
 $THEORY$,
         $CODE$function iniciarAppTareas() {
-  const container = document.createElement("div");
-  container.id = "todoApp";
+  // TODO:
+  // 1. Crea el contenedor #todoApp con #taskInput, #btnAddTask y #taskList
+  // 2. Al hacer clic en #btnAddTask, añade la tarea a la lista y limpia el input
 
-  const input = document.createElement("input");
-  input.id = "taskInput";
-  input.placeholder = "Nueva tarea...";
-
-  const btn = document.createElement("button");
-  btn.id = "btnAddTask";
-  btn.textContent = "Agregar";
-
-  const ul = document.createElement("ul");
-  ul.id = "taskList";
-
-  btn.addEventListener("click", () => {
-    const valor = input.value.trim();
-    if (valor.length > 0) {
-      const li = document.createElement("li");
-      li.textContent = valor;
-      ul.appendChild(li);
-      input.value = "";
-    }
-  });
-
-  container.appendChild(input);
-  container.appendChild(btn);
-  container.appendChild(ul);
-  document.body.appendChild(container);
 }$CODE$,
         $CODE$function iniciarAppTareas() {
   const container = document.createElement("div");
