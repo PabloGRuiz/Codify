@@ -38,6 +38,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { QuizRunner } from "@/components/ide/QuizRunner";
 import { ReportIssueModal } from "@/components/ide/ReportIssueModal";
+import { ProjectFileTree, getFileLanguage } from "@/components/ide/ProjectFileTree";
 import { getLevelInfo } from "@/lib/gamification";
 
 // Deshabilitar SSR para Monaco Editor con Loading State amigable
@@ -259,8 +260,9 @@ export default function ChallengeIDEPage() {
   const { user, profile } = useUser();
   const { isCollapsed, toggleCollapse } = useSidebar();
   const [challenge, setChallenge] = useState<any>(null);
-  const [code, setCode] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState<"html" | "css" | "javascript" | "python" | "cpp" | "sql">("javascript");
+  const [files, setFiles] = useState<Record<string, string>>({ "index.html": "" });
+  const [activeFile, setActiveFile] = useState("index.html");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("html");
   const [logs, setLogs] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
@@ -272,14 +274,50 @@ export default function ChallengeIDEPage() {
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Helper para inicializar archivos desde initial_code
+  const parseInitialFiles = (data: any): { files: Record<string, string>; activeFile: string } => {
+    const raw = (data.initial_code || "").trim();
+    if (raw.startsWith("{") && raw.includes('"files"')) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.files === "object") {
+          const fileKeys = Object.keys(parsed.files);
+          const active = parsed.activeFile && parsed.files[parsed.activeFile] !== undefined
+            ? parsed.activeFile
+            : (fileKeys.includes("index.html") ? "index.html" : fileKeys[0] || "index.html");
+          return { files: parsed.files, activeFile: active };
+        }
+      } catch (e) {
+        console.error("Error al parsear proyecto JSON de reto", e);
+      }
+    }
+
+    // Archivo único tradicional
+    const lang = detectChallengeLanguage(data);
+    let defaultFileName = "script.js";
+    if (lang === "html" || data.challenge_type === "web") defaultFileName = "index.html";
+    else if (lang === "css") defaultFileName = "styles.css";
+    else if (lang === "python") defaultFileName = "main.py";
+    else if (lang === "cpp") defaultFileName = "main.cpp";
+    else if (lang === "sql") defaultFileName = "query.sql";
+
+    return {
+      files: { [defaultFileName]: data.initial_code || "" },
+      activeFile: defaultFileName,
+    };
+  };
+
   useEffect(() => {
     const fetchChallenge = async () => {
       const { data } = await supabase.from("challenges").select("*, modules(id, course_id, title)").eq("id", id).single();
       if (data) {
         setChallenge(data);
-        setCode(data.initial_code || "");
-        const lang = detectChallengeLanguage(data);
+        const { files: initFiles, activeFile: initActive } = parseInitialFiles(data);
+        setFiles(initFiles);
+        setActiveFile(initActive);
+        const lang = getFileLanguage(initActive);
         setSelectedLanguage(lang);
+
         if (!data.theory) {
           setActiveTab("code");
         }
@@ -291,53 +329,122 @@ export default function ChallengeIDEPage() {
     if (id) fetchChallenge();
   }, [id]);
 
+  // Al cambiar de archivo activo, actualizar el lenguaje del editor
+  const handleSelectFile = (fileName: string) => {
+    setActiveFile(fileName);
+    setSelectedLanguage(getFileLanguage(fileName));
+  };
+
+  // Crear un nuevo archivo en el proyecto
+  const handleCreateFile = (fileName: string) => {
+    let boilerplate = "";
+    if (fileName.endsWith(".html")) {
+      boilerplate = `<!DOCTYPE html>\n<html lang="es">\n<head>\n  <meta charset="UTF-8">\n  <title>Mi Proyecto</title>\n</head>\n<body>\n  \n</body>\n</html>`;
+    } else if (fileName.endsWith(".css")) {
+      boilerplate = `/* Estilos para ${fileName} */\n`;
+    } else if (fileName.endsWith(".js")) {
+      boilerplate = `// Lógica para ${fileName}\n`;
+    }
+
+    setFiles((prev) => ({
+      ...prev,
+      [fileName]: boilerplate,
+    }));
+    handleSelectFile(fileName);
+  };
+
+  // Eliminar un archivo
+  const handleDeleteFile = (fileName: string) => {
+    const updated = { ...files };
+    delete updated[fileName];
+    setFiles(updated);
+    if (activeFile === fileName) {
+      const remaining = Object.keys(updated);
+      const nextActive = remaining.includes("index.html") ? "index.html" : remaining[0] || "index.html";
+      handleSelectFile(nextActive);
+    }
+  };
+
+  // Código del archivo activo
+  const activeCode = files[activeFile] ?? "";
+
+  const handleCodeChange = (newVal: string | undefined) => {
+    const val = newVal || "";
+    setFiles((prev) => ({
+      ...prev,
+      [activeFile]: val,
+    }));
+  };
+
+  /**
+   * Bundler virtual para compilar múltiples archivos HTML, CSS y JS en el iframe
+   */
+  const buildSandboxBundle = (virtualFiles: Record<string, string>): string => {
+    let html = virtualFiles["index.html"] || "";
+
+    // Si no hay index.html pero hay archivos, envolverlos
+    if (!html) {
+      const cssBlocks = Object.entries(virtualFiles)
+        .filter(([name]) => name.endsWith(".css"))
+        .map(([name, content]) => `<style data-virtual="${name}">\n${content}\n</style>`)
+        .join("\n");
+
+      const jsBlocks = Object.entries(virtualFiles)
+        .filter(([name]) => name.endsWith(".js"))
+        .map(([name, content]) => `<script data-virtual="${name}">\n${content}\n</script>`)
+        .join("\n");
+
+      return `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          ${cssBlocks}
+        </head>
+        <body>
+          <div id="sandbox-root"></div>
+          ${jsBlocks}
+        </body>
+        </html>
+      `;
+    }
+
+    // 1. Reemplazar <link rel="stylesheet" href="..."> por el CSS virtual inlined
+    html = html.replace(/<link\s+[^>]*rel=["']stylesheet["'][^>]*>/gi, (match) => {
+      const hrefMatch = match.match(/href=["']([^"']+)["']/i);
+      if (hrefMatch && hrefMatch[1]) {
+        const rawHref = hrefMatch[1].trim().replace(/^\.\//, "");
+        // Buscar coincidencia exacta o por nombre base
+        const matchedEntry = Object.entries(virtualFiles).find(([name]) => {
+          return name === rawHref || name.endsWith(`/${rawHref}`) || rawHref.endsWith(name);
+        });
+
+        if (matchedEntry) {
+          return `<style data-source="${matchedEntry[0]}">\n${matchedEntry[1]}\n</style>`;
+        }
+      }
+      return match;
+    });
+
+    // 2. Reemplazar <script src="..."> por el JS virtual inlined
+    html = html.replace(/<script\s+[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
+      const rawSrc = src.trim().replace(/^\.\//, "");
+      const matchedEntry = Object.entries(virtualFiles).find(([name]) => {
+        return name === rawSrc || name.endsWith(`/${rawSrc}`) || rawSrc.endsWith(name);
+      });
+
+      if (matchedEntry) {
+        return `<script data-source="${matchedEntry[0]}">\n${matchedEntry[1]}\n</script>`;
+      }
+      return match;
+    });
+
+    return html;
+  };
+
   const initSandboxIframe = () => {
     if (iframeRef.current && iframeRef.current.contentDocument) {
       const doc = iframeRef.current.contentDocument;
-      doc.open();
-      doc.write(`
-        <!DOCTYPE html>
-        <html lang="es">
-          <head>
-            <meta charset="utf-8" />
-            <style>
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                margin: 16px;
-                background-color: #0d0d11;
-                color: #e4e4e7;
-              }
-              h1 { color: #8b5cf6; font-size: 1.5rem; margin-top: 0; margin-bottom: 0.5rem; }
-              p { color: #a1a1aa; line-height: 1.5; margin-top: 0; margin-bottom: 0.75rem; }
-              a { color: #38bdf8; text-decoration: underline; }
-              img { max-width: 100%; border-radius: 8px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); }
-              ul { padding-left: 20px; color: #cbd5e1; }
-              li { margin-bottom: 4px; }
-              button {
-                background: linear-gradient(135deg, #8b5cf6, #ec4899);
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-weight: bold;
-                cursor: pointer;
-                transition: opacity 0.2s;
-              }
-              button:hover { opacity: 0.9; }
-              input {
-                background: #18181b;
-                border: 1px solid #3f3f46;
-                color: white;
-                padding: 6px 12px;
-                border-radius: 6px;
-                outline: none;
-              }
-            </style>
-          </head>
-          <body></body>
-        </html>
-      `);
-      doc.close();
       return { doc, win: iframeRef.current.contentWindow };
     }
     return { doc: document, win: window };
@@ -352,7 +459,7 @@ export default function ChallengeIDEPage() {
             user_id: user.id,
             challenge_id: challenge!.id,
             status: "completed",
-            code_snapshot: code || "",
+            code_snapshot: JSON.stringify(files),
             completed_at: new Date().toISOString(),
           });
 
@@ -389,42 +496,28 @@ export default function ChallengeIDEPage() {
 
     let passed = false;
     try {
-      // Initialize fresh sandbox isolated DOM
+      // 1. Construir e inyectar el bundle virtual en el iframe sandbox
+      const bundledHtml = buildSandboxBundle(files);
       const { doc: sandboxDoc, win: sandboxWin } = initSandboxIframe();
-      const isHtml = selectedLanguage === "html" || code.trim().startsWith("<");
-      const isCss = selectedLanguage === "css";
 
-      if (isHtml) {
-        // 1. Inject HTML directly into the sandbox
-        if (code.includes("<!DOCTYPE") || code.includes("<html")) {
-          sandboxDoc.open();
-          sandboxDoc.write(code);
-          sandboxDoc.close();
-        } else {
-          sandboxDoc.body.innerHTML = code;
-        }
+      if (iframeRef.current && iframeRef.current.contentDocument) {
+        sandboxDoc.open();
+        sandboxDoc.write(bundledHtml);
+        sandboxDoc.close();
+      }
 
-        // 2. Run challenge tests against the rendered DOM if provided
-        if (challenge.test_code) {
-          const runFn = new Function("document", "window", challenge.test_code);
-          runFn(sandboxDoc, sandboxWin);
-        }
-      } else if (isCss) {
-        // 1. Inject CSS into head
-        const styleTag = sandboxDoc.createElement("style");
-        styleTag.textContent = code;
-        sandboxDoc.head.appendChild(styleTag);
-
-        // 2. Run challenge tests if provided
-        if (challenge.test_code) {
-          const runFn = new Function("document", "window", challenge.test_code);
-          runFn(sandboxDoc, sandboxWin);
-        }
+      // 2. Ejecutar batería de tests sobre el proyecto
+      if (challenge.test_code) {
+        // Pasar el sistema de archivos virtuales, document y window al entorno de tests
+        const testRunner = new Function("files", "document", "window", "code", challenge.test_code);
+        testRunner(files, sandboxDoc, sandboxWin, activeCode);
       } else {
-        // JavaScript / Standard Logic Execution
-        const fullCode = `${code}\n\n${challenge.test_code || ""}`;
-        const runFn = new Function("document", "window", fullCode);
-        runFn(sandboxDoc, sandboxWin);
+        // En caso de código JS único sin test específico
+        const isJs = selectedLanguage === "javascript" || activeFile.endsWith(".js");
+        if (isJs) {
+          const runFn = new Function("document", "window", activeCode);
+          runFn(sandboxDoc, sandboxWin);
+        }
       }
       
       setLogs([...capturedLogs, "✅ ¡Todos los tests pasaron exitosamente!"]);
@@ -603,77 +696,53 @@ export default function ChallengeIDEPage() {
                 <button onClick={() => setActiveTab("theory")} className="font-bold underline shrink-0 ml-2">Ver Teoría</button>
               </div>
 
-              {/* Top Right: Monaco Editor with Multi-language Toolbar */}
-              <div className="flex-1 relative lg:rounded-2xl overflow-hidden border-y lg:border border-white/10 shadow-lg min-h-[260px] flex flex-col bg-[#09090b]">
+              {/* Top Right: Monaco Editor with Project File Tree & Toolbar */}
+              <div className="flex-1 relative lg:rounded-2xl overflow-hidden border-y lg:border border-white/10 shadow-lg min-h-[280px] flex flex-col bg-[#09090b]">
                 
-                {/* Editor Tab & Language Switcher Header */}
-                <div className="h-10 bg-black/60 border-b border-white/10 px-3 flex items-center justify-between text-xs shrink-0 select-none">
-                  {/* File Tab Indicator */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-white/10 text-white font-mono font-semibold border border-white/10 shadow-sm">
-                      {selectedLanguage === "html" && <Code2 size={14} className="text-orange-400" />}
-                      {selectedLanguage === "css" && <Paintbrush size={14} className="text-blue-400" />}
-                      {selectedLanguage === "javascript" && <Braces size={14} className="text-yellow-400" />}
-                      {selectedLanguage === "python" && <TerminalSquare size={14} className="text-emerald-400" />}
-                      {selectedLanguage === "cpp" && <Code2 size={14} className="text-purple-400" />}
-                      {selectedLanguage === "sql" && <Database size={14} className="text-cyan-400" />}
-                      
-                      <span>
-                        {selectedLanguage === "html" && "index.html"}
-                        {selectedLanguage === "css" && "styles.css"}
-                        {selectedLanguage === "javascript" && "script.js"}
-                        {selectedLanguage === "python" && "main.py"}
-                        {selectedLanguage === "cpp" && "main.cpp"}
-                        {selectedLanguage === "sql" && "query.sql"}
-                      </span>
-                    </div>
+                {/* Editor Tab & Project File Tree Header */}
+                <div className="h-11 bg-black/70 border-b border-white/10 px-2 flex items-center justify-between text-xs shrink-0 select-none gap-2">
+                  {/* Project File Tree Tabs */}
+                  <div className="flex-1 min-w-0 h-full flex items-center">
+                    <ProjectFileTree
+                      files={files}
+                      activeFile={activeFile}
+                      onSelectFile={handleSelectFile}
+                      onCreateFile={handleCreateFile}
+                      onDeleteFile={handleDeleteFile}
+                    />
                   </div>
 
-                  {/* Actions & Language Selector */}
-                  <div className="flex items-center gap-2">
+                  {/* Actions & Language Info */}
+                  <div className="flex items-center gap-1.5 shrink-0 pr-1">
                     {/* Reset Code Button */}
                     <button
                       type="button"
                       onClick={() => {
-                        if (confirm("¿Deseas reiniciar el código al estado inicial?")) {
-                          setCode(challenge.initial_code || "");
+                        if (confirm("¿Deseas reiniciar todos los archivos del proyecto al estado inicial?")) {
+                          const { files: initFiles, activeFile: initActive } = parseInitialFiles(challenge);
+                          setFiles(initFiles);
+                          setActiveFile(initActive);
+                          setSelectedLanguage(getFileLanguage(initActive));
                         }
                       }}
                       className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
-                      title="Reiniciar código inicial"
+                      title="Reiniciar archivos iniciales"
                     >
                       <RotateCcw size={12} />
                       <span className="hidden sm:inline">Reiniciar</span>
                     </button>
 
-                    {/* Language Dropdown */}
-                    <div className="flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-lg border border-white/10">
-                      <span className="text-[10px] uppercase font-bold text-zinc-500 hidden sm:inline">Modo:</span>
-                      <select
-                        value={selectedLanguage}
-                        onChange={(e) => {
-                          const lang = e.target.value as any;
-                          setSelectedLanguage(lang);
-                          if (lang === "html" || lang === "css") {
-                            setBottomTab("preview");
-                          }
-                        }}
-                        className="bg-transparent text-xs font-mono font-bold text-indigo-300 outline-none cursor-pointer"
-                      >
-                        <option value="html" className="bg-[#18181b] text-white">HTML5</option>
-                        <option value="css" className="bg-[#18181b] text-white">CSS3</option>
-                        <option value="javascript" className="bg-[#18181b] text-white">JavaScript</option>
-                        <option value="python" className="bg-[#18181b] text-white">Python</option>
-                        <option value="cpp" className="bg-[#18181b] text-white">C++</option>
-                        <option value="sql" className="bg-[#18181b] text-white">SQL</option>
-                      </select>
+                    {/* Active Language Badge */}
+                    <div className="flex items-center gap-1 bg-black/50 px-2 py-1 rounded-lg border border-white/10 text-[11px] font-mono font-bold text-indigo-300">
+                      <span className="text-[9px] uppercase tracking-wider text-zinc-500 hidden sm:inline">Sintaxis:</span>
+                      <span className="uppercase">{selectedLanguage}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Monaco Editor Container */}
                 <div className="flex-1 w-full h-full">
-                  <CodeEditor language={selectedLanguage} value={code} onChange={(v) => setCode(v || "")} />
+                  <CodeEditor language={selectedLanguage} value={activeCode} onChange={handleCodeChange} />
                 </div>
               </div>
 
