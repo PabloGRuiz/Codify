@@ -450,6 +450,28 @@ export default function ChallengeIDEPage() {
     return { doc: document, win: window };
   };
 
+  /**
+   * Actualizar únicamente la Vista Previa Web sin ejecutar los tests
+   */
+  const updatePreview = () => {
+    const bundledHtml = buildSandboxBundle(files);
+    const { doc: sandboxDoc } = initSandboxIframe();
+
+    if (iframeRef.current && iframeRef.current.contentDocument) {
+      sandboxDoc.open();
+      sandboxDoc.write(bundledHtml);
+      sandboxDoc.close();
+    }
+    setBottomTab("preview");
+  };
+
+  // Actualizar la vista previa cuando se monta la página o cambia el tab a preview
+  useEffect(() => {
+    if (bottomTab === "preview" && iframeRef.current) {
+      updatePreview();
+    }
+  }, [bottomTab]);
+
   const handleChallengeComplete = async () => {
     if (!isCompleted) {
       setShowSuccessModal(true);
@@ -622,11 +644,28 @@ export default function ChallengeIDEPage() {
               +{challenge.xp_reward} XP
             </span>
             {challenge.challenge_type !== "quiz" && (
-              <div className={`${activeTab === "code" ? "block" : "hidden lg:block"}`}>
-                <Button size="sm" onClick={runCodeAndTests} isLoading={isRunning} leftIcon={<Play size={16} />} className="shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                  <span className="hidden sm:inline">Ejecutar Tests</span>
-                  <span className="sm:hidden">Ejecutar</span>
-                </Button>
+              <div className="flex items-center gap-2">
+                {/* Botón para actualizar solo la vista previa en retos web sin ejecutar tests */}
+                {isWebChallenge && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={updatePreview}
+                    leftIcon={<RefreshCw size={15} />}
+                    className="border border-white/10 hover:border-blue-500/30 hover:bg-blue-500/10 text-zinc-300 hover:text-blue-400"
+                    title="Actualizar la vista previa web sin correr los tests de validación"
+                  >
+                    <span className="hidden sm:inline">Actualizar Vista</span>
+                    <span className="sm:hidden">Vista</span>
+                  </Button>
+                )}
+
+                <div className={`${activeTab === "code" ? "block" : "hidden lg:block"}`}>
+                  <Button size="sm" onClick={runCodeAndTests} isLoading={isRunning} leftIcon={<Play size={16} />} className="shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+                    <span className="hidden sm:inline">Ejecutar Tests</span>
+                    <span className="sm:hidden">Ejecutar</span>
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -822,11 +861,22 @@ export default function ChallengeIDEPage() {
                 <div className={`flex-1 bg-[#0d0d11] relative overflow-hidden flex flex-col ${
                   bottomTab === "preview" ? "flex" : "hidden"
                 }`}>
-                  <div className="h-6 bg-black/60 border-b border-white/5 px-3 flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
-                    <span className="w-2 h-2 rounded-full bg-red-500/60 inline-block"></span>
-                    <span className="w-2 h-2 rounded-full bg-yellow-500/60 inline-block"></span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500/60 inline-block"></span>
-                    <span className="ml-2 text-zinc-400 font-sans">http://sandbox.local/preview</span>
+                  <div className="h-7 bg-black/60 border-b border-white/5 px-3 flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-500/60 inline-block"></span>
+                      <span className="w-2 h-2 rounded-full bg-yellow-500/60 inline-block"></span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500/60 inline-block"></span>
+                      <span className="ml-2 text-zinc-400 font-sans">http://sandbox.local/preview</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={updatePreview}
+                      className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-white px-2 py-0.5 rounded hover:bg-white/10 transition-colors font-sans"
+                      title="Refrescar vista previa"
+                    >
+                      <RefreshCw size={11} />
+                      <span>Refrescar</span>
+                    </button>
                   </div>
                   <iframe
                     ref={iframeRef}
