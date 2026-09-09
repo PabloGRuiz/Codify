@@ -561,10 +561,22 @@ export default function ChallengeIDEPage() {
           .map(([, content]) => content)
           .join("\n\n") || (activeFile.endsWith(".js") ? activeCode : "");
 
+        // Sanitizar test_code y allJsCode para evitar colisiones de identificadores redeclarados
+        // (por ejemplo: si test_code declara 'const assert = ...' cuando assert ya está provisto en el runner)
+        const sanitizedTestCode = challenge.test_code
+          .replace(/\b(?:const|let|var)\s+assert\b/g, "assert")
+          .replace(/\b(?:const|let|var)\s+expect\b/g, "expect")
+          .replace(/\b(?:const|let|var)\s+test\b/g, "test");
+
+        const sanitizedJsCode = allJsCode
+          .replace(/\b(?:const|let|var)\s+assert\b/g, "assert")
+          .replace(/\b(?:const|let|var)\s+expect\b/g, "expect")
+          .replace(/\b(?:const|let|var)\s+test\b/g, "test");
+
         // Entorno de pruebas (test runner tipo Jest/Vitest con expect y assert)
         const testHelperScript = `
           // Utilidad expect simple y completa
-          function expect(actual) {
+          let expect = function(actual) {
             return {
               toBe(expected) {
                 if (actual !== expected) {
@@ -590,26 +602,26 @@ export default function ChallengeIDEPage() {
                 }
               }
             };
-          }
+          };
 
-          function assert(condition, message) {
+          let assert = function(condition, message) {
             if (!condition) throw new Error(message || "La aserción falló.");
-          }
+          };
 
-          function test(description, fn) {
+          let test = function(description, fn) {
             try {
               fn();
             } catch (err) {
               err.message = "[" + description + "] " + err.message;
               throw err;
             }
-          }
+          };
 
           // 1. Ejecutar código JS del usuario (si existe) en este ámbito
-          ${allJsCode}
+          ${sanitizedJsCode}
 
           // 2. Ejecutar la batería de tests definida
-          ${challenge.test_code}
+          ${sanitizedTestCode}
         `;
 
         const testRunner = new Function("files", "document", "window", "code", testHelperScript);
