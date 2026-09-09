@@ -18,9 +18,19 @@ interface QuizRunnerProps {
   questions: QuizQuestion[];
   xpReward: number;
   onComplete: () => void;
+  maxAttempts?: number;
+  attemptsLeft?: number;
+  onFailAttempt?: () => void;
 }
 
-export function QuizRunner({ questions, xpReward, onComplete }: QuizRunnerProps) {
+export function QuizRunner({ 
+  questions, 
+  xpReward, 
+  onComplete,
+  maxAttempts,
+  attemptsLeft,
+  onFailAttempt
+}: QuizRunnerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -57,6 +67,8 @@ export function QuizRunner({ questions, xpReward, onComplete }: QuizRunnerProps)
       const percentage = Math.round((score / questions.length) * 100);
       if (percentage >= 70) {
         onComplete();
+      } else if (onFailAttempt) {
+        onFailAttempt();
       }
     }
   };
@@ -201,11 +213,30 @@ export function QuizRunner({ questions, xpReward, onComplete }: QuizRunnerProps)
               </div>
               <h3 className="text-3xl font-heading font-bold text-white">Evaluación Reprobada</h3>
               <p className="text-zinc-400 text-sm">
-                Has obtenido un <strong className="text-white font-mono">{percentage}%</strong>. Necesitas al menos un 70% para aprobar esta lección.
+                Has obtenido un <strong className="text-white font-mono">{percentage}%</strong>. Necesitas al menos un 70% para aprobar este reto.
               </p>
-              <Button onClick={handleRetry} className="w-full mt-4 py-3 bg-red-500 hover:bg-red-600 text-white font-bold" leftIcon={<RefreshCw size={18} />}>
-                Reintentar Evaluación
-              </Button>
+
+              {attemptsLeft !== undefined && (
+                <div className={`p-3 rounded-xl border text-xs font-semibold ${
+                  attemptsLeft <= 0
+                    ? "bg-red-500/20 border-red-500/40 text-red-300"
+                    : "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                }`}>
+                  {attemptsLeft <= 0
+                    ? "❌ Has agotado tus 3 intentos. Tu racha competitiva se ha reiniciado."
+                    : `⚠️ Te ${attemptsLeft === 1 ? "queda 1 intento" : `quedan ${attemptsLeft} intentos`} antes de perder tu racha.`}
+                </div>
+              )}
+
+              {attemptsLeft !== undefined && attemptsLeft <= 0 ? (
+                <Button onClick={() => window.location.href = "/"} className="w-full mt-4 py-3 bg-zinc-700 hover:bg-zinc-600 text-white font-bold">
+                  Volver al Tablero
+                </Button>
+              ) : (
+                <Button onClick={handleRetry} className="w-full mt-4 py-3 bg-red-500 hover:bg-red-600 text-white font-bold" leftIcon={<RefreshCw size={18} />}>
+                  Reintentar Evaluación {attemptsLeft !== undefined ? `(${attemptsLeft} restante${attemptsLeft === 1 ? "" : "s"})` : ""}
+                </Button>
+              )}
             </>
           )}
         </div>

@@ -232,3 +232,23 @@ export function calculateArenaPromotion(currentRankInput?: string | null, curren
     message: "¡Victoria en Rango Oro 🥇! Mantienes tu estatus en la cumbre de la Arena.",
   };
 }
+
+/**
+ * Calcula el resultado de fallar un reto en la Arena (agotar los 3 intentos).
+ * Resetea la racha hacia el siguiente rango a 0 para impedir el ascenso.
+ */
+export function calculateArenaFailure(currentRankInput?: string | null): {
+  newRank: ArenaRank;
+  newStreak: number;
+  message: string;
+} {
+  const currentRank = (currentRankInput?.toLowerCase() || "unranked") as ArenaRank;
+
+  return {
+    newRank: currentRank,
+    newStreak: 0,
+    message: currentRank === "unranked"
+      ? "Has agotado tus 3 intentos en este reto. ¡Sigue practicando para alcanzar Bronce!"
+      : `Has agotado tus 3 intentos. Tu racha hacia el siguiente rango se reinicia a 0/3.`,
+  };
+}

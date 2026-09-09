@@ -38,7 +38,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { QuizRunner } from "@/components/ide/QuizRunner";
 import { ReportIssueModal } from "@/components/ide/ReportIssueModal";
-import { getLevelInfo, calculateArenaPromotion, getArenaRankInfo } from "@/lib/gamification";
+import { getLevelInfo, calculateArenaPromotion, calculateArenaFailure, getArenaRankInfo } from "@/lib/gamification";
 import { ProjectFileTree, getFileLanguage } from "@/components/ide/ProjectFileTree";
 
 // Deshabilitar SSR para Monaco Editor con Loading State amigable
@@ -271,6 +271,9 @@ export default function ChallengeIDEPage() {
   const [bottomTab, setBottomTab] = useState<"console" | "preview">("console");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showFailureModal, setShowFailureModal] = useState(false);
+  const [attemptsLeft, setAttemptsLeft] = useState<number>(3);
+  const [failureMessage, setFailureMessage] = useState<string>("");
   const [arenaPromotionInfo, setArenaPromotionInfo] = useState<{
     promoted: boolean;
     message: string;
@@ -624,8 +627,30 @@ export default function ChallengeIDEPage() {
       setStatus("success");
       passed = true;
     } catch (err: any) {
-      setLogs([...capturedLogs, `❌ Error en los tests: ${err.message}`]);
+      const isArenaChallenge = 
+        challenge.modules?.title?.includes("Arena") || 
+        !challenge.modules?.course_id;
+
+      let remaining = attemptsLeft;
+      if (isArenaChallenge) {
+        remaining = Math.max(0, attemptsLeft - 1);
+        setAttemptsLeft(remaining);
+      }
+
+      setLogs([
+        ...capturedLogs, 
+        `❌ Error en los tests: ${err.message}`,
+        isArenaChallenge 
+          ? (remaining > 0 
+              ? `⚠️ Intento fallido. Te ${remaining === 1 ? "queda 1 intento" : `quedan ${remaining} intentos`}.` 
+              : "❌ Has agotado tus 3 intentos en este reto.")
+          : ""
+      ].filter(Boolean));
       setStatus("error");
+
+      if (isArenaChallenge && remaining <= 0) {
+        handleChallengeFailure();
+      }
     } finally {
       console.log = originalLog;
       console.error = originalError;
@@ -634,6 +659,26 @@ export default function ChallengeIDEPage() {
 
     if (passed) {
       await handleChallengeComplete();
+    }
+  };
+
+  const handleChallengeFailure = async () => {
+    const isArenaChallenge = 
+      challenge.modules?.title?.includes("Arena") || 
+      !challenge.modules?.course_id;
+
+    if (isArenaChallenge && user) {
+      try {
+        const failureResult = calculateArenaFailure(profile?.arena_rank);
+        setFailureMessage(failureResult.message);
+        await supabase
+          .from("profiles")
+          .update({ arena_streak: failureResult.newStreak })
+          .eq("id", user.id);
+      } catch (e) {
+        console.error("Error al registrar intento fallido en Arena:", e);
+      }
+      setShowFailureModal(true);
     }
   };
 
@@ -718,6 +763,18 @@ export default function ChallengeIDEPage() {
               <span className="hidden sm:inline">Reportar</span>
             </button>
 
+            {/* Indicador de Intentos para Retos de la Arena */}
+            {(challenge.modules?.title?.includes("Arena") || !challenge.modules?.course_id) && (
+              <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border ${
+                attemptsLeft === 3 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" :
+                attemptsLeft === 2 ? "bg-amber-500/10 text-amber-400 border-amber-500/30" :
+                attemptsLeft === 1 ? "bg-orange-500/10 text-orange-400 border-orange-500/30 animate-pulse" :
+                "bg-red-500/10 text-red-400 border-red-500/30"
+              }`}>
+                {attemptsLeft} {attemptsLeft === 1 ? "intento" : "intentos"}
+              </span>
+            )}
+
             <span className="text-primary font-bold text-xs lg:text-sm bg-primary/10 px-2 lg:px-3 py-1 lg:py-1.5 rounded-full border border-primary/20 hidden sm:block">
               +{challenge.xp_reward} XP
             </span>
@@ -739,8 +796,19 @@ export default function ChallengeIDEPage() {
                 )}
 
                 <div className={`${activeTab === "code" ? "block" : "hidden lg:block"}`}>
-                  <Button size="sm" onClick={runCodeAndTests} isLoading={isRunning} leftIcon={<Play size={16} />} className="shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                    <span className="hidden sm:inline">Ejecutar Tests</span>
+                  <Button 
+                    size="sm" 
+                    onClick={runCodeAndTests} 
+                    isLoading={isRunning} 
+                    disabled={attemptsLeft <= 0}
+                    leftIcon={<Play size={16} />} 
+                    className={`shadow-[0_0_15px_rgba(139,92,246,0.3)] ${
+                      attemptsLeft <= 0 ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    <span className="hidden sm:inline">
+                      {attemptsLeft <= 0 ? "Intentos Agotados" : "Ejecutar Tests"}
+                    </span>
                     <span className="sm:hidden">Ejecutar</span>
                   </Button>
                 </div>
@@ -770,6 +838,18 @@ export default function ChallengeIDEPage() {
                 questions={parsedQuestions}
                 xpReward={challenge.xp_reward || 50}
                 onComplete={handleChallengeComplete}
+                maxAttempts={3}
+                attemptsLeft={challenge.modules?.title?.includes("Arena") || !challenge.modules?.course_id ? attemptsLeft : undefined}
+                onFailAttempt={() => {
+                  const isArena = challenge.modules?.title?.includes("Arena") || !challenge.modules?.course_id;
+                  if (isArena) {
+                    const remaining = Math.max(0, attemptsLeft - 1);
+                    setAttemptsLeft(remaining);
+                    if (remaining <= 0) {
+                      handleChallengeFailure();
+                    }
+                  }
+                }}
               />
             </div>
 
@@ -1033,6 +1113,53 @@ export default function ChallengeIDEPage() {
                   className="text-sm text-zinc-400 hover:text-white transition-colors mt-2"
                 >
                   Quedarme viendo el código
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FAILURE / EXHAUSTED ATTEMPTS MODAL */}
+      <AnimatePresence>
+        {showFailureModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: "spring", bounce: 0.5 }}
+              className="bg-zinc-900 border-2 border-red-500/50 p-8 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.2)] max-w-sm w-full text-center relative overflow-hidden"
+            >
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-red-500/20 blur-[60px] rounded-full pointer-events-none" />
+
+              <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)] relative z-10">
+                <AlertCircle size={40} className="text-red-400" />
+              </div>
+              
+              <h2 className="text-3xl font-heading font-bold text-white mb-2 relative z-10">Intentos Agotados</h2>
+              <p className="text-zinc-400 mb-6 relative z-10">Has utilizado tus 3 intentos en este reto de la Arena.</p>
+
+              <div className="p-3.5 rounded-xl border bg-red-500/10 border-red-500/30 text-red-300 text-xs font-medium mb-6 relative z-10">
+                {failureMessage || "Tu racha hacia el próximo rango se ha reiniciado a 0."}
+              </div>
+
+              <div className="flex flex-col gap-3 relative z-10">
+                <Button 
+                  size="lg" 
+                  onClick={() => router.push("/")}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white font-bold border-none shadow-lg shadow-red-500/20"
+                >
+                  Regresar al Tablero
+                </Button>
+                <button 
+                  onClick={() => setShowFailureModal(false)}
+                  className="text-sm text-zinc-400 hover:text-white transition-colors mt-1"
+                >
+                  Cerrar y revisar mi solución
                 </button>
               </div>
             </motion.div>
