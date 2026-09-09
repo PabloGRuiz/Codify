@@ -555,11 +555,11 @@ export default function ChallengeIDEPage() {
 
       // 2. Ejecutar batería de tests sobre el proyecto
       if (challenge.test_code) {
-        // Concatenar todos los archivos JS o el código activo
+        // Concatenar ÚNICAMENTE archivos .js (nunca HTML o CSS que romperían la sintaxis JS con '<')
         const allJsCode = Object.entries(files)
           .filter(([name]) => name.endsWith(".js"))
           .map(([, content]) => content)
-          .join("\n\n") || activeCode;
+          .join("\n\n") || (activeFile.endsWith(".js") ? activeCode : "");
 
         // Entorno de pruebas (test runner tipo Jest/Vitest con expect y assert)
         const testHelperScript = `
@@ -605,7 +605,7 @@ export default function ChallengeIDEPage() {
             }
           }
 
-          // 1. Ejecutar código del usuario en este ámbito
+          // 1. Ejecutar código JS del usuario (si existe) en este ámbito
           ${allJsCode}
 
           // 2. Ejecutar la batería de tests definida
