@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 12 - PERMISOS RLS Y SINCRONIZACIÓN DE PERFILES
+-- 🚀 SGFC SEED: 12 - PERMISOS RLS Y SINCRONIZACIÓN DE PERFILES
 -- ==============================================================================
 -- Este script soluciona la visibilidad de usuarios en el Panel de Administración:
 -- 1. Permite que todos los usuarios autenticados puedan leer perfiles (o admins lean todo).

@@ -454,7 +454,7 @@ export function ExamModal({
             <div className="py-16 text-center space-y-4">
               <div className="w-14 h-14 rounded-2xl border-4 border-amber-500 border-t-transparent animate-spin mx-auto" />
               <h4 className="text-lg font-bold text-white font-heading">Evaluando Respuestas...</h4>
-              <p className="text-xs text-zinc-400">Verificando respuestas contra el banco oficial de Codify.</p>
+              <p className="text-xs text-zinc-400">Verificando respuestas contra el banco oficial de SGFC.</p>
             </div>
           )}
 

@@ -530,7 +530,7 @@ export default function AdminPage() {
   };
 
   // AI Prompt Template
-  const aiPromptText = `Actúa como un Diseñador Curricular de Programación y Experto en JavaScript para la plataforma gamificada "Codify".
+  const aiPromptText = `Actúa como un Diseñador Curricular de Programación y Experto en JavaScript para la plataforma gamificada "SGFC".
 
 Necesito que generes el contenido completo para un nuevo MÓDULO de aprendizaje y sus 5 RETOS progresivos en formato de script SQL de PostgreSQL para insertar directamente en Supabase.
 
@@ -1303,7 +1303,7 @@ Genera el script SQL completo listo para copiar y pegar.`;
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-white">Difusión de Anuncios del Sistema</h2>
-                  <p className="text-sm text-zinc-400">Envía un comunicado o notificación instantánea a toda la comunidad de Codify.</p>
+                  <p className="text-sm text-zinc-400">Envía un comunicado o notificación instantánea a toda la comunidad de SGFC.</p>
                 </div>
               </div>
 

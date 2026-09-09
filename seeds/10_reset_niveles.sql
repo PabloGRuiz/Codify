@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🔄 CODIFY: RESET DE NIVELES Y XP (CONSERVANDO PROGRESO DE MÓDULOS)
+-- 🔄 SGFC: RESET DE NIVELES Y XP (CONSERVANDO PROGRESO DE MÓDULOS)
 -- ==============================================================================
 -- Este script resetea el nivel y la experiencia en la tabla "profiles" a Nivel 1 (0 XP)
 -- SIN TOCAR la tabla "user_progress", manteniendo todas tus lecciones y módulos 

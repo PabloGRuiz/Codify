@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ⚔️ CODIFY SEED: ARENA ALGORÍTMICA & RETOS DIARIOS PVP (10 RETOS)
+-- ⚔️ SGFC SEED: ARENA ALGORÍTMICA & RETOS DIARIOS PVP (10 RETOS)
 -- ==============================================================================
 -- Este script crea el módulo de Speed Coding / Retos Diarios.
 -- 100% INDEPENDIENTE e IDEMPOTENTE.
@@ -372,7 +372,7 @@ Implementa `capitalizeWords(sentence)` para formatear la frase en Title Case.',
   expect(capitalizeWords("aprende a programar")).toBe("Aprende A Programar");
 });
 test("Frase con mayúsculas locas", () => {
-  expect(capitalizeWords("cODiFy eS gENiAL")).toBe("Codify Es Genial");
+  expect(capitalizeWords("cODiFy eS gENiAL")).toBe("SGFC Es Genial");
 });',
     75,
     9

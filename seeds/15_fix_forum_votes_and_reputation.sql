@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 15 - FIX FORO VOTES, REPUTACIÓN Y TRIGGERS SECURITY DEFINER
+-- 🚀 SGFC SEED: 15 - FIX FORO VOTES, REPUTACIÓN Y TRIGGERS SECURITY DEFINER
 -- ==============================================================================
 -- Este script soluciona el problema de que los likes no incrementaban la reputación
 -- ni guardaban los upvotes en Supabase debido a permisos de RLS en los triggers.

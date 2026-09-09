@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🌐 CODIFY SEED: 16 - CURSO MAESTRO: FUNDAMENTOS DE LA PROGRAMACIÓN WEB
+-- 🌐 SGFC SEED: 16 - CURSO MAESTRO: FUNDAMENTOS DE LA PROGRAMACIÓN WEB
 -- ==============================================================================
 -- Curso profesional con arquitectura de proyectos reales, estructura de carpetas,
 -- multi-archivos (HTML, CSS y JS interconectados), evaluación profunda por etapas
@@ -233,7 +233,7 @@ Un documento HTML5 válido comienza con el preámbulo que instruye al motor de r
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codify Academy | Formación Web</title>
+  <title>SGFC Academy | Formación Web</title>
 </head>
 <body>
   <!-- Contenido semántico visible -->
@@ -260,13 +260,13 @@ El **HTML Semántico** introdujo etiquetas con significado intrínseco que le co
 
 ### 🎯 Tu Misión de Hoy:
 En el archivo `index.html`, construye una estructura semántica completa y accesible:
-1. El boilerplate HTML5 con `<!DOCTYPE html>`, `<html lang="es">`, `<head>` (con `<meta charset="UTF-8">` y `<title>Codify Academy</title>`), y su `<body>`.
+1. El boilerplate HTML5 con `<!DOCTYPE html>`, `<html lang="es">`, `<head>` (con `<meta charset="UTF-8">` y `<title>SGFC Academy</title>`), y su `<body>`.
 2. Dentro del `<body>`:
-   - Un `<header>` que contenga un encabezado principal `<h1>Codify Academy</h1>`.
+   - Un `<header>` que contenga un encabezado principal `<h1>SGFC Academy</h1>`.
    - Un `<main>` que contenga:
      - Un párrafo `<p id="resumen">` con el texto `"Aprende desarrollo web paso a paso"`.
      - Una `<section id="contenido">` con un encabezado secundario `<h2>Nuestros Cursos</h2>`.
-   - Un elemento `<footer id="pie">` con el texto `"© 2026 Codify"`.
+   - Un elemento `<footer id="pie">` con el texto `"© 2026 SGFC"`.
 
 > 💡 **Tip:** Observa cómo el Sandbox interpreta tus etiquetas en la pestaña **Vista Previa Web**.
 
@@ -280,14 +280,14 @@ En el archivo `index.html`, construye una estructura semántica completa y acces
   "type": "project",
   "activeFile": "index.html",
   "files": {
-    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Codify Academy</title>\n</head>\n<body>\n  <!-- 1. Crea el <header> con su <h1> \"Codify Academy\" -->\n\n  <!-- 2. Crea el <main> con <p id=\"resumen\"> y <section id=\"contenido\"> -->\n\n  <!-- 3. Crea el <footer id=\"pie\"> -->\n\n</body>\n</html>"
+    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>SGFC Academy</title>\n</head>\n<body>\n  <!-- 1. Crea el <header> con su <h1> \"SGFC Academy\" -->\n\n  <!-- 2. Crea el <main> con <p id=\"resumen\"> y <section id=\"contenido\"> -->\n\n  <!-- 3. Crea el <footer id=\"pie\"> -->\n\n</body>\n</html>"
   }
 }$CODE$,
         $CODE${
   "type": "project",
   "activeFile": "index.html",
   "files": {
-    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Codify Academy</title>\n</head>\n<body>\n  <header>\n    <h1>Codify Academy</h1>\n  </header>\n\n  <main>\n    <p id=\"resumen\">Aprende desarrollo web paso a paso</p>\n    <section id=\"contenido\">\n      <h2>Nuestros Cursos</h2>\n    </section>\n  </main>\n\n  <footer id=\"pie\">© 2026 Codify</footer>\n</body>\n</html>"
+    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>SGFC Academy</title>\n</head>\n<body>\n  <header>\n    <h1>SGFC Academy</h1>\n  </header>\n\n  <main>\n    <p id=\"resumen\">Aprende desarrollo web paso a paso</p>\n    <section id=\"contenido\">\n      <h2>Nuestros Cursos</h2>\n    </section>\n  </main>\n\n  <footer id=\"pie\">© 2026 SGFC</footer>\n</body>\n</html>"
   }
 }$CODE$,
         $TEST$const assert = (c, m) => { if (!c) throw new Error(m); };
@@ -300,7 +300,7 @@ console.log("✓ [Archivos] Archivo index.html detectado correctamente");
 const header = document.querySelector("header");
 assert(header !== null, "Etapa 2 Fallida: Debe existir un elemento semántico <header> en el <body>.");
 const h1 = header.querySelector("h1");
-assert(h1 !== null && h1.textContent.trim() === "Codify Academy", "Etapa 2 Fallida: El <header> debe contener un <h1> con el texto exacto 'Codify Academy'.");
+assert(h1 !== null && h1.textContent.trim() === "SGFC Academy", "Etapa 2 Fallida: El <header> debe contener un <h1> con el texto exacto 'SGFC Academy'.");
 console.log("✓ [HTML5] <header> y <h1> estructurados correctamente");
 
 const main = document.querySelector("main");
@@ -316,7 +316,7 @@ console.log("✓ [HTML5] <main>, párrafo y <section> validados");
 
 const footer = document.getElementById("pie") || document.querySelector("footer");
 assert(footer !== null && footer.tagName.toLowerCase() === "footer", "Etapa 2 Fallida: Debe existir un elemento semántico <footer id='pie'>.");
-assert(footer.textContent.includes("Codify"), "Etapa 2 Fallida: El footer debe contener el texto de copyright con 'Codify'.");
+assert(footer.textContent.includes("SGFC"), "Etapa 2 Fallida: El footer debe contener el texto de copyright con 'SGFC'.");
 console.log("✓ [HTML5] <footer> semántico verificado");$TEST$
     );
 
@@ -385,14 +385,14 @@ En `index.html`, maqueta un formulario de registro profesional:
   "type": "project",
   "activeFile": "index.html",
   "files": {
-    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Registro de Usuario</title>\n</head>\n<body>\n  <h2>Crear Cuenta en Codify</h2>\n\n  <!-- Construye el <form id=\"registroForm\"> con sus labels, inputs tipados y botón -->\n  <form id=\"registroForm\">\n    \n  </form>\n</body>\n</html>"
+    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Registro de Usuario</title>\n</head>\n<body>\n  <h2>Crear Cuenta en SGFC</h2>\n\n  <!-- Construye el <form id=\"registroForm\"> con sus labels, inputs tipados y botón -->\n  <form id=\"registroForm\">\n    \n  </form>\n</body>\n</html>"
   }
 }$CODE$,
         $CODE${
   "type": "project",
   "activeFile": "index.html",
   "files": {
-    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Registro de Usuario</title>\n</head>\n<body>\n  <h2>Crear Cuenta en Codify</h2>\n\n  <form id=\"registroForm\">\n    <label for=\"emailInput\">Correo:</label>\n    <input type=\"email\" id=\"emailInput\" name=\"email\" placeholder=\"tu@correo.com\" required>\n\n    <label for=\"passInput\">Contraseña:</label>\n    <input type=\"password\" id=\"passInput\" name=\"password\" required>\n\n    <button type=\"submit\" id=\"btnEnviar\">Crear Cuenta</button>\n  </form>\n</body>\n</html>"
+    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Registro de Usuario</title>\n</head>\n<body>\n  <h2>Crear Cuenta en SGFC</h2>\n\n  <form id=\"registroForm\">\n    <label for=\"emailInput\">Correo:</label>\n    <input type=\"email\" id=\"emailInput\" name=\"email\" placeholder=\"tu@correo.com\" required>\n\n    <label for=\"passInput\">Contraseña:</label>\n    <input type=\"password\" id=\"passInput\" name=\"password\" required>\n\n    <button type=\"submit\" id=\"btnEnviar\">Crear Cuenta</button>\n  </form>\n</body>\n</html>"
   }
 }$CODE$,
         $TEST$const assert = (c, m) => { if (!c) throw new Error(m); };
@@ -724,7 +724,7 @@ Construye una barra de navegación profesional multi-archivo:
    - Vincula `css/styles.css` con `<link rel="stylesheet" href="css/styles.css">`.
    - Crea un elemento `<nav id="navbar">`.
    - Dentro del `<nav>`, agrega:
-     - Un `<div id="logo">Codify</div>`.
+     - Un `<div id="logo">SGFC</div>`.
      - Un `<div id="navLinks">`: con dos enlaces `<a href="#cursos">Cursos</a>` y `<a href="#comunidad">Comunidad</a>`.
      - Un botón `<button id="btnLogin">Ingresar</button>`.
 2. En `css/styles.css`:
@@ -756,7 +756,7 @@ Construye una barra de navegación profesional multi-archivo:
   "type": "project",
   "activeFile": "css/styles.css",
   "files": {
-    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Navbar con Flexbox</title>\n  <link rel=\"stylesheet\" href=\"css/styles.css\">\n</head>\n<body>\n  <nav id=\"navbar\">\n    <div id=\"logo\">Codify</div>\n    <div id=\"navLinks\">\n      <a href=\"#cursos\">Cursos</a>\n      <a href=\"#comunidad\">Comunidad</a>\n    </div>\n    <button id=\"btnLogin\">Ingresar</button>\n  </nav>\n</body>\n</html>",
+    "index.html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Navbar con Flexbox</title>\n  <link rel=\"stylesheet\" href=\"css/styles.css\">\n</head>\n<body>\n  <nav id=\"navbar\">\n    <div id=\"logo\">SGFC</div>\n    <div id=\"navLinks\">\n      <a href=\"#cursos\">Cursos</a>\n      <a href=\"#comunidad\">Comunidad</a>\n    </div>\n    <button id=\"btnLogin\">Ingresar</button>\n  </nav>\n</body>\n</html>",
     "css/styles.css": "/* Estilos de Barra de Navegación Flexbox */\n#navbar {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  padding: 16px 24px;\n  background-color: #0d0d11;\n}\n\n#navLinks {\n  display: flex;\n  gap: 16px;\n}\n"
   }
 }$CODE$,

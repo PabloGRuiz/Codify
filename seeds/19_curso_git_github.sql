@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 19 - CURSO TEÓRICO COMPLETO: CONTROL DE VERSIONES CON GIT & GITHUB
+-- 🚀 SGFC SEED: 19 - CURSO TEÓRICO COMPLETO: CONTROL DE VERSIONES CON GIT & GITHUB
 -- ==============================================================================
 -- Curso 100% interactivo mediante cuestionarios profundos (quizzes con 5+ preguntas por lección)
 -- Diseñado para preparar al estudiante en el uso de repositorios y publicación de Proyectos Integradores.
@@ -503,12 +503,12 @@ $THEORY$,
   VALUES (
     v_mod2_id,
     '5. Repositorios Remotos en GitHub y Publicación de Proyectos',
-    'Aprende a vincular tu repo local con GitHub, sincronizar cambios con push y pull, y el flujo para publicar Proyectos Integradores en Codify.',
+    'Aprende a vincular tu repo local con GitHub, sincronizar cambios con push y pull, y el flujo para publicar Proyectos Integradores en SGFC.',
     'quiz',
     100,
     $THEORY$# Trabajo Remoto con GitHub y Publicación de Proyectos
 
-Hasta ahora hemos trabajado con Git en tu computadora local. Sin embargo, para colaborar con otros programadores, tener respaldo en la nube y **publicar tus Proyectos Integradores en la comunidad de Codify**, necesitamos conectar Git con **GitHub**.
+Hasta ahora hemos trabajado con Git en tu computadora local. Sin embargo, para colaborar con otros programadores, tener respaldo en la nube y **publicar tus Proyectos Integradores en la comunidad de SGFC**, necesitamos conectar Git con **GitHub**.
 
 ---
 
@@ -541,13 +541,13 @@ Hasta ahora hemos trabajado con Git en tu computadora local. Sin embargo, para c
 
 ---
 
-### 4. Flujo para Proyectos Integradores en Codify
-Para presentar y validar tus **Proyectos Integradores** en el Foro de Codify:
+### 4. Flujo para Proyectos Integradores en SGFC
+Para presentar y validar tus **Proyectos Integradores** en el Foro de SGFC:
 1. Creas el código de tu proyecto en tu editor local.
 2. Inicializas Git (`git init`), preparas archivos (`git add .`) y confirmas (`git commit -m "feat: proyecto final"`).
 3. Creas un repositorio público en tu cuenta de GitHub.
 4. Conectas el remoto (`git remote add origin ...`) y subes tu código (`git push -u origin main`).
-5. Copias el enlace público de tu repositorio de GitHub y lo compartes en el Foro de Codify para que los profesores y la comunidad evalúen tu proyecto.
+5. Copias el enlace público de tu repositorio de GitHub y lo compartes en el Foro de SGFC para que los profesores y la comunidad evalúen tu proyecto.
 $THEORY$,
     $QUIZ$[
       {
@@ -600,10 +600,10 @@ $THEORY$,
       },
       {
         "id": "q5",
-        "question": "En Codify, ¿cuál es el requisito y flujo indispensable para entregar un Proyecto Integrador ante la comunidad y los profesores?",
+        "question": "En SGFC, ¿cuál es el requisito y flujo indispensable para entregar un Proyecto Integrador ante la comunidad y los profesores?",
         "options": [
           "Enviar un archivo comprimido .zip por correo electrónico privado",
-          "Tener el proyecto versionado con Git, publicado en un repositorio público de GitHub y compartir su enlace en el Foro de Codify",
+          "Tener el proyecto versionado con Git, publicado en un repositorio público de GitHub y compartir su enlace en el Foro de SGFC",
           "Pegar miles de líneas de código en un mensaje de chat",
           "Subir capturas de pantalla a redes sociales"
         ],

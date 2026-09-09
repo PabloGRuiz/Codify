@@ -12,7 +12,7 @@ export default function AuthPage() {
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.5)] mb-4">
           <Code2 size={32} className="text-white" />
         </div>
-        <h1 className="text-5xl font-heading font-bold text-white tracking-tight">Codify</h1>
+        <h1 className="text-5xl font-heading font-bold text-white tracking-tight">SGFC</h1>
         <p className="text-zinc-400 mt-2 font-sans text-lg">Aprende, Programa y Sube de Nivel</p>
       </div>
 

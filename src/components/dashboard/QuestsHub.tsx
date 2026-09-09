@@ -45,7 +45,7 @@ export function QuestsHub() {
       id: "daily_login",
       type: "daily",
       title: "Inicia Sesión Diario",
-      description: "Entra a Codify hoy y mantén tu hábito de aprendizaje activo.",
+      description: "Entra a SGFC hoy y mantén tu hábito de aprendizaje activo.",
       xpReward: 25,
       progress: 1,
       total: 1,

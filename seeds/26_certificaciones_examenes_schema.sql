@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 26 - SISTEMA DE EXÁMENES Y CERTIFICACIONES OFICIALES VERIFICABLES
+-- 🚀 SGFC SEED: 26 - SISTEMA DE EXÁMENES Y CERTIFICACIONES OFICIALES VERIFICABLES
 -- ==============================================================================
 -- 1. Tablas: certifications, certification_questions, user_certifications, exam_attempts
 -- 2. Políticas de Seguridad RLS

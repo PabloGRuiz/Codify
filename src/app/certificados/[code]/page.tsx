@@ -75,7 +75,7 @@ export default function CertificateValidationPage() {
       <div className="min-h-screen bg-[#07070b] flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <div className="w-14 h-14 rounded-2xl border-4 border-amber-500 border-t-transparent animate-spin mx-auto" />
-          <p className="text-sm font-mono text-zinc-400">Verificando autenticidad del certificado en Codify...</p>
+          <p className="text-sm font-mono text-zinc-400">Verificando autenticidad del certificado en SGFC...</p>
         </div>
       </div>
     );
@@ -91,7 +91,7 @@ export default function CertificateValidationPage() {
           <div className="space-y-1">
             <h2 className="text-xl font-heading font-bold text-white">Certificado No Encontrado</h2>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              El código de verificación <strong className="text-red-300 font-mono">{String(code)}</strong> no corresponde a ningún certificado válido emitido por la plataforma Codify.
+              El código de verificación <strong className="text-red-300 font-mono">{String(code)}</strong> no corresponde a ningún certificado válido emitido por la plataforma SGFC.
             </p>
           </div>
           <Link href="/cursos">
@@ -115,8 +115,8 @@ export default function CertificateValidationPage() {
   // URL para agregar la certificación a LinkedIn
   const currentUrl = typeof window !== "undefined" ? window.location.href : `https://codify.dev/certificados/${userCert.verification_code}`;
   const linkedInUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
-    cert?.title || "Certificación Codify"
-  )}&organizationName=Codify&issueYear=${issueDate.getFullYear()}&issueMonth=${issueDate.getMonth() + 1}&certUrl=${encodeURIComponent(
+    cert?.title || "Certificación SGFC"
+  )}&organizationName=SGFC&issueYear=${issueDate.getFullYear()}&issueMonth=${issueDate.getMonth() + 1}&certUrl=${encodeURIComponent(
     currentUrl
   )}&certId=${encodeURIComponent(userCert.verification_code)}`;
 
@@ -167,7 +167,7 @@ export default function CertificateValidationPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* DIPLOMA DIGITAL CODIFY (Imprimible y Verificable) */}
+      {/* DIPLOMA DIGITAL SGFC (Imprimible y Verificable) */}
       {/* ========================================================================= */}
       <div className="w-full max-w-4xl relative bg-[#0d0d14] border-2 border-amber-500/30 rounded-3xl p-6 sm:p-12 shadow-[0_0_80px_rgba(245,158,11,0.15)] overflow-hidden print:shadow-none print:border print:m-0 print:p-8">
         {/* Esquinas Doradas Decorativas */}
@@ -186,7 +186,7 @@ export default function CertificateValidationPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold font-mono tracking-widest uppercase">
               <Sparkles size={13} />
-              Codify Certified Professional
+              SGFC Certified Professional
             </div>
             <h1 className="text-2xl sm:text-4xl font-heading font-black tracking-tight text-white uppercase">
               Certificado de Aprobación Oficial
@@ -204,7 +204,7 @@ export default function CertificateValidationPage() {
 
             <div className="space-y-1">
               <h2 className="text-3xl sm:text-5xl font-heading font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-100 py-1">
-                @{userCert.profile?.username || "Estudiante de Codify"}
+                @{userCert.profile?.username || "Estudiante de SGFC"}
               </h2>
               <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto" />
             </div>
@@ -270,7 +270,7 @@ export default function CertificateValidationPage() {
 
       {/* Footer link */}
       <div className="mt-8 text-center text-xs text-zinc-500 font-mono print:hidden">
-        Validación criptográfica respaldada por Codify Learning Engine.
+        Validación criptográfica respaldada por SGFC Learning Engine.
       </div>
     </div>
   );

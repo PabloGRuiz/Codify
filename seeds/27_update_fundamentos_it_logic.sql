@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 27 - MIGRACIÓN / ACTUALIZACIÓN: CURSO FUNDAMENTOS IT Y LÓGICA
+-- 🚀 SGFC SEED: 27 - MIGRACIÓN / ACTUALIZACIÓN: CURSO FUNDAMENTOS IT Y LÓGICA
 -- ==============================================================================
 -- Este script actualiza el curso existente "Fundamentos IT y Lógica"
 -- sincronizándolo de forma 100% coherente con el Examen Integrador (CERT-IT-101).

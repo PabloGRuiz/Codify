@@ -15,7 +15,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Codify | Aprende a Programar Jugando",
+  title: "SGFC | Aprende a Programar Jugando",
   description: "Plataforma de microaprendizaje interactivo, POO y IA",
 };
 

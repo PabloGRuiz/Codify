@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 18 - SISTEMA DE PRERREQUISITOS Y CORRELATIVIDADES DE CURSOS
+-- 🚀 SGFC SEED: 18 - SISTEMA DE PRERREQUISITOS Y CORRELATIVIDADES DE CURSOS
 -- ==============================================================================
 -- Este script:
 -- 1. Agrega las columnas 'prerequisite_course_id' y 'min_level' a 'courses'.

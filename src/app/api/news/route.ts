@@ -61,7 +61,7 @@ export async function GET(request: Request) {
         reading_time_minutes: 5,
         published_at: new Date().toISOString(),
         tag_list: ["python", "fastapi", "backend"],
-        user: { name: "Codify Editorial", profile_image: null },
+        user: { name: "SGFC Editorial", profile_image: null },
         source: "Tech Pulse",
       },
       {

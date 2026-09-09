@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 25 - CURSO COMPLETO: FUNDAMENTOS DE INTELIGENCIA ARTIFICIAL Y LLMS
+-- 🚀 SGFC SEED: 25 - CURSO COMPLETO: FUNDAMENTOS DE INTELIGENCIA ARTIFICIAL Y LLMS
 -- ==============================================================================
 -- Este script inserta:
 -- 1. Curso: "Fundamentos de Inteligencia Artificial y LLMs" con Ficha Técnica

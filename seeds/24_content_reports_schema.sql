@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 24 - SISTEMA DE REPORTES DE ERRORES Y FEEDBACK EN CURSOS
+-- 🚀 SGFC SEED: 24 - SISTEMA DE REPORTES DE ERRORES Y FEEDBACK EN CURSOS
 -- ==============================================================================
 -- Crea la tabla de reportes de incidencias en material didáctico,
 -- cuestionarios y validaciones de código con soporte para RLS y notificaciones.

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 17 - RESÚMENES DETALLADOS DE CURSOS (COURSE SUMMARIES)
+-- 🚀 SGFC SEED: 17 - RESÚMENES DETALLADOS DE CURSOS (COURSE SUMMARIES)
 -- ==============================================================================
 -- Este script:
 -- 1. Agrega la columna 'summary' a la tabla 'courses' si no existe.

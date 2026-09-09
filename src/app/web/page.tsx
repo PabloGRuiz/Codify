@@ -13,7 +13,7 @@ const CodeEditor = dynamic(() => import("@/components/ide/CodeEditor").then(mod 
 
 export default function WebPrototypingPage() {
   const { isCollapsed } = useSidebar();
-  const [html, setHtml] = useState("<h1>¡Hola, Codify!</h1>\n<p>Este es tu primer prototipo web.</p>");
+  const [html, setHtml] = useState("<h1>¡Hola, SGFC!</h1>\n<p>Este es tu primer prototipo web.</p>");
   const [css, setCss] = useState("body {\n  font-family: sans-serif;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  height: 100vh;\n  margin: 0;\n  background: #f4f4f5;\n}\n\nh1 {\n  color: #8b5cf6;\n}\np {\n  color: #52525b;\n}");
   const [js, setJs] = useState("console.log('¡Prototipo cargado!');");
   

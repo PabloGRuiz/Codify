@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 23 - CURSO COMPLETO: FUNDAMENTOS DE PROGRAMACIÓN EN C++
+-- 🚀 SGFC SEED: 23 - CURSO COMPLETO: FUNDAMENTOS DE PROGRAMACIÓN EN C++
 -- ==============================================================================
 -- Este script inserta:
 -- 1. Curso: "Fundamentos de Programación en C++" con Ficha Técnica
@@ -94,7 +94,7 @@ C++ es un lenguaje compilado directamente a código máquina nativo. Cada progra
 #include <iostream> // Directiva del preprocesador para entrada y salida
 
 int main() {
-    std::cout << "¡Hola, Codify!" << std::endl;
+    std::cout << "¡Hola, SGFC!" << std::endl;
     return 0; // 0 indica terminación exitosa al sistema operativo
 }
 ```

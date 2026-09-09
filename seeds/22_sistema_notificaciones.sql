@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 22 - SISTEMA INTEGRAL DE NOTIFICACIONES EN TIEMPO REAL
+-- 🚀 SGFC SEED: 22 - SISTEMA INTEGRAL DE NOTIFICACIONES EN TIEMPO REAL
 -- ==============================================================================
 -- Crea la tabla de notificaciones, políticas RLS, triggers para respuestas
 -- en el foro y nuevos cursos, además de la función de difusión global.

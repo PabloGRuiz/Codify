@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 28 - CREAR USUARIO ADMINISTRADOR DIRECTO
+-- 🚀 SGFC SEED: 28 - CREAR USUARIO ADMINISTRADOR DIRECTO
 -- ==============================================================================
 -- Credenciales:
 -- Email:    admin@codify.com
@@ -14,7 +14,7 @@ BEGIN
 
   -- 1. Si ya existe un usuario con este email, eliminarlo para recrearlo limpio
   DELETE FROM auth.users WHERE email = 'admin@codify.com';
-  DELETE FROM public.profiles WHERE username = 'Admin Codify' OR id = v_user_id;
+  DELETE FROM public.profiles WHERE username = 'Admin SGFC' OR id = v_user_id;
 
   -- 2. Hashear la contraseña 'admin123' con bcrypt compatible con Supabase
   -- Requiere la extensión pgcrypto (activa por defecto en Supabase)
@@ -49,7 +49,7 @@ BEGIN
     now(), -- Email verificado automáticamente
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
-    '{"username":"Admin Codify"}'::jsonb,
+    '{"username":"Admin SGFC"}'::jsonb,
     false,
     now(),
     now(),
@@ -71,7 +71,7 @@ BEGIN
     last_login
   ) VALUES (
     v_user_id,
-    'Admin Codify',
+    'Admin SGFC',
     'admin',
     10,
     5000,

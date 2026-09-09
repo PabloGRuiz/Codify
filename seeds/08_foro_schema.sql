@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 💬 CODIFY SEED: MÓDULO FORO COMUNITARIO & REPUTACIÓN
+-- 💬 SGFC SEED: MÓDULO FORO COMUNITARIO & REPUTACIÓN
 -- ==============================================================================
 
 -- 1. Añadir columna de reputación a perfiles (si no existe)

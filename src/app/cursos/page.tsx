@@ -135,7 +135,7 @@ export default function CatalogPage() {
             
             <div className="text-center py-12 mb-8">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold text-xs uppercase tracking-wider mb-6 border border-indigo-500/30">
-                <GraduationCap size={16} /> <span>Codify Academy</span>
+                <GraduationCap size={16} /> <span>SGFC Academy</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-heading font-black text-white mb-6">
                 Explora el Catálogo de <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Cursos</span>

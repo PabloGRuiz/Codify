@@ -110,7 +110,7 @@ export function AuthForm() {
       </form>
 
       <div className="mt-6 text-center text-sm text-zinc-400">
-        {isLogin ? "¿No tienes cuenta aún? " : "¿Ya eres parte de Codify? "}
+        {isLogin ? "¿No tienes cuenta aún? " : "¿Ya eres parte de SGFC? "}
         <button
           type="button"
           onClick={() => setIsLogin(!isLogin)}

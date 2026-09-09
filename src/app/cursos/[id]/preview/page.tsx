@@ -212,7 +212,7 @@ export default function CoursePreviewPage() {
                     {/* Badges */}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 font-bold text-xs uppercase tracking-wider border border-indigo-500/30">
-                        <GraduationCap size={14} /> <span>Codify Academy</span>
+                        <GraduationCap size={14} /> <span>SGFC Academy</span>
                       </span>
 
                       {typeTag && (

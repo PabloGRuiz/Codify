@@ -82,7 +82,7 @@ export function Sidebar() {
             </div>
             {!isCollapsed && (
               <span className="font-heading font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent whitespace-nowrap">
-                Codify
+                SGFC
               </span>
             )}
           </Link>

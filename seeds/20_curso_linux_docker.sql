@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 20 - CURSO COMPLETO: VIRTUALIZACIÓN, LINUX & DOCKER
+-- 🚀 SGFC SEED: 20 - CURSO COMPLETO: VIRTUALIZACIÓN, LINUX & DOCKER
 -- ==============================================================================
 -- Este script inserta:
 -- 1. Curso: "Virtualización, Linux Server & Contenedores con Docker" con Ficha Técnica

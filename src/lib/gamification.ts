@@ -1,5 +1,5 @@
 /**
- * 🎮 CODIFY GAMIFICATION & PROGRESSION ENGINE
+ * 🎮 SGFC GAMIFICATION & PROGRESSION ENGINE
  * Sistema de cálculo de niveles, curvas de experiencia progresiva (RPG)
  * y rotación determinista de retos diarios.
  */

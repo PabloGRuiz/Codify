@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 21 - CURSO: JERGA Y VOCABULARIO TECH: EL IDIOMA DE LA INDUSTRIA IT
+-- 🚀 SGFC SEED: 21 - CURSO: JERGA Y VOCABULARIO TECH: EL IDIOMA DE LA INDUSTRIA IT
 -- ==============================================================================
 -- Este script inserta:
 -- 1. Curso: "Jerga y Vocabulario Tech: El Idioma de la Industria IT"

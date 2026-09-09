@@ -47,7 +47,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
             <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
           </div>
           <span className="text-sm font-medium text-zinc-400 font-sans tracking-wide">
-            Cargando Codify...
+            Cargando SGFC...
           </span>
         </div>
       </div>

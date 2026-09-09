@@ -169,7 +169,7 @@ export function ReportIssueModal({
               </div>
               <h4 className="text-xl font-bold text-white font-heading">¡Reporte Enviado con Éxito!</h4>
               <p className="text-sm text-zinc-400 max-w-sm mx-auto leading-relaxed">
-                Gracias por ayudarnos a mejorar la calidad del contenido de Codify. Nuestro equipo técnico lo revisará pronto.
+                Gracias por ayudarnos a mejorar la calidad del contenido de SGFC. Nuestro equipo técnico lo revisará pronto.
               </p>
             </div>
           ) : (

@@ -47,7 +47,7 @@ En JavaScript moderno existen dos formas principales de declarar datos:
 
 \`\`\`js
 // Ejemplo Práctico:
-const appName = "Codify";
+const appName = "SGFC";
 let userLevel = 1;
 userLevel = userLevel + 1; // 2
 \`\`\`
@@ -109,7 +109,7 @@ El DOM (Document Object Model) te permite interactuar dinámicamente con tu HTML
 \`\`\`js
 // Seleccionar por ID
 const titulo = document.getElementById("tituloApp");
-titulo.textContent = "Bienvenido a Codify";
+titulo.textContent = "Bienvenido a SGFC";
 
 // Escuchar eventos
 const boton = document.querySelector(".btn-submit");

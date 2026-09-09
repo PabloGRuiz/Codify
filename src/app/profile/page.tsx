@@ -236,7 +236,7 @@ export default function ProfilePage() {
                   ) : (
                     <div className="flex items-center justify-center md:justify-start gap-2">
                       <h1 className="text-2xl md:text-3xl font-heading font-bold text-white">
-                        {profile?.username || "Usuario de Codify"}
+                        {profile?.username || "Usuario de SGFC"}
                       </h1>
                       <button
                         onClick={() => setIsEditing(true)}

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- 🚀 CODIFY SEED: 11 - CURSOS Y ROLES (RBAC)
+-- 🚀 SGFC SEED: 11 - CURSOS Y ROLES (RBAC)
 -- ==============================================================================
 -- Este script realiza la migración estructural para soportar Multi-Cursos y 
 -- permisos de Administrador/Profesor.

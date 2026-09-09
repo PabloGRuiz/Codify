@@ -329,7 +329,7 @@ export default function PublicProfilePage() {
                     <span>
                       {targetProfile.created_at 
                         ? `Miembro desde ${new Date(targetProfile.created_at).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}` 
-                        : 'Miembro de Codify'}
+                        : 'Miembro de SGFC'}
                     </span>
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export default function PublicProfilePage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-heading font-bold text-white flex items-center gap-2">
                   <GraduationCap className="text-amber-400" size={24} />
-                  <span>Certificaciones Oficiales de Codify</span>
+                  <span>Certificaciones Oficiales de SGFC</span>
                   <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold font-mono border border-amber-500/30">
                     {userCerts.length}
                   </span>
