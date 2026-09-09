@@ -74,58 +74,58 @@ export default function Home() {
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto z-10 relative space-y-6 lg:space-y-8">
           
           {/* Header Banner & Main Dashboard Navigation Tabs */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-6">
             <div>
               <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider mb-2">
                 <Sparkles size={16} />
                 <span>Plataforma de Aprendizaje Activo</span>
               </div>
-              <h1 className="text-3xl lg:text-4xl font-heading font-bold text-white mb-2">
+              <h1 className="text-3xl lg:text-4xl font-heading font-bold text-foreground mb-2">
                 ¡Hola de nuevo, {profile?.username || "Developer"}! 👋
               </h1>
-              <p className="text-zinc-400 font-sans text-sm lg:text-base max-w-2xl">
+              <p className="text-muted font-sans text-sm lg:text-base max-w-2xl">
                 Continúa construyendo tu carrera en tecnología: domina Python, APIs con FastAPI, JavaScript y Arquitectura de IA.
               </p>
             </div>
 
             {/* Main Tabs Selector */}
-            <div className="flex items-center bg-black/60 p-1.5 rounded-2xl border border-white/10 shrink-0 self-start md:self-auto flex-wrap gap-1">
+            <div className="flex items-center bg-card p-1.5 rounded-xl border border-border shrink-0 self-start md:self-auto flex-wrap gap-1 shadow-sm">
               <button
                 onClick={() => setActiveDashboardTab("roadmap")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ${
                   activeDashboardTab === "roadmap"
-                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <Map size={16} /> <span>Ruta de Niveles</span>
               </button>
               <button
                 onClick={() => setActiveDashboardTab("arena")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ${
                   activeDashboardTab === "arena"
-                    ? "bg-gradient-to-r from-red-600 to-purple-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]"
-                    : "text-red-400/80 hover:text-red-300"
+                    ? "bg-danger text-white shadow-md"
+                    : "text-red-500/80 hover:text-red-600 hover:bg-red-500/10"
                 }`}
               >
                 <Swords size={16} /> <span>Arena Diaria ⚡</span>
               </button>
               <button
                 onClick={() => setActiveDashboardTab("news")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ${
                   activeDashboardTab === "news"
-                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <Newspaper size={16} /> <span>Pulso Tech</span>
               </button>
               <button
                 onClick={() => setActiveDashboardTab("quests")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ${
                   activeDashboardTab === "quests"
-                    ? "bg-gradient-to-r from-primary to-accent text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <Gift size={16} /> <span>Misiones</span>

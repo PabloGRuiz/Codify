@@ -129,8 +129,8 @@ export function Sidebar() {
                     isCollapsed ? "justify-center" : ""
                   } ${
                     isActive
-                      ? "bg-primary/20 text-primary border border-primary/30 font-bold shadow-lg"
-                      : "text-zinc-400 hover:text-white hover:bg-white/5 font-medium"
+                      ? "bg-primary/10 text-primary border border-primary/20 font-bold"
+                      : "text-muted hover:text-foreground hover:bg-secondary font-medium"
                   }`}
                 >
                   <div className="shrink-0">{item.icon}</div>
@@ -172,18 +172,18 @@ export function Sidebar() {
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-zinc-300 group-hover:text-primary transition-colors truncate">
+                    <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                       {profile?.username ? `@${profile.username}` : "Coder"}
                     </span>
                     <span className="text-xs text-primary font-bold shrink-0">Nivel {currentLevel}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs mb-2">
-                    <span className="text-zinc-400">{levelInfo.xpInLevel} / {levelInfo.xpRequiredForNextLevel} XP</span>
+                    <span className="text-muted">{levelInfo.xpInLevel} / {levelInfo.xpRequiredForNextLevel} XP</span>
                     <span className="flex items-center gap-1 text-yellow-500 font-bold bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20" title="Puntos de Reputación en el Foro">
                       <Star size={12} className="fill-yellow-500" /> {currentStars}
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden border border-border">
                     <div 
                       className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
                       style={{ width: `${xpPercentage}%` }}
@@ -196,7 +196,7 @@ export function Sidebar() {
           
           <button 
             onClick={handleLogout}
-            className={`flex items-center gap-3 text-zinc-400 hover:text-red-400 w-full p-2.5 transition-colors text-sm font-medium rounded-xl hover:bg-red-500/10 ${
+            className={`flex items-center gap-3 text-muted hover:text-red-500 w-full p-2.5 transition-colors text-sm font-medium rounded-xl hover:bg-red-500/10 ${
               isCollapsed ? "justify-center" : "px-3"
             }`}
             title={isCollapsed ? "Cerrar Sesión" : undefined}

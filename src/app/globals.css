@@ -1,25 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  /* Light Theme (Professional & Modern) */
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Light Theme - Optimizado para alta legibilidad, contraste y elegancia sobria */
+  --background: #f1f5f9; /* Slate 100 suave, no blanco chillón */
+  --foreground: #090d16; /* Prácticamente negro para máxima nitidez */
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #3b82f6; /* Modern Blue */
-  --primary-hover: #2563eb;
+  --card-foreground: #090d16;
+  --primary: #2563eb; /* Azul cobalto profesional accesible */
+  --primary-hover: #1d4ed8;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
+  --secondary: #e2e8f0; /* Slate 200 para paneles secundarios */
   --secondary-foreground: #0f172a;
-  --accent: #8b5cf6;
+  --muted: #475569; /* Slate 600 para textos secundarios nítidos */
+  --muted-foreground: #64748b;
+  --accent: #7c3aed;
   --accent-foreground: #ffffff;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #3b82f6;
-  --radius: 0.5rem; /* Moderately rounded for professional look */
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --border: #cbd5e1; /* Slate 300 con bordes claros y marcados */
+  --input: #cbd5e1;
+  --ring: #2563eb;
+  --radius: 0.5rem;
 }
 
 .dark {
@@ -33,6 +35,8 @@
   --primary-foreground: #ffffff;
   --secondary: #334155;
   --secondary-foreground: #f8fafc;
+  --muted: #94a3b8;
+  --muted-foreground: #64748b;
   --accent: #8b5cf6;
   --accent-foreground: #ffffff;
   --success: #10b981;
@@ -54,6 +58,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-success: var(--success);
@@ -73,26 +79,71 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Glassmorphism utilities - updated for professional look */
+/* Adaptabilidad inteligente para vistas heredadas con clases fijas de modo oscuro */
+html:not(.dark) .text-zinc-400 {
+  color: #475569 !important; /* Slate 600 para que sea 100% legible sobre fondos claros */
+}
+
+html:not(.dark) .text-zinc-500 {
+  color: #64748b !important; /* Slate 500 */
+}
+
+html:not(.dark) .text-zinc-300 {
+  color: #334155 !important; /* Slate 700 */
+}
+
+html:not(.dark) .text-zinc-200 {
+  color: #1e293b !important; /* Slate 800 */
+}
+
+html:not(.dark) .text-zinc-600 {
+  color: #475569 !important;
+}
+
+/* En modo claro, los encabezados y textos que tenían text-white pasan a foreground si no están dentro de botones primarios */
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) h4.text-white,
+html:not(.dark) p.text-white,
+html:not(.dark) span.text-white:not(.bg-primary *):not(.bg-gradient-to-r *):not(.bg-gradient-to-tr *):not(.bg-danger *):not(button *) {
+  color: #090d16 !important;
+}
+
+/* Paneles de contraste y fondos transparentes oscuros heredados */
+html:not(.dark) .bg-black\/60,
+html:not(.dark) .bg-black\/50,
+html:not(.dark) .bg-black\/40,
+html:not(.dark) .bg-black\/20 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) .bg-white\/5,
+html:not(.dark) .bg-white\/10 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Paneles de vidrio y tarjetas */
 .glass {
   background: var(--card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);
-  opacity: 0.95;
 }
 
 .glass-panel {
   background: var(--card);
   border: 1px solid var(--border);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
 }
 
 .dark .glass-panel {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
 }
 
 /* Custom Scrollbar */
