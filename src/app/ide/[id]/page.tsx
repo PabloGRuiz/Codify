@@ -552,8 +552,64 @@ export default function ChallengeIDEPage() {
 
       // 2. Ejecutar batería de tests sobre el proyecto
       if (challenge.test_code) {
-        // Pasar el sistema de archivos virtuales, document y window al entorno de tests
-        const testRunner = new Function("files", "document", "window", "code", challenge.test_code);
+        // Concatenar todos los archivos JS o el código activo
+        const allJsCode = Object.entries(files)
+          .filter(([name]) => name.endsWith(".js"))
+          .map(([, content]) => content)
+          .join("\n\n") || activeCode;
+
+        // Entorno de pruebas (test runner tipo Jest/Vitest con expect y assert)
+        const testHelperScript = `
+          // Utilidad expect simple y completa
+          function expect(actual) {
+            return {
+              toBe(expected) {
+                if (actual !== expected) {
+                  throw new Error("Se esperaba " + JSON.stringify(expected) + " pero se obtuvo " + JSON.stringify(actual));
+                }
+              },
+              toEqual(expected) {
+                const actualStr = JSON.stringify(actual);
+                const expectedStr = JSON.stringify(expected);
+                if (actualStr !== expectedStr) {
+                  throw new Error("Se esperaba " + expectedStr + " pero se obtuvo " + actualStr);
+                }
+              },
+              toBeTruthy() {
+                if (!actual) throw new Error("Se esperaba un valor verdadero pero se obtuvo " + actual);
+              },
+              toBeFalsy() {
+                if (actual) throw new Error("Se esperaba un valor falso pero se obtuvo " + actual);
+              },
+              toContain(item) {
+                if (!actual || !actual.includes(item)) {
+                  throw new Error("Se esperaba que contuviera " + JSON.stringify(item));
+                }
+              }
+            };
+          }
+
+          function assert(condition, message) {
+            if (!condition) throw new Error(message || "La aserción falló.");
+          }
+
+          function test(description, fn) {
+            try {
+              fn();
+            } catch (err) {
+              err.message = "[" + description + "] " + err.message;
+              throw err;
+            }
+          }
+
+          // 1. Ejecutar código del usuario en este ámbito
+          ${allJsCode}
+
+          // 2. Ejecutar la batería de tests definida
+          ${challenge.test_code}
+        `;
+
+        const testRunner = new Function("files", "document", "window", "code", testHelperScript);
         testRunner(files, sandboxDoc, sandboxWin, activeCode);
       } else {
         // En caso de código JS único sin test específico
