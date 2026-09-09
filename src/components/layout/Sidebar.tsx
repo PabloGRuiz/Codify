@@ -21,6 +21,7 @@ import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
 import { useSidebar } from "@/context/SidebarContext";
 import { getLevelInfo } from "@/lib/gamification";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -88,21 +89,27 @@ export function Sidebar() {
           </Link>
 
           {/* Desktop Collapse Toggle Button */}
-          <button
-            onClick={toggleCollapse}
-            className="hidden md:flex p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-            title={isCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
-          >
-            {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-          </button>
+          <div className="hidden md:flex items-center gap-1">
+            <ThemeToggle />
+            <button
+              onClick={toggleCollapse}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-foreground hover:bg-secondary transition-colors"
+              title={isCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+            >
+              {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
+          </div>
 
-          {/* Mobile Close Button */}
-          <button 
-            onClick={() => setIsMobileOpen(false)} 
-            className="md:hidden text-zinc-400 hover:text-white"
-          >
-            <X size={24} />
-          </button>
+          {/* Mobile Theme & Close Button */}
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <button 
+              onClick={() => setIsMobileOpen(false)} 
+              className="text-zinc-400 hover:text-foreground"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         {/* Navigation items */}

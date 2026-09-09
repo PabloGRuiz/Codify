@@ -3,6 +3,7 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,13 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${inter.variable} ${outfit.variable} dark antialiased`} suppressHydrationWarning>
+    <html lang="es" className={`${inter.variable} ${outfit.variable} antialiased`} suppressHydrationWarning>
       <body className="min-h-screen flex flex-col bg-background text-foreground">
-        <SidebarProvider>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
-        </SidebarProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <SidebarProvider>
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
