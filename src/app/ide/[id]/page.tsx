@@ -38,8 +38,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { QuizRunner } from "@/components/ide/QuizRunner";
 import { ReportIssueModal } from "@/components/ide/ReportIssueModal";
+import { getLevelInfo, calculateArenaPromotion, getArenaRankInfo } from "@/lib/gamification";
 import { ProjectFileTree, getFileLanguage } from "@/components/ide/ProjectFileTree";
-import { getLevelInfo } from "@/lib/gamification";
 
 // Deshabilitar SSR para Monaco Editor con Loading State amigable
 const CodeEditor = dynamic(
@@ -271,6 +271,11 @@ export default function ChallengeIDEPage() {
   const [bottomTab, setBottomTab] = useState<"console" | "preview">("console");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [arenaPromotionInfo, setArenaPromotionInfo] = useState<{
+    promoted: boolean;
+    message: string;
+    newRank: string;
+  } | null>(null);
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -474,7 +479,6 @@ export default function ChallengeIDEPage() {
 
   const handleChallengeComplete = async () => {
     if (!isCompleted) {
-      setShowSuccessModal(true);
       if (user) {
         try {
           await supabase.from("user_progress").insert({
@@ -488,12 +492,30 @@ export default function ChallengeIDEPage() {
           const newXp = (profile?.xp || 0) + challenge!.xp_reward;
           const { level: newLevel } = getLevelInfo(newXp);
 
-          await supabase.from("profiles").update({ xp: newXp, level: newLevel }).eq("id", user.id);
+          const isArenaChallenge = 
+            challenge.modules?.title?.includes("Arena") || 
+            !challenge.modules?.course_id;
+
+          const profileUpdates: any = { xp: newXp, level: newLevel };
+
+          if (isArenaChallenge) {
+            const promo = calculateArenaPromotion(profile?.arena_rank, profile?.arena_streak);
+            profileUpdates.arena_rank = promo.newRank;
+            profileUpdates.arena_streak = promo.newStreak;
+            setArenaPromotionInfo({
+              promoted: promo.promoted,
+              message: promo.message,
+              newRank: promo.newRank,
+            });
+          }
+
+          await supabase.from("profiles").update(profileUpdates).eq("id", user.id);
           setIsCompleted(true);
         } catch (e) {
           console.error("Error guardando progreso", e);
         }
       }
+      setShowSuccessModal(true);
     }
   };
 
@@ -927,10 +949,20 @@ export default function ChallengeIDEPage() {
               <h2 className="text-3xl font-heading font-bold text-white mb-2 relative z-10">¡Nivel Superado!</h2>
               <p className="text-zinc-400 mb-6 relative z-10">Has resuelto el reto perfectamente.</p>
 
-              <div className="bg-black/50 border border-emerald-500/20 rounded-xl p-4 flex items-center justify-center gap-3 mb-8 relative z-10">
+              <div className="bg-black/50 border border-emerald-500/20 rounded-xl p-4 flex items-center justify-center gap-3 mb-4 relative z-10">
                 <Star size={24} className="text-yellow-400 fill-yellow-400" />
                 <span className="text-2xl font-bold text-emerald-400">+{challenge.xp_reward} XP</span>
               </div>
+
+              {arenaPromotionInfo && (
+                <div className={`p-3 rounded-xl border mb-6 text-xs relative z-10 text-center ${
+                  arenaPromotionInfo.promoted 
+                    ? "bg-amber-500/20 border-amber-500/40 text-amber-300 font-bold" 
+                    : "bg-purple-500/20 border-purple-500/40 text-purple-200"
+                }`}>
+                  {arenaPromotionInfo.message}
+                </div>
+              )}
 
               <div className="flex flex-col gap-3 relative z-10">
                 <Button 

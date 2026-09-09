@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
 import { supabase } from "@/lib/supabase";
-import { getLevelInfo } from "@/lib/gamification";
+import { getLevelInfo, getArenaRankInfo } from "@/lib/gamification";
 import { 
   User, 
   Trophy, 
@@ -252,6 +252,20 @@ export default function ProfilePage() {
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/20 text-primary border border-primary/30 w-fit mx-auto md:mx-0">
                       <ShieldCheck size={14} /> Nivel {currentLevel}
                     </span>
+
+                    {/* Arena Rank Badge */}
+                    {(() => {
+                      const arenaInfo = getArenaRankInfo(profile?.arena_rank, profile?.arena_streak);
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${arenaInfo.color}`}>
+                          <span>{arenaInfo.badge}</span>
+                          <span>Rango: {arenaInfo.label}</span>
+                          {arenaInfo.nextRankLabel && (
+                            <span className="opacity-75 text-[10px]">({arenaInfo.streak}/3)</span>
+                          )}
+                        </span>
+                      );
+                    })()}
 
                     {(profile?.role === 'admin' || profile?.role === 'profesor') && (
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">

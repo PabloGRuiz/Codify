@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { getDailyChallengeIndices } from "@/lib/gamification";
+import { getDailyChallengeIndices, getArenaRankInfo } from "@/lib/gamification";
 import Link from "next/link";
 
 interface Challenge {
@@ -25,14 +25,17 @@ interface Challenge {
   description: string;
   xp_reward: number;
   order_index: number;
+  challenge_type?: string;
   completed?: boolean;
 }
 
 export function DailyCodingArena() {
-  const { user } = useUser();
+  const { user, profile } = useUser();
   const [dailyChallenges, setDailyChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
+
+  const rankInfo = getArenaRankInfo(profile?.arena_rank, profile?.arena_streak);
 
   // Countdown to midnight
   useEffect(() => {
@@ -58,61 +61,38 @@ export function DailyCodingArena() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch Arena challenges and rotate 3 daily
+  // Fetch exclusive Arena challenges based on rank pool (defaults to Bronze pool)
   useEffect(() => {
     const fetchArenaChallenges = async () => {
       setLoading(true);
       try {
-        // 1. Get default base module (Logic & IT Fundamentals)
-        const { data: defaultModule } = await supabase
+        // 1. Obtener módulo exclusivo de la Arena (Rango Bronce)
+        let { data: arenaModule } = await supabase
           .from("modules")
           .select("id")
-          .eq("title", "Arena de Lógica y Fundamentos")
-          .single();
+          .eq("title", "Arena de Retos: Rango Bronce")
+          .maybeSingle();
 
-        let allowedModuleIds: string[] = [];
-        if (defaultModule) {
-          allowedModuleIds.push(defaultModule.id);
-        }
-
-        // 2. Get user enrolled courses to unlock advanced challenges
-        if (user) {
-          const { data: enrollments } = await supabase
-            .from("course_enrollments")
-            .select("courses(modules(id))")
-            .eq("user_id", user.id);
-          
-          if (enrollments) {
-            enrollments.forEach((enr: any) => {
-              if (enr.courses?.modules) {
-                enr.courses.modules.forEach((m: any) => {
-                  allowedModuleIds.push(m.id);
-                });
-              }
-            });
-          }
-        }
-
-        // 3. Fallback to Speed Coding only if no logic module exists and user not logged in
-        if (allowedModuleIds.length === 0) {
-           const { data: speedModule } = await supabase
+        // Fallback al módulo previo si la semilla no se ha ejecutado aún
+        if (!arenaModule) {
+          const { data: fallbackModule } = await supabase
             .from("modules")
             .select("id")
             .eq("title", "Arena Algorítmica & Speed Coding")
-            .single();
-           if (speedModule) allowedModuleIds.push(speedModule.id);
+            .maybeSingle();
+          arenaModule = fallbackModule;
         }
 
-        if (allowedModuleIds.length === 0) {
+        if (!arenaModule) {
           setLoading(false);
           return;
         }
 
-        // 4. Get all allowed challenges
+        // 2. Obtener retos exclusivos del módulo de la Arena
         const { data: challengesData, error } = await supabase
           .from("challenges")
-          .select("id, title, description, xp_reward, order_index")
-          .in("module_id", allowedModuleIds)
+          .select("id, title, description, xp_reward, order_index, challenge_type")
+          .eq("module_id", arenaModule.id)
           .order("order_index", { ascending: true });
 
         if (error || !challengesData || challengesData.length === 0) {
@@ -120,11 +100,11 @@ export function DailyCodingArena() {
           return;
         }
 
-        // 5. Deterministic rotation of 3 challenges for today
+        // 3. Rotación determinista diaria de 3 retos a partir del banco
         const indices = getDailyChallengeIndices(challengesData.length);
         const selected = indices.map((idx) => challengesData[idx]);
 
-        // 6. Check user completions if logged in
+        // 4. Verificar cuáles ha completado el usuario hoy
         if (user) {
           const ids = selected.map((c) => c.id);
           const { data: progressData } = await supabase
@@ -156,48 +136,96 @@ export function DailyCodingArena() {
 
   const completedTodayCount = dailyChallenges.filter((c) => c.completed).length;
 
+  const getCategoryBadge = (title: string, challengeType?: string) => {
+    const lower = title.toLowerCase();
+    if (lower.startsWith("redes")) {
+      return { text: "Redes", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30" };
+    }
+    if (lower.startsWith("lógica proposicional")) {
+      return { text: "Lógica Proposicional", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" };
+    }
+    if (lower.startsWith("fundamentos it")) {
+      return { text: "Fundamentos IT", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" };
+    }
+    if (challengeType === "quiz") {
+      return { text: "Cuestionario", color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30" };
+    }
+    return { text: "Código JS", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" };
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
+      {/* Header Banner with Rank Progression */}
       <div className="bg-gradient-to-r from-red-950/40 via-purple-950/30 to-blue-950/30 border border-red-500/20 rounded-3xl p-6 lg:p-8 relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
           <div>
             <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-wider mb-2">
               <Swords size={16} className="animate-pulse" />
-              <span>Formación Diaria Activa</span>
+              <span>Arena de Retos Diarios Exclusivos</span>
             </div>
-            <h2 className="text-2xl lg:text-3xl font-heading font-bold text-white mb-2">
-              3 Retos de Lógica y Especialidad ⚡
+            <h2 className="text-2xl lg:text-3xl font-heading font-bold text-foreground mb-2">
+              3 Retos Únicos por Rotación Diaria ⚡
             </h2>
-            <p className="text-zinc-400 font-sans text-sm max-w-xl">
-              Mejora tus habilidades como responsable informático resolviendo cuestionarios de lógica, fundamentos IT y ejercicios prácticos de los cursos en los que estás inscrito.
+            <p className="text-muted font-sans text-sm max-w-xl">
+              Desafíos independientes no repetidos de los módulos: redes, lógica booleana, fundamentos IT y programación.
             </p>
           </div>
 
-          <div className="flex items-center gap-4 shrink-0 bg-black/40 border border-white/10 px-5 py-3.5 rounded-2xl">
-            <Clock size={20} className="text-red-400 animate-spin [animation-duration:8s]" />
-            <div>
-              <span className="text-[10px] uppercase font-bold text-zinc-500 block font-mono">
-                Próxima rotación en
-              </span>
-              <span className="text-sm lg:text-base font-bold font-mono text-white">
-                {timeLeft || "00h 00m 00s"}
-              </span>
+          {/* User Rank Card & Countdown Widget */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {/* Rank Card */}
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${rankInfo.color} shadow-lg backdrop-blur-sm`}>
+              <span className="text-2xl">{rankInfo.badge}</span>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-muted block font-mono">
+                  Tu Rango Actual
+                </span>
+                <span className="text-sm font-heading font-bold text-foreground">
+                  {rankInfo.label}
+                </span>
+              </div>
+            </div>
+
+            {/* Rotation Countdown */}
+            <div className="flex items-center gap-3 bg-card border border-border px-4 py-3 rounded-2xl shadow-sm">
+              <Clock size={18} className="text-red-400 animate-spin [animation-duration:8s]" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-muted block font-mono">
+                  Rotación en
+                </span>
+                <span className="text-sm font-bold font-mono text-foreground">
+                  {timeLeft || "00h 00m 00s"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="mt-6 pt-6 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-zinc-300">Progreso Diario:</span>
-            <span className="text-xs font-bold font-mono text-red-400">{completedTodayCount} de 3 completados</span>
+        {/* Promotion & Daily Progress Bar */}
+        <div className="mt-6 pt-6 border-t border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-foreground">Retos de hoy:</span>
+              <span className="text-xs font-bold font-mono text-red-500">{completedTodayCount} de 3 resueltos</span>
+            </div>
+
+            {rankInfo.nextRankLabel && (
+              <div className="flex items-center gap-2 pl-4 border-l border-border">
+                <span className="text-xs text-muted">Ascenso a {rankInfo.nextRankLabel}:</span>
+                <span className="text-xs font-bold font-mono text-amber-500">
+                  {rankInfo.rank === "unranked" 
+                    ? "Completa 1 reto para ser Bronce" 
+                    : `${rankInfo.streak} / 3 victorias consecutivas`}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex-1 max-w-xs h-2 bg-black/60 rounded-full overflow-hidden border border-white/5">
+
+          <div className="flex-1 max-w-xs h-2 bg-secondary rounded-full overflow-hidden border border-border">
             <div 
-              className="h-full bg-gradient-to-r from-red-500 via-purple-500 to-primary transition-all duration-500"
+              className="h-full bg-gradient-to-r from-red-500 via-amber-500 to-primary transition-all duration-500"
               style={{ width: `${(completedTodayCount / 3) * 100}%` }}
             />
           </div>
@@ -209,66 +237,74 @@ export function DailyCodingArena() {
         {loading ? (
           [1, 2, 3].map((n) => (
             <Card key={n} className="p-6 glass animate-pulse space-y-4">
-              <div className="h-6 w-3/4 bg-white/10 rounded-lg" />
-              <div className="h-12 w-full bg-white/5 rounded-lg" />
-              <div className="h-10 w-full bg-white/10 rounded-xl" />
+              <div className="h-6 w-3/4 bg-secondary rounded-lg" />
+              <div className="h-12 w-full bg-secondary/50 rounded-lg" />
+              <div className="h-10 w-full bg-secondary rounded-xl" />
             </Card>
           ))
         ) : dailyChallenges.length === 0 ? (
-          <div className="col-span-3 text-center py-12 bg-black/20 rounded-2xl border border-white/5 p-6">
-            <Code2 size={40} className="mx-auto text-zinc-600 mb-3" />
-            <h4 className="text-lg font-bold text-white mb-1">Retos en preparación</h4>
-            <p className="text-sm text-zinc-400">
-              Ejecuta el script <code className="text-primary font-mono">seeds/09_retos_algoritmicos_diarios.sql</code> en Supabase para activar los 10 retos de la Arena.
+          <div className="col-span-3 text-center py-12 bg-card rounded-2xl border border-border p-6 shadow-sm">
+            <Code2 size={40} className="mx-auto text-muted mb-3" />
+            <h4 className="text-lg font-bold text-foreground mb-1">Retos de Bronce en preparación</h4>
+            <p className="text-sm text-muted">
+              Ejecuta el script <code className="text-primary font-mono">seeds/29_arena_rangos_y_retos_bronce.sql</code> en Supabase para activar los 15 retos exclusivos de Bronce.
             </p>
           </div>
         ) : (
-          dailyChallenges.map((challenge, idx) => (
-            <Card 
-              key={challenge.id} 
-              className={`p-6 glass flex flex-col justify-between transition-all relative overflow-hidden group hover:border-red-500/40 hover:scale-[1.02] ${
-                challenge.completed ? "border-emerald-500/30 bg-emerald-950/10" : "border-white/10"
-              }`}
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
-                    Reto #{idx + 1}
-                  </span>
-                  
-                  <div className="flex items-center gap-1.5 text-yellow-400 font-bold text-xs font-mono bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                    <Zap size={12} className="fill-yellow-400" />
-                    +{challenge.xp_reward} XP
+          dailyChallenges.map((challenge, idx) => {
+            const catBadge = getCategoryBadge(challenge.title, challenge.challenge_type);
+
+            return (
+              <Card 
+                key={challenge.id} 
+                className={`p-6 glass flex flex-col justify-between transition-all relative overflow-hidden group hover:border-red-500/40 hover:-translate-y-1 shadow-sm ${
+                  challenge.completed ? "border-emerald-500/30 bg-emerald-500/5" : "border-border"
+                }`}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20">
+                      Reto #{idx + 1}
+                    </span>
+                    
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${catBadge.color}`}>
+                      {catBadge.text}
+                    </span>
+
+                    <div className="flex items-center gap-1 text-amber-500 font-bold text-xs font-mono bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20 ml-auto">
+                      <Zap size={12} className="fill-amber-500" />
+                      +{challenge.xp_reward} XP
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-red-500 transition-colors">
+                      {challenge.title}
+                    </h3>
+                    <p className="text-xs text-muted mt-1 line-clamp-2 leading-relaxed">
+                      {challenge.description}
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="font-heading font-bold text-lg text-white group-hover:text-red-300 transition-colors">
-                    {challenge.title}
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
-                    {challenge.description}
-                  </p>
+                <div className="mt-6 pt-4 border-t border-border">
+                  {challenge.completed ? (
+                    <Link href={`/ide/${challenge.id}`} className="w-full block">
+                      <Button variant="outline" className="w-full border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10 flex items-center justify-center gap-2">
+                        <CheckCircle2 size={16} /> Resuelto (Repetir)
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link href={`/ide/${challenge.id}`} className="w-full block">
+                      <Button className="w-full bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white font-bold flex items-center justify-center gap-2 shadow-md">
+                        <Play size={16} className="fill-white" /> Resolver Reto ⚡
+                      </Button>
+                    </Link>
+                  )}
                 </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/5">
-                {challenge.completed ? (
-                  <Link href={`/ide/${challenge.id}`} className="w-full block">
-                    <Button variant="outline" className="w-full border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 flex items-center justify-center gap-2">
-                      <CheckCircle2 size={16} /> Resuelto (Repetir)
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href={`/ide/${challenge.id}`} className="w-full block">
-                    <Button className="w-full bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white font-bold flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.25)]">
-                      <Play size={16} className="fill-white" /> Resolver Reto ⚡
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </Card>
-          ))
+              </Card>
+            );
+          })
         )}
       </div>
     </div>

@@ -8,6 +8,8 @@ export interface UserProfile {
   last_login?: string;
   role: string;
   reputation_stars: number;
+  arena_rank?: "unranked" | "bronce" | "plata" | "oro";
+  arena_streak?: number;
 }
 
 export interface Course {

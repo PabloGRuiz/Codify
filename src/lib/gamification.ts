@@ -99,3 +99,136 @@ export function getDailyChallengeIndices(totalChallenges: number, date: Date = n
 
   return Array.from(selected);
 }
+
+export type ArenaRank = "unranked" | "bronce" | "plata" | "oro";
+
+export interface ArenaRankInfo {
+  rank: ArenaRank;
+  label: string;
+  badge: string;
+  color: string;
+  nextRankLabel: string | null;
+  streak: number;
+  requiredStreak: number;
+  streakPercentage: number;
+}
+
+export function getArenaRankInfo(rankInput?: string | null, streakInput?: number | null): ArenaRankInfo {
+  const rank = (rankInput?.toLowerCase() || "unranked") as ArenaRank;
+  const streak = Math.max(0, streakInput || 0);
+
+  switch (rank) {
+    case "oro":
+      return {
+        rank: "oro",
+        label: "Oro",
+        badge: "🥇",
+        color: "text-amber-400 border-amber-500/30 bg-amber-500/10",
+        nextRankLabel: null,
+        streak: 3,
+        requiredStreak: 3,
+        streakPercentage: 100,
+      };
+    case "plata":
+      return {
+        rank: "plata",
+        label: "Plata",
+        badge: "🥈",
+        color: "text-slate-300 border-slate-400/30 bg-slate-400/10",
+        nextRankLabel: "Oro",
+        streak: Math.min(3, streak),
+        requiredStreak: 3,
+        streakPercentage: Math.round((Math.min(3, streak) / 3) * 100),
+      };
+    case "bronce":
+      return {
+        rank: "bronce",
+        label: "Bronce",
+        badge: "🥉",
+        color: "text-amber-600 border-amber-600/30 bg-amber-600/10",
+        nextRankLabel: "Plata",
+        streak: Math.min(3, streak),
+        requiredStreak: 3,
+        streakPercentage: Math.round((Math.min(3, streak) / 3) * 100),
+      };
+    case "unranked":
+    default:
+      return {
+        rank: "unranked",
+        label: "Sin Rango",
+        badge: "🔰",
+        color: "text-zinc-400 border-zinc-500/30 bg-zinc-500/10",
+        nextRankLabel: "Bronce",
+        streak: 0,
+        requiredStreak: 1,
+        streakPercentage: 0,
+      };
+  }
+}
+
+/**
+ * Calcula la promoción o avance de racha tras resolver un reto de la arena exitosamente.
+ */
+export function calculateArenaPromotion(currentRankInput?: string | null, currentStreakInput?: number | null): {
+  newRank: ArenaRank;
+  newStreak: number;
+  promoted: boolean;
+  message: string;
+} {
+  const currentRank = (currentRankInput?.toLowerCase() || "unranked") as ArenaRank;
+  const currentStreak = Math.max(0, currentStreakInput || 0);
+
+  if (currentRank === "unranked") {
+    // Primer reto completado -> Asigna Bronce inmediatamente
+    return {
+      newRank: "bronce",
+      newStreak: 0,
+      promoted: true,
+      message: "¡Bienvenido a la Arena! Has obtenido tu rango inicial de Bronce 🥉",
+    };
+  }
+
+  if (currentRank === "bronce") {
+    const nextStreak = currentStreak + 1;
+    if (nextStreak >= 3) {
+      return {
+        newRank: "plata",
+        newStreak: 0,
+        promoted: true,
+        message: "¡Ascenso de Rango! 3 victorias consecutivas: Has alcanzado el rango Plata 🥈",
+      };
+    }
+    return {
+      newRank: "bronce",
+      newStreak: nextStreak,
+      promoted: false,
+      message: `¡Gran victoria! Racha consecutiva: ${nextStreak}/3 hacia Plata.`,
+    };
+  }
+
+  if (currentRank === "plata") {
+    const nextStreak = currentStreak + 1;
+    if (nextStreak >= 3) {
+      return {
+        newRank: "oro",
+        newStreak: 3,
+        promoted: true,
+        message: "¡Ascenso Épico! 3 victorias consecutivas: ¡Has alcanzado el rango máximo de Oro 🥇!",
+      };
+    }
+    return {
+      newRank: "plata",
+      newStreak: nextStreak,
+      promoted: false,
+      message: `¡Gran victoria! Racha consecutiva: ${nextStreak}/3 hacia Oro.`,
+    };
+  }
+
+  // Si ya es Oro
+  return {
+    newRank: "oro",
+    newStreak: 3,
+    promoted: false,
+    message: "¡Victoria en Rango Oro 🥇! Mantienes tu estatus en la cumbre de la Arena.",
+  };
+}
