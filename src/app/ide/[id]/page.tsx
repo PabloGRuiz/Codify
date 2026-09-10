@@ -55,6 +55,56 @@ const CodeEditor = dynamic(
   }
 );
 
+declare global {
+  interface Window {
+    loadPyodide?: (config: any) => Promise<any>;
+    _pyodideInstance?: any;
+    _pyodideLoadingPromise?: Promise<any>;
+  }
+}
+
+async function getPyodideInstance(
+  onLog: (text: string) => void,
+  onError: (text: string) => void
+) {
+  if (typeof window === "undefined") return null;
+
+  if (window._pyodideInstance) {
+    window._pyodideInstance.setStdout({ batched: (text: string) => onLog(text) });
+    window._pyodideInstance.setStderr({ batched: (text: string) => onError(text) });
+    return window._pyodideInstance;
+  }
+
+  if (window._pyodideLoadingPromise) {
+    const pyodide = await window._pyodideLoadingPromise;
+    pyodide.setStdout({ batched: (text: string) => onLog(text) });
+    pyodide.setStderr({ batched: (text: string) => onError(text) });
+    return pyodide;
+  }
+
+  window._pyodideLoadingPromise = (async () => {
+    if (!window.loadPyodide) {
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js";
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("No se pudo cargar el motor de Python (Pyodide)."));
+        document.head.appendChild(script);
+      });
+    }
+
+    const pyodide = await window.loadPyodide!({
+      stdout: (text: string) => onLog(text),
+      stderr: (text: string) => onError(text),
+    });
+    window._pyodideInstance = pyodide;
+    return pyodide;
+  })();
+
+  return await window._pyodideLoadingPromise;
+}
+
 function formatMathAndMarkdown(content: string): string {
   if (!content) return "";
 
@@ -543,102 +593,170 @@ export default function ChallengeIDEPage() {
 
     let passed = false;
     try {
-      // 1. Construir e inyectar el bundle virtual en el iframe sandbox
-      const bundledHtml = buildSandboxBundle(files);
-      const { doc: sandboxDoc, win: sandboxWin } = initSandboxIframe();
+      const isPython =
+        selectedLanguage === "python" ||
+        challenge.challenge_type === "python" ||
+        activeFile.endsWith(".py") ||
+        Object.keys(files).some((f) => f.endsWith(".py"));
 
-      if (iframeRef.current && iframeRef.current.contentDocument) {
-        sandboxDoc.open();
-        sandboxDoc.write(bundledHtml);
-        sandboxDoc.close();
-      }
+      if (isPython) {
+        capturedLogs.push("🐍 Inicializando entorno Python (WebAssembly)...");
+        setLogs([...capturedLogs]);
 
-      // 2. Ejecutar batería de tests sobre el proyecto
-      if (challenge.test_code) {
-        // Concatenar ÚNICAMENTE archivos .js (nunca HTML o CSS que romperían la sintaxis JS con '<')
-        const allJsCode = Object.entries(files)
-          .filter(([name]) => name.endsWith(".js"))
-          .map(([, content]) => content)
-          .join("\n\n") || (activeFile.endsWith(".js") ? activeCode : "");
+        const pyodide = await getPyodideInstance(
+          (text: string) => {
+            capturedLogs.push(text);
+            setLogs([...capturedLogs]);
+          },
+          (errText: string) => {
+            capturedLogs.push(`[stderr] ${errText}`);
+            setLogs([...capturedLogs]);
+          }
+        );
 
-        // Sanitizar test_code y allJsCode para evitar colisiones de identificadores redeclarados
-        // (por ejemplo: si test_code declara 'const assert = ...' cuando assert ya está provisto en el runner)
-        const sanitizedTestCode = challenge.test_code
-          .replace(/\b(?:const|let|var)\s+assert\b/g, "assert")
-          .replace(/\b(?:const|let|var)\s+expect\b/g, "expect")
-          .replace(/\b(?:const|let|var)\s+test\b/g, "test");
+        if (!pyodide) {
+          throw new Error("El motor de Python no se encuentra disponible.");
+        }
 
-        const sanitizedJsCode = allJsCode
-          .replace(/\b(?:const|let|var)\s+assert\b/g, "assert")
-          .replace(/\b(?:const|let|var)\s+expect\b/g, "expect")
-          .replace(/\b(?:const|let|var)\s+test\b/g, "test");
+        // Asegurar que el directorio de trabajo esté en sys.path
+        await pyodide.runPythonAsync(`
+import sys, os
+cwd = os.getcwd()
+if cwd not in sys.path:
+    sys.path.insert(0, cwd)
+`);
 
-        // Entorno de pruebas (test runner tipo Jest/Vitest con expect y assert)
-        const testHelperScript = `
-          // Utilidad expect simple y completa
-          let expect = function(actual) {
-            return {
-              toBe(expected) {
-                if (actual !== expected) {
-                  throw new Error("Se esperaba " + JSON.stringify(expected) + " pero se obtuvo " + JSON.stringify(actual));
+        // Escribir todos los archivos del proyecto en el sistema de archivos virtual de Pyodide
+        for (const [filename, content] of Object.entries(files)) {
+          pyodide.FS.writeFile(filename, content);
+        }
+
+        // Limpiar caché de módulos de Python del proyecto para forzar recarga fresca del código del usuario
+        const moduleNames = Object.keys(files)
+          .filter((f) => f.endsWith(".py"))
+          .map((f) => f.replace(/\.py$/, ""));
+
+        await pyodide.runPythonAsync(`
+import sys
+for mod_name in ${JSON.stringify(moduleNames)}:
+    if mod_name in sys.modules:
+        del sys.modules[mod_name]
+`);
+
+        // Ejecutar batería de tests o código principal
+        if (challenge.test_code) {
+          await pyodide.runPythonAsync(challenge.test_code);
+        } else {
+          const entryFile = files["main.py"] !== undefined ? "main.py" : activeFile;
+          await pyodide.runPythonAsync(files[entryFile] || activeCode);
+        }
+
+        setLogs([...capturedLogs, "✅ ¡Todos los tests pasaron exitosamente!"]);
+        setStatus("success");
+        passed = true;
+      } else {
+        // 1. Construir e inyectar el bundle virtual en el iframe sandbox (HTML/CSS/JS)
+        const bundledHtml = buildSandboxBundle(files);
+        const { doc: sandboxDoc, win: sandboxWin } = initSandboxIframe();
+
+        if (iframeRef.current && iframeRef.current.contentDocument) {
+          sandboxDoc.open();
+          sandboxDoc.write(bundledHtml);
+          sandboxDoc.close();
+        }
+
+        // 2. Ejecutar batería de tests sobre el proyecto
+        if (challenge.test_code) {
+          // Concatenar ÚNICAMENTE archivos .js (nunca HTML o CSS que romperían la sintaxis JS con '<')
+          const allJsCode = Object.entries(files)
+            .filter(([name]) => name.endsWith(".js"))
+            .map(([, content]) => content)
+            .join("\n\n") || (activeFile.endsWith(".js") ? activeCode : "");
+
+          // Sanitizar test_code y allJsCode para evitar colisiones de identificadores redeclarados
+          // (por ejemplo: si test_code declara 'const assert = ...' cuando assert ya está provisto en el runner)
+          const sanitizedTestCode = challenge.test_code
+            .replace(/\b(?:const|let|var)\s+assert\b/g, "assert")
+            .replace(/\b(?:const|let|var)\s+expect\b/g, "expect")
+            .replace(/\b(?:const|let|var)\s+test\b/g, "test");
+
+          const sanitizedJsCode = allJsCode
+            .replace(/\b(?:const|let|var)\s+assert\b/g, "assert")
+            .replace(/\b(?:const|let|var)\s+expect\b/g, "expect")
+            .replace(/\b(?:const|let|var)\s+test\b/g, "test");
+
+          // Entorno de pruebas (test runner tipo Jest/Vitest con expect y assert)
+          const testHelperScript = `
+            // Utilidad expect simple y completa
+            let expect = function(actual) {
+              return {
+                toBe(expected) {
+                  if (actual !== expected) {
+                    throw new Error("Se esperaba " + JSON.stringify(expected) + " pero se obtuvo " + JSON.stringify(actual));
+                  }
+                },
+                toEqual(expected) {
+                  const actualStr = JSON.stringify(actual);
+                  const expectedStr = JSON.stringify(expected);
+                  if (actualStr !== expectedStr) {
+                    throw new Error("Se esperaba " + expectedStr + " pero se obtuvo " + actualStr);
+                  }
+                },
+                toBeTruthy() {
+                  if (!actual) throw new Error("Se esperaba un valor verdadero pero se obtuvo " + actual);
+                },
+                toBeFalsy() {
+                  if (actual) throw new Error("Se esperaba un valor falso pero se obtuvo " + actual);
+                },
+                toContain(item) {
+                  if (!actual || !actual.includes(item)) {
+                    throw new Error("Se esperaba que contuviera " + JSON.stringify(item));
+                  }
                 }
-              },
-              toEqual(expected) {
-                const actualStr = JSON.stringify(actual);
-                const expectedStr = JSON.stringify(expected);
-                if (actualStr !== expectedStr) {
-                  throw new Error("Se esperaba " + expectedStr + " pero se obtuvo " + actualStr);
-                }
-              },
-              toBeTruthy() {
-                if (!actual) throw new Error("Se esperaba un valor verdadero pero se obtuvo " + actual);
-              },
-              toBeFalsy() {
-                if (actual) throw new Error("Se esperaba un valor falso pero se obtuvo " + actual);
-              },
-              toContain(item) {
-                if (!actual || !actual.includes(item)) {
-                  throw new Error("Se esperaba que contuviera " + JSON.stringify(item));
-                }
+              };
+            };
+
+            let assert = function(condition, message) {
+              if (!condition) throw new Error(message || "La aserción falló.");
+            };
+
+            let test = function(description, fn) {
+              try {
+                fn();
+              } catch (err) {
+                err.message = "[" + description + "] " + err.message;
+                throw err;
               }
             };
-          };
 
-          let assert = function(condition, message) {
-            if (!condition) throw new Error(message || "La aserción falló.");
-          };
+            // 1. Ejecutar código JS del usuario (si existe) en este ámbito
+            ${sanitizedJsCode}
 
-          let test = function(description, fn) {
-            try {
-              fn();
-            } catch (err) {
-              err.message = "[" + description + "] " + err.message;
-              throw err;
-            }
-          };
+            // 2. Ejecutar la batería de tests definida
+            ${sanitizedTestCode}
+          `;
 
-          // 1. Ejecutar código JS del usuario (si existe) en este ámbito
-          ${sanitizedJsCode}
-
-          // 2. Ejecutar la batería de tests definida
-          ${sanitizedTestCode}
-        `;
-
-        const testRunner = new Function("files", "document", "window", "code", testHelperScript);
-        testRunner(files, sandboxDoc, sandboxWin, activeCode);
-      } else {
-        // En caso de código JS único sin test específico
-        const isJs = selectedLanguage === "javascript" || activeFile.endsWith(".js");
-        if (isJs) {
-          const runFn = new Function("document", "window", activeCode);
-          runFn(sandboxDoc, sandboxWin);
+          const testRunner = new Function("files", "document", "window", "code", testHelperScript);
+          testRunner(files, sandboxDoc, sandboxWin, activeCode);
+        } else {
+          // En caso de código JS único sin test específico
+          const isJs = selectedLanguage === "javascript" || activeFile.endsWith(".js");
+          if (isJs) {
+            const runFn = new Function("document", "window", activeCode);
+            runFn(sandboxDoc, sandboxWin);
+          }
         }
+        
+        setLogs([...capturedLogs, "✅ ¡Todos los tests pasaron exitosamente!"]);
+        setStatus("success");
+        passed = true;
       }
-      
-      setLogs([...capturedLogs, "✅ ¡Todos los tests pasaron exitosamente!"]);
-      setStatus("success");
-      passed = true;
     } catch (err: any) {
+      let displayError = err?.message || "Error desconocido en la ejecución.";
+      if (typeof displayError === "string" && displayError.includes("AssertionError:")) {
+        const parts = displayError.split("AssertionError:");
+        displayError = parts[parts.length - 1].trim();
+      }
       const isArenaChallenge = 
         challenge.modules?.title?.includes("Arena") || 
         !challenge.modules?.course_id;
@@ -651,7 +769,7 @@ export default function ChallengeIDEPage() {
 
       setLogs([
         ...capturedLogs, 
-        `❌ Error en los tests: ${err.message}`,
+        `❌ Error en los tests: ${displayError}`,
         isArenaChallenge 
           ? (remaining > 0 
               ? `⚠️ Intento fallido. Te ${remaining === 1 ? "queda 1 intento" : `quedan ${remaining} intentos`}.` 
