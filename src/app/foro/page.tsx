@@ -14,7 +14,8 @@ import {
   Star,
   Clock,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from "lucide-react";
 import { useSidebar } from "@/context/SidebarContext";
 import { useUser } from "@/hooks/useUser";
@@ -42,11 +43,29 @@ interface Thread {
 
 export default function ForoPage() {
   const { isCollapsed } = useSidebar();
-  const { user } = useUser();
+  const { user, isAdmin } = useUser();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleDeleteThread = async (e: React.MouseEvent, threadId: string, threadTitle: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!confirm(`¿Estás seguro de eliminar el hilo "${threadTitle}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("forum_threads").delete().eq("id", threadId);
+      if (error) throw error;
+      setThreads((prev) => prev.filter((t) => t.id !== threadId));
+    } catch (err: any) {
+      console.error("Error al eliminar hilo:", err);
+      alert("No se pudo eliminar el hilo: " + (err.message || "Error desconocido"));
+    }
+  };
 
   const fetchThreads = async (search = "") => {
     setLoading(true);
@@ -190,14 +209,26 @@ export default function ForoPage() {
 
                       {/* Content column */}
                       <div className="flex-1 min-w-0">
-                        <Link href={`/foro/${thread.id}`} className="block group">
-                          <h2 className="text-lg sm:text-xl font-heading font-bold text-blue-100 group-hover:text-blue-400 transition-colors mb-1 truncate">
-                            {thread.title}
-                          </h2>
-                          <p className="text-sm text-zinc-400 line-clamp-2 mb-3">
-                            {thread.content.length > 150 ? `${thread.content.substring(0, 150)}...` : thread.content}
-                          </p>
-                        </Link>
+                        <div className="flex items-start justify-between gap-3">
+                          <Link href={`/foro/${thread.id}`} className="block group flex-1 min-w-0">
+                            <h2 className="text-lg sm:text-xl font-heading font-bold text-blue-100 group-hover:text-blue-400 transition-colors mb-1 truncate">
+                              {thread.title}
+                            </h2>
+                            <p className="text-sm text-zinc-400 line-clamp-2 mb-3">
+                              {thread.content.length > 150 ? `${thread.content.substring(0, 150)}...` : thread.content}
+                            </p>
+                          </Link>
+
+                          {(isAdmin || (user && user.id === thread.author_id)) && (
+                            <button
+                              onClick={(e) => handleDeleteThread(e, thread.id, thread.title)}
+                              className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all z-20 shrink-0"
+                              title="Eliminar publicación"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
 
                         {/* Tags & Meta footer */}
                         <div className="flex flex-wrap items-center justify-between gap-4 text-xs mt-4">

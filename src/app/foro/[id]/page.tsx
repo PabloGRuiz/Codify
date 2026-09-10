@@ -19,7 +19,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   CheckCircle2,
-  MoreVertical
+  MoreVertical,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { formatTimeAgo } from "@/lib/formatTime";
@@ -61,13 +62,44 @@ export default function ThreadDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { isCollapsed } = useSidebar();
-  const { user } = useUser();
+  const { user, isAdmin } = useUser();
   
   const [thread, setThread] = useState<Thread | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPostContent, setNewPostContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleDeleteThread = async () => {
+    if (!thread) return;
+    if (!confirm(`¿Estás seguro de eliminar el hilo "${thread.title}"? Esta acción eliminará el hilo y todas sus respuestas.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("forum_threads").delete().eq("id", thread.id);
+      if (error) throw error;
+      router.push("/foro");
+    } catch (err: any) {
+      console.error("Error al eliminar hilo:", err);
+      alert("No se pudo eliminar el hilo: " + (err.message || "Error desconocido"));
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm("¿Estás seguro de eliminar esta respuesta?")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("forum_posts").delete().eq("id", postId);
+      if (error) throw error;
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (err: any) {
+      console.error("Error al eliminar respuesta:", err);
+      alert("No se pudo eliminar la respuesta: " + (err.message || "Error desconocido"));
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -283,9 +315,21 @@ export default function ThreadDetailPage() {
             <Card className="p-6 md:p-8 mb-8 border-blue-500/20 bg-blue-900/10 shadow-lg relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
               
-              <h1 className="text-2xl md:text-3xl font-heading font-bold text-white mb-4">
-                {thread.title}
-              </h1>
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <h1 className="text-2xl md:text-3xl font-heading font-bold text-white">
+                  {thread.title}
+                </h1>
+                {(isAdmin || (user && user.id === thread.author?.id)) && (
+                  <button
+                    onClick={handleDeleteThread}
+                    className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 text-xs flex items-center gap-1.5 h-8 px-3 rounded-xl shrink-0 transition-all font-medium"
+                    title="Eliminar hilo de discusión"
+                  >
+                    <Trash2 size={15} />
+                    <span className="hidden sm:inline">Eliminar Hilo</span>
+                  </button>
+                )}
+              </div>
 
               {/* Thread Meta */}
               <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400 mb-6 pb-6 border-b border-white/10">
@@ -405,9 +449,17 @@ export default function ThreadDetailPage() {
                             </span>
                           </div>
                         </Link>
-                        <div className="flex items-center gap-4 text-xs text-zinc-500">
+                        <div className="flex items-center gap-3 text-xs text-zinc-500">
                           <span>{formatTimeAgo(post.created_at)}</span>
-                          <button className="text-zinc-400 hover:text-white"><MoreVertical size={16}/></button>
+                          {(isAdmin || (user && user.id === post.author?.id)) && (
+                            <button 
+                              onClick={() => handleDeletePost(post.id)}
+                              className="p-1 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                              title="Eliminar respuesta"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
                         </div>
                       </div>
 
