@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { CheckCircle2, XCircle, HelpCircle, Award, ArrowRight, RefreshCw, Lightbulb } from "lucide-react";
+import { CheckCircle2, XCircle, HelpCircle, Award, ArrowRight, RefreshCw, Lightbulb, Shuffle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface QuizQuestion {
@@ -23,6 +23,31 @@ interface QuizRunnerProps {
   onFailAttempt?: () => void;
 }
 
+// Mezcla las opciones de una pregunta y recalcula el correctIndex correspondiente
+function shuffleQuestionOptions(q: QuizQuestion): QuizQuestion {
+  if (!q.options || q.options.length <= 1) return q;
+
+  const indexed = q.options.map((opt, idx) => ({
+    text: opt,
+    isCorrect: idx === q.correctIndex,
+  }));
+
+  // Algoritmo Fisher-Yates para barajado uniforme
+  for (let i = indexed.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+  }
+
+  const newOptions = indexed.map((item) => item.text);
+  const newCorrectIndex = indexed.findIndex((item) => item.isCorrect);
+
+  return {
+    ...q,
+    options: newOptions,
+    correctIndex: newCorrectIndex >= 0 ? newCorrectIndex : 0,
+  };
+}
+
 export function QuizRunner({ 
   questions, 
   xpReward, 
@@ -31,13 +56,29 @@ export function QuizRunner({
   attemptsLeft,
   onFailAttempt
 }: QuizRunnerProps) {
+  const [shuffledQuestions, setShuffledQuestions] = useState<QuizQuestion[]>(() =>
+    questions.map(shuffleQuestionOptions)
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
 
-  const currentQ = questions[currentIndex] || {
+  // Mezclar cuando cambian las preguntas
+  useEffect(() => {
+    setShuffledQuestions(questions.map(shuffleQuestionOptions));
+    setCurrentIndex(0);
+    setSelectedOption(null);
+    setIsSubmitted(false);
+    setScore(0);
+    setQuizFinished(false);
+  }, [questions]);
+
+  const activeQuestions = shuffledQuestions.length > 0 ? shuffledQuestions : questions;
+
+  const currentQ = activeQuestions[currentIndex] || {
+    id: "default",
     question: "¿Cuál es el resultado de typeof [] en JavaScript?",
     options: ["'array'", "'object'", "'list'", "'undefined'"],
     correctIndex: 1,
@@ -58,13 +99,14 @@ export function QuizRunner({
   };
 
   const handleNextQuestion = () => {
-    if (currentIndex + 1 < questions.length) {
+    if (currentIndex + 1 < activeQuestions.length) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
       setIsSubmitted(false);
     } else {
       setQuizFinished(true);
-      const percentage = Math.round((score / questions.length) * 100);
+      const total = activeQuestions.length || 1;
+      const percentage = Math.round((score / total) * 100);
       if (percentage >= 70) {
         onComplete();
       } else if (onFailAttempt) {
@@ -74,6 +116,8 @@ export function QuizRunner({
   };
 
   const handleRetry = () => {
+    // Mezclar nuevamente en cada reintento
+    setShuffledQuestions(questions.map(shuffleQuestionOptions));
     setCurrentIndex(0);
     setSelectedOption(null);
     setIsSubmitted(false);
@@ -81,7 +125,8 @@ export function QuizRunner({
     setQuizFinished(false);
   };
 
-  const percentage = Math.round((score / questions.length) * 100);
+  const total = activeQuestions.length || 1;
+  const percentage = Math.round((score / total) * 100);
   const passed = percentage >= 70;
 
   return (
@@ -97,7 +142,7 @@ export function QuizRunner({
               <span>Evaluación Teórica Multiple Choice</span>
             </div>
             <span className="text-xs text-zinc-400 font-mono">
-              Pregunta {currentIndex + 1} de {questions.length}
+              Pregunta {currentIndex + 1} de {activeQuestions.length}
             </span>
           </div>
 

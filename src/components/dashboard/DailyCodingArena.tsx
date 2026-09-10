@@ -348,96 +348,203 @@ export function DailyCodingArena() {
         )}
       </AnimatePresence>
 
-      {/* BANCO DE DESAFÍOS DISPONIBLES EN TU RANGO */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-heading font-bold text-foreground flex items-center gap-2">
-              <span>Pool de Desafíos Disponibles</span>
-              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                {challenges.length} Retos
-              </span>
-            </h3>
-            <p className="text-xs text-muted">
-              Puedes entrar en cola automática arriba o seleccionar manualmente cualquier reto de tu rango.
-            </p>
+      {/* PANEL DE INTELIGENCIA DE LIGA & REGLAS CLASIFICATORIAS (SIN MOSTRAR RETOS INDIVIDUALES) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Tarjeta 1: Disciplinas de la Liga */}
+        <Card className="p-6 glass border-border space-y-4 shadow-sm">
+          <div className="flex items-center gap-2 text-primary font-bold text-sm">
+            <Layers size={18} />
+            <span>Disciplinas en tu Liga</span>
           </div>
-        </div>
+          <p className="text-xs text-muted leading-relaxed">
+            El sistema de emparejamiento seleccionará un desafío aleatorio dentro de las siguientes áreas temáticas de tu rango:
+          </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading ? (
-            [1, 2, 3, 4, 5, 6].map((n) => (
-              <Card key={n} className="p-5 glass animate-pulse space-y-3">
-                <div className="h-5 w-3/4 bg-secondary rounded-md" />
-                <div className="h-10 w-full bg-secondary/50 rounded-md" />
-                <div className="h-9 w-full bg-secondary rounded-lg" />
-              </Card>
-            ))
-          ) : challenges.length === 0 ? (
-            <div className="col-span-3 text-center py-12 bg-card rounded-2xl border border-border p-6 shadow-sm">
-              <Code2 size={40} className="mx-auto text-muted mb-3" />
-              <h4 className="text-lg font-bold text-foreground mb-1">Retos en preparación</h4>
-              <p className="text-sm text-muted">
-                Ejecuta la semilla SQL <code className="text-primary font-mono">seeds/31_arena_retos_plata_y_expansion_bronce.sql</code> en Supabase para activar todos los retos de la Arena.
+          <div className="space-y-2 pt-1">
+            {isSilver ? (
+              <>
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+                  <Database size={15} className="text-amber-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Bases de Datos</span>
+                    <span className="text-[11px] text-muted">ACID vs BASE, Índices B-Tree, Normalización</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs">
+                  <Network size={15} className="text-cyan-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Redes & Modelo OSI</span>
+                    <span className="text-[11px] text-muted">Troubleshooting en 7 capas, Handshake TCP, DNS</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs">
+                  <Cpu size={15} className="text-blue-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Hardware & Arquitectura</span>
+                    <span className="text-[11px] text-muted">Cachés L1/L2/L3, CPU vs GPU, Cuellos de botella</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs">
+                  <Radio size={15} className="text-orange-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Electrónica Básica</span>
+                    <span className="text-[11px] text-muted">Ley de Ohm, Pines flotantes, Pull-Up/Down</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                  <Code2 size={15} className="text-emerald-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Algoritmos O(N) & Big-O</span>
+                    <span className="text-[11px] text-muted">Two-Sum, Búsqueda Binaria, Matrices 2D</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs">
+                  <Network size={15} className="text-cyan-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Redes Básicas</span>
+                    <span className="text-[11px] text-muted">Puertos estándar, IPs privadas vs públicas, Gateways</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs">
+                  <Layers size={15} className="text-purple-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Lógica Proposicional</span>
+                    <span className="text-[11px] text-muted">Operador XOR, Tablas de verdad, Compuertas lógicas</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs">
+                  <Target size={15} className="text-indigo-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Fundamentos IT</span>
+                    <span className="text-[11px] text-muted">Comandos de terminal CLI, memoria y periféricos</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                  <Code2 size={15} className="text-emerald-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Lógica de Código Base</span>
+                    <span className="text-[11px] text-muted">Par o impar, sumatorias, filtros y strings</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </Card>
+
+        {/* Tarjeta 2: Reglas de Emparejamiento */}
+        <Card className="p-6 glass border-border space-y-4 shadow-sm">
+          <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+            <Target size={18} />
+            <span>Reglas de Combate Clasificatorio</span>
+          </div>
+          <p className="text-xs text-muted leading-relaxed">
+            Las reglas que rigen el emparejamiento competitivo de la Arena:
+          </p>
+
+          <div className="space-y-3 pt-1 text-xs">
+            <div className="flex items-start gap-3">
+              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                1
+              </span>
+              <p className="text-muted leading-relaxed">
+                <strong className="text-foreground">Matchmaking a Ciegas:</strong> Los retos no se eligen manualmente para evitar memorización o comodidad; se asignan al azar según tu liga.
               </p>
             </div>
-          ) : (
-            challenges.map((challenge, idx) => {
-              const catBadge = getCategoryBadge(challenge.title, challenge.challenge_type);
-              const IconComp = catBadge.icon;
 
-              return (
-                <Card 
-                  key={challenge.id} 
-                  className={`p-5 glass flex flex-col justify-between transition-all relative overflow-hidden group hover:border-red-500/40 hover:-translate-y-1 shadow-sm ${
-                    challenge.completed ? "border-emerald-500/30 bg-emerald-500/5" : "border-border"
-                  }`}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-secondary text-muted">
-                        #{idx + 1}
-                      </span>
-                      
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border flex items-center gap-1 ${catBadge.color}`}>
-                        <IconComp size={11} />
-                        {catBadge.text}
-                      </span>
+            <div className="flex items-start gap-3">
+              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                2
+              </span>
+              <p className="text-muted leading-relaxed">
+                <strong className="text-foreground">3 Intentos por Reto:</strong> Dispones de 3 intentos para resolver los tests o cuestionarios en el IDE.
+              </p>
+            </div>
 
-                      <div className="flex items-center gap-1 text-amber-500 font-bold text-xs font-mono bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20 ml-auto">
-                        <Zap size={11} className="fill-amber-500" />
-                        +{challenge.xp_reward} XP
-                      </div>
-                    </div>
+            <div className="flex items-start gap-3">
+              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                3
+              </span>
+              <p className="text-muted leading-relaxed">
+                <strong className="text-foreground">Ascenso por Racha:</strong> 3 victorias consecutivas te promueven de inmediato al siguiente rango.
+              </p>
+            </div>
 
-                    <div>
-                      <h4 className="font-heading font-bold text-base text-foreground group-hover:text-red-400 transition-colors line-clamp-1">
-                        {challenge.title}
-                      </h4>
-                      <p className="text-xs text-muted mt-1 line-clamp-2 leading-relaxed">
-                        {challenge.description}
-                      </p>
-                    </div>
-                  </div>
+            <div className="flex items-start gap-3">
+              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                4
+              </span>
+              <p className="text-muted leading-relaxed">
+                <strong className="text-foreground">Entrenamiento Ilimitado:</strong> Si fallas, tu racha se reinicia, pero puedes volver a la cola al instante.
+              </p>
+            </div>
+          </div>
+        </Card>
 
-                  <div className="mt-5 pt-3 border-t border-border">
-                    <Link href={`/ide/${challenge.id}`} className="w-full block">
-                      {challenge.completed ? (
-                        <Button variant="outline" size="sm" className="w-full border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 flex items-center justify-center gap-1.5 text-xs">
-                          <CheckCircle2 size={14} /> Resuelto (Repetir)
-                        </Button>
-                      ) : (
-                        <Button size="sm" className="w-full bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white font-bold flex items-center justify-center gap-1.5 shadow-sm text-xs">
-                          <Play size={13} className="fill-white" /> Desafiar ⚡
-                        </Button>
-                      )}
-                    </Link>
-                  </div>
-                </Card>
-              );
-            })
-          )}
-        </div>
+        {/* Tarjeta 3: Estadísticas & Preparación */}
+        <Card className="p-6 glass border-border space-y-4 shadow-sm flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+              <Trophy size={18} />
+              <span>Tu Rendimiento en {rankInfo.label}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="bg-card/70 border border-border p-3.5 rounded-2xl text-center space-y-1">
+                <span className="text-[10px] font-mono font-bold text-muted uppercase block">Dominados</span>
+                <span className="text-2xl font-heading font-extrabold text-foreground block">
+                  {completedCount}
+                </span>
+                <span className="text-[10px] text-emerald-400 font-mono">
+                  {challenges.length > 0 ? `${Math.round((completedCount / challenges.length) * 100)}% de la liga` : "0%"}
+                </span>
+              </div>
+
+              <div className="bg-card/70 border border-border p-3.5 rounded-2xl text-center space-y-1">
+                <span className="text-[10px] font-mono font-bold text-muted uppercase block">Pool Total</span>
+                <span className="text-2xl font-heading font-extrabold text-foreground block">
+                  {challenges.length}
+                </span>
+                <span className="text-[10px] text-muted font-mono">
+                  Retos activos
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-secondary/50 border border-border text-xs space-y-2">
+              <div className="flex items-center justify-between font-mono text-[11px]">
+                <span className="text-muted">Racha para Promoción:</span>
+                <span className="font-bold text-amber-400">{rankInfo.streak} / 3</span>
+              </div>
+              <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-amber-500 to-primary transition-all duration-300"
+                  style={{ width: `${(rankInfo.streak / 3) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              onClick={handleStartMatchmaking}
+              disabled={isQueueing || loading || challenges.length === 0}
+              className="w-full bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white font-bold py-3 text-xs shadow-md flex items-center justify-center gap-2"
+            >
+              <Play size={14} className="fill-white" />
+              <span>Entrar en Cola Directa</span>
+            </Button>
+          </div>
+        </Card>
       </div>
     </div>
   );
