@@ -33,7 +33,7 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { useSidebar } from "@/context/SidebarContext";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { QuizRunner } from "@/components/ide/QuizRunner";
@@ -307,6 +307,8 @@ const detectChallengeLanguage = (data: any): "html" | "css" | "javascript" | "py
 export default function ChallengeIDEPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const arenaMode = searchParams.get("mode") || "ranked";
   const { user, profile } = useUser();
   const { isCollapsed, toggleCollapse } = useSidebar();
   const [challenge, setChallenge] = useState<any>(null);
@@ -552,14 +554,22 @@ export default function ChallengeIDEPage() {
           const profileUpdates: any = { xp: newXp, level: newLevel };
 
           if (isArenaChallenge) {
-            const promo = calculateArenaPromotion(profile?.arena_rank, profile?.arena_streak);
-            profileUpdates.arena_rank = promo.newRank;
-            profileUpdates.arena_streak = promo.newStreak;
-            setArenaPromotionInfo({
-              promoted: promo.promoted,
-              message: promo.message,
-              newRank: promo.newRank,
-            });
+            if (arenaMode === "casual") {
+              setArenaPromotionInfo({
+                promoted: false,
+                message: "🎯 ¡Victoria en Partida Casual! Experiencia acumulada. Tu racha clasificatoria se mantiene protegida.",
+                newRank: profile?.arena_rank || "unranked",
+              });
+            } else {
+              const promo = calculateArenaPromotion(profile?.arena_rank, profile?.arena_streak);
+              profileUpdates.arena_rank = promo.newRank;
+              profileUpdates.arena_streak = promo.newStreak;
+              setArenaPromotionInfo({
+                promoted: promo.promoted,
+                message: promo.message,
+                newRank: promo.newRank,
+              });
+            }
           }
 
           await supabase.from("profiles").update(profileUpdates).eq("id", user.id);
@@ -799,12 +809,16 @@ for mod_name in ${JSON.stringify(moduleNames)}:
 
     if (isArenaChallenge && user) {
       try {
-        const failureResult = calculateArenaFailure(profile?.arena_rank);
-        setFailureMessage(failureResult.message);
-        await supabase
-          .from("profiles")
-          .update({ arena_streak: failureResult.newStreak })
-          .eq("id", user.id);
+        if (arenaMode === "casual") {
+          setFailureMessage("Has utilizado tus 3 intentos. Al ser una partida Casual, tu racha clasificatoria está a salvo.");
+        } else {
+          const failureResult = calculateArenaFailure(profile?.arena_rank, profile?.arena_streak);
+          setFailureMessage(failureResult.message);
+          await supabase
+            .from("profiles")
+            .update({ arena_streak: failureResult.newStreak })
+            .eq("id", user.id);
+        }
       } catch (e) {
         console.error("Error al registrar intento fallido en Arena:", e);
       }

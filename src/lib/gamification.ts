@@ -111,11 +111,13 @@ export interface ArenaRankInfo {
   streak: number;
   requiredStreak: number;
   streakPercentage: number;
+  inPromotion: boolean;
 }
 
 export function getArenaRankInfo(rankInput?: string | null, streakInput?: number | null): ArenaRankInfo {
   const rank = (rankInput?.toLowerCase() || "unranked") as ArenaRank;
   const streak = Math.max(0, streakInput || 0);
+  const inPromotion = (rank === "bronce" || rank === "plata") && streak >= 3;
 
   switch (rank) {
     case "oro":
@@ -128,6 +130,7 @@ export function getArenaRankInfo(rankInput?: string | null, streakInput?: number
         streak: 3,
         requiredStreak: 3,
         streakPercentage: 100,
+        inPromotion: false,
       };
     case "plata":
       return {
@@ -138,7 +141,8 @@ export function getArenaRankInfo(rankInput?: string | null, streakInput?: number
         nextRankLabel: "Oro",
         streak: Math.min(3, streak),
         requiredStreak: 3,
-        streakPercentage: Math.round((Math.min(3, streak) / 3) * 100),
+        streakPercentage: inPromotion ? 100 : Math.round((Math.min(3, streak) / 3) * 100),
+        inPromotion,
       };
     case "bronce":
       return {
@@ -149,7 +153,8 @@ export function getArenaRankInfo(rankInput?: string | null, streakInput?: number
         nextRankLabel: "Plata",
         streak: Math.min(3, streak),
         requiredStreak: 3,
-        streakPercentage: Math.round((Math.min(3, streak) / 3) * 100),
+        streakPercentage: inPromotion ? 100 : Math.round((Math.min(3, streak) / 3) * 100),
+        inPromotion,
       };
     case "unranked":
     default:
@@ -162,12 +167,15 @@ export function getArenaRankInfo(rankInput?: string | null, streakInput?: number
         streak: 0,
         requiredStreak: 1,
         streakPercentage: 0,
+        inPromotion: false,
       };
   }
 }
 
 /**
  * Calcula la promoción o avance de racha tras resolver un reto de la arena exitosamente.
+ * Si el usuario ya tiene 3 victorias consecutivas (en fase de promoción),
+ * esta victoria corresponde al reto del tier superior y confirma el ascenso.
  */
 export function calculateArenaPromotion(currentRankInput?: string | null, currentStreakInput?: number | null): {
   newRank: ArenaRank;
@@ -189,38 +197,60 @@ export function calculateArenaPromotion(currentRankInput?: string | null, curren
   }
 
   if (currentRank === "bronce") {
+    // Si ya estaba en racha 3/3, este fue su Desafío de Promoción del tier Plata
+    if (currentStreak >= 3) {
+      return {
+        newRank: "plata",
+        newStreak: 0, // Inicia en 0/3 en Plata (el reto de promo no suma para el siguiente)
+        promoted: true,
+        message: "🏆 ¡DESAFÍO DE PROMOCIÓN SUPERADO! Has vencido el reto de tier superior y alcanzado el rango Plata 🥈.",
+      };
+    }
+
     const nextStreak = currentStreak + 1;
     if (nextStreak >= 3) {
       return {
-        newRank: "plata",
-        newStreak: 0,
-        promoted: true,
-        message: "¡Ascenso de Rango! 3 victorias consecutivas: Has alcanzado el rango Plata 🥈",
+        newRank: "bronce",
+        newStreak: 3,
+        promoted: false,
+        message: "🔥 ¡3 VICTORIAS CONSECUTIVAS! Has clasificado a la FASE DE PROMOCIÓN hacia Plata ⚔️. Tu próximo reto será el examen de ascenso.",
       };
     }
+
     return {
       newRank: "bronce",
       newStreak: nextStreak,
       promoted: false,
-      message: `¡Gran victoria! Racha consecutiva: ${nextStreak}/3 hacia Plata.`,
+      message: `¡Gran victoria! Racha consecutiva: ${nextStreak}/3 hacia la Promoción de Plata.`,
     };
   }
 
   if (currentRank === "plata") {
-    const nextStreak = currentStreak + 1;
-    if (nextStreak >= 3) {
+    // Si ya estaba en racha 3/3, este fue su Desafío de Promoción del tier Oro
+    if (currentStreak >= 3) {
       return {
         newRank: "oro",
         newStreak: 3,
         promoted: true,
-        message: "¡Ascenso Épico! 3 victorias consecutivas: ¡Has alcanzado el rango máximo de Oro 🥇!",
+        message: "🏆 ¡DESAFÍO DE PROMOCIÓN SUPERADO! Has vencido el reto de tier superior y alcanzado el rango máximo de Oro 🥇!",
       };
     }
+
+    const nextStreak = currentStreak + 1;
+    if (nextStreak >= 3) {
+      return {
+        newRank: "plata",
+        newStreak: 3,
+        promoted: false,
+        message: "🔥 ¡3 VICTORIAS CONSECUTIVAS! Has clasificado a la FASE DE PROMOCIÓN hacia Oro ⚔️. Tu próximo reto será el examen de ascenso.",
+      };
+    }
+
     return {
       newRank: "plata",
       newStreak: nextStreak,
       promoted: false,
-      message: `¡Gran victoria! Racha consecutiva: ${nextStreak}/3 hacia Oro.`,
+      message: `¡Gran victoria! Racha consecutiva: ${nextStreak}/3 hacia la Promoción de Oro.`,
     };
   }
 
@@ -229,7 +259,7 @@ export function calculateArenaPromotion(currentRankInput?: string | null, curren
     newRank: "oro",
     newStreak: 3,
     promoted: false,
-    message: "¡Victoria en Rango Oro 🥇! Mantienes tu estatus en la cumbre de la Arena.",
+    message: "¡Victoria en Rango Oro 🥇! Mantienes tu supremacía en la cumbre de la Arena.",
   };
 }
 
@@ -237,18 +267,22 @@ export function calculateArenaPromotion(currentRankInput?: string | null, curren
  * Calcula el resultado de fallar un reto en la Arena (agotar los 3 intentos).
  * Resetea la racha hacia el siguiente rango a 0 para impedir el ascenso.
  */
-export function calculateArenaFailure(currentRankInput?: string | null): {
+export function calculateArenaFailure(currentRankInput?: string | null, currentStreakInput?: number | null): {
   newRank: ArenaRank;
   newStreak: number;
   message: string;
 } {
   const currentRank = (currentRankInput?.toLowerCase() || "unranked") as ArenaRank;
+  const currentStreak = Math.max(0, currentStreakInput || 0);
+  const wasInPromo = currentStreak >= 3;
 
   return {
     newRank: currentRank,
     newStreak: 0,
-    message: currentRank === "unranked"
-      ? "Has agotado tus 3 intentos en este reto. ¡Sigue practicando para alcanzar Bronce!"
-      : `Has agotado tus 3 intentos. Tu racha hacia el siguiente rango se reinicia a 0/3.`,
+    message: wasInPromo
+      ? "Has caído en el Desafío de Promoción. Tu racha clasificatoria se reinicia a 0/3. ¡Reagrúpate y vuelve a intentarlo!"
+      : (currentRank === "unranked"
+        ? "Has agotado tus 3 intentos en este reto. ¡Sigue practicando para alcanzar Bronce!"
+        : "Has agotado tus 3 intentos. Tu racha clasificatoria se reinicia a 0/3."),
   };
 }
