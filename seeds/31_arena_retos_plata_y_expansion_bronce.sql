@@ -10,7 +10,7 @@
 --    - Algoritmos Complejos con tests unitarios (Two-Sum O(N), Búsqueda Binaria, Matrices 2D)
 -- ==============================================================================
 
-DO $$
+DO $ARENA_SEED$
 DECLARE
   v_bronze_module_id UUID;
   v_silver_module_id UUID;
@@ -339,7 +339,9 @@ Toda la informática digital es, en última instancia, **física de electrones c
 - **Corriente ($I$, en Amperios):** El caudal o cantidad de carga eléctrica que fluye por segundo.
 - **Resistencia ($R$, en Ohmios $\Omega$):** La oposición que presenta un material al paso de la corriente.
 
-$$\mathbf{V = I \cdot R} \quad \Longleftrightarrow \quad \mathbf{I = \frac{V}{R}} \quad \Longleftrightarrow \quad \mathbf{P = V \cdot I \text{ (Potencia en Watts)}}$$
+```
+V = I · R   <===>   I = V / R   <===>   P = V · I  (Potencia en Watts)
+```
 
 ---
 
@@ -589,4 +591,4 @@ test("Mayoría en lista larga", () => {
     12
   );
 
-END $$;
+END $ARENA_SEED$;
