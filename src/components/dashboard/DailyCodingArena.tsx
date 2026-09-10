@@ -132,7 +132,7 @@ export function DailyCodingArena() {
     const statusSteps = [
       "Conectando a la red clasificatoria...",
       `Seleccionando reto de Rango ${rankInfo.label}...`,
-      "¡Desafío encontrado! Preparando sala de combate...",
+      "¡Desafío encontrado! Preparando sala del reto...",
     ];
 
     statusSteps.forEach((msg, idx) => {
@@ -193,7 +193,7 @@ export function DailyCodingArena() {
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider">
               <Swords size={14} className="animate-pulse" />
-              <span>Arena Clasificatoria • Matchmaking Ilimitado</span>
+              <span>Arena de Desafíos • Matchmaking Ilimitado</span>
             </div>
 
             <h2 className="text-3xl lg:text-4xl font-heading font-extrabold text-foreground tracking-tight">
@@ -353,7 +353,7 @@ export function DailyCodingArena() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-heading font-bold text-foreground flex items-center gap-2">
-              <span>Pool de Combates Disponibles</span>
+              <span>Pool de Desafíos Disponibles</span>
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                 {challenges.length} Retos
               </span>
@@ -428,7 +428,7 @@ export function DailyCodingArena() {
                         </Button>
                       ) : (
                         <Button size="sm" className="w-full bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white font-bold flex items-center justify-center gap-1.5 shadow-sm text-xs">
-                          <Play size={13} className="fill-white" /> Combatir ⚡
+                          <Play size={13} className="fill-white" /> Desafiar ⚡
                         </Button>
                       )}
                     </Link>

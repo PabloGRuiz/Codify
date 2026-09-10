@@ -108,7 +108,7 @@ export default function Home() {
                     : "text-red-500/80 hover:text-red-600 hover:bg-red-500/10"
                 }`}
               >
-                <Swords size={16} /> <span>Arena Diaria ⚡</span>
+                <Swords size={16} /> <span>Arena de Desafíos ⚡</span>
               </button>
               <button
                 onClick={() => setActiveDashboardTab("news")}
