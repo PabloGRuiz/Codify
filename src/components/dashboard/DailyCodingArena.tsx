@@ -222,6 +222,21 @@ export function DailyCodingArena() {
 
   const getCategoryBadge = (title: string, challengeType?: string) => {
     const lower = title.toLowerCase();
+    if (lower.startsWith("sistemas operativos") || lower.startsWith("concurrencia") || lower.startsWith("sistemas & concurrencia")) {
+      return { text: "Sistemas & SO", color: "bg-red-500/20 text-red-400 border-red-500/30", icon: Cpu };
+    }
+    if (lower.startsWith("arquitectura distribuida") || lower.startsWith("arquitectura backend")) {
+      return { text: "Arquitectura", color: "bg-purple-500/20 text-purple-400 border-purple-500/30", icon: Layers };
+    }
+    if (lower.startsWith("ciberseguridad") || lower.startsWith("criptografía")) {
+      return { text: "Ciberseguridad", color: "bg-teal-500/20 text-teal-400 border-teal-500/30", icon: Shield };
+    }
+    if (lower.startsWith("estructuras de datos")) {
+      return { text: "Estructuras de Datos", color: "bg-violet-500/20 text-violet-400 border-violet-500/30", icon: Layers };
+    }
+    if (lower.startsWith("redes avanzadas")) {
+      return { text: "Redes Avanzadas", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30", icon: Network };
+    }
     if (lower.startsWith("bases de datos")) {
       return { text: "Bases de Datos", color: "bg-amber-500/20 text-amber-400 border-amber-500/30", icon: Database };
     }
@@ -580,7 +595,57 @@ export function DailyCodingArena() {
           </p>
 
           <div className="space-y-2 pt-1">
-            {(rankInfo.inPromotion && queueMode === "ranked") || isSilverOrAbove ? (
+            {(isGold || (rankInfo.inPromotion && rankInfo.rank === "plata" && queueMode === "ranked")) ? (
+              <>
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs">
+                  <Cpu size={15} className="text-red-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Concurrencia & Sistemas Operativos</span>
+                    <span className="text-[11px] text-muted">Condiciones de Coffman, Mutex vs Semáforos, TLB</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs">
+                  <Layers size={15} className="text-purple-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Arquitectura Distribuida</span>
+                    <span className="text-[11px] text-muted">Teorema CAP, Idempotency Keys, Circuit Breaker</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+                  <Database size={15} className="text-amber-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Bases de Datos Avanzadas</span>
+                    <span className="text-[11px] text-muted">MVCC en PostgreSQL, Niveles ANSI SQL, Sharding</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs">
+                  <Shield size={15} className="text-teal-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Ciberseguridad & Criptografía</span>
+                    <span className="text-[11px] text-muted">TLS Híbrido, Hashing con Argon2/Bcrypt, HttpOnly</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs">
+                  <Network size={15} className="text-cyan-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Redes & Transporte HTTP/3</span>
+                    <span className="text-[11px] text-muted">Subnetting CIDR, QUIC sobre UDP, HOL Blocking</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                  <Code2 size={15} className="text-emerald-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground block">Algoritmos de Nivel Superior</span>
+                    <span className="text-[11px] text-muted">Kadane O(N), Ciclos en Grafos, LRU Cache, Token Bucket</span>
+                  </div>
+                </div>
+              </>
+            ) : ((rankInfo.inPromotion && rankInfo.rank === "bronce" && queueMode === "ranked") || isSilverOrAbove) ? (
               <>
                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
                   <Database size={15} className="text-amber-400 shrink-0" />
