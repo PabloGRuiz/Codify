@@ -34,6 +34,8 @@ interface Challenge {
   xp_reward: number;
   order_index: number;
   challenge_type?: string;
+  module_id?: string;
+  rank?: "bronce" | "plata" | "oro";
   completed?: boolean;
 }
 
@@ -46,48 +48,54 @@ export function DailyCodingArena() {
   const [queueStatus, setQueueStatus] = useState("Buscando oponente...");
 
   const rankInfo = getArenaRankInfo(profile?.arena_rank, profile?.arena_streak);
-  const isSilver = profile?.arena_rank?.toLowerCase() === "plata";
+  const currentRank = profile?.arena_rank?.toLowerCase() || "unranked";
+  const isSilverOrAbove = currentRank === "plata" || currentRank === "oro";
+  const isGold = currentRank === "oro";
 
-  // Cargar el banco de retos del rango correspondiente
+  // Cargar el banco de retos: rango actual Y rangos anteriores
   useEffect(() => {
     const fetchArenaChallenges = async () => {
       setLoading(true);
       try {
-        const targetTitle = isSilver 
-          ? "Arena de Retos: Rango Plata" 
-          : "Arena de Retos: Rango Bronce";
+        const eligibleTitles: string[] = [
+          "Arena de Retos: Rango Bronce",
+          "Arena Algorítmica & Speed Coding",
+        ];
 
-        let { data: arenaModule } = await supabase
-          .from("modules")
-          .select("id, title")
-          .eq("title", targetTitle)
-          .maybeSingle();
-
-        // Fallback al otro módulo si aún no se corrió la semilla
-        if (!arenaModule) {
-          const fallbackTitle = isSilver 
-            ? "Arena de Retos: Rango Bronce" 
-            : "Arena Algorítmica & Speed Coding";
-
-          const { data: fallbackModule } = await supabase
-            .from("modules")
-            .select("id, title")
-            .eq("title", fallbackTitle)
-            .maybeSingle();
-
-          arenaModule = fallbackModule;
+        if (isSilverOrAbove) {
+          eligibleTitles.push("Arena de Retos: Rango Plata");
+        }
+        if (isGold) {
+          eligibleTitles.push("Arena de Retos: Rango Oro");
         }
 
-        if (!arenaModule) {
+        const { data: arenaModules, error: modulesError } = await supabase
+          .from("modules")
+          .select("id, title")
+          .in("title", eligibleTitles);
+
+        if (modulesError || !arenaModules || arenaModules.length === 0) {
           setLoading(false);
           return;
         }
 
-        // Obtener todos los retos del módulo del rango actual
+        const moduleIds = arenaModules.map((m) => m.id);
+        const moduleRankMap: Record<string, "bronce" | "plata" | "oro"> = {};
+        arenaModules.forEach((m) => {
+          if (m.title.includes("Plata")) {
+            moduleRankMap[m.id] = "plata";
+          } else if (m.title.includes("Oro")) {
+            moduleRankMap[m.id] = "oro";
+          } else {
+            moduleRankMap[m.id] = "bronce";
+          }
+        });
+
+        // Obtener todos los retos de los módulos del rango actual y rangos anteriores
         const { data: challengesData, error } = await supabase
           .from("challenges")
-          .select("id, title, description, xp_reward, order_index, challenge_type")
-          .eq("module_id", arenaModule.id)
+          .select("id, title, description, xp_reward, order_index, challenge_type, module_id")
+          .in("module_id", moduleIds)
           .order("order_index", { ascending: true });
 
         if (error || !challengesData || challengesData.length === 0) {
@@ -108,11 +116,17 @@ export function DailyCodingArena() {
           setChallenges(
             challengesData.map((c) => ({
               ...c,
+              rank: moduleRankMap[c.module_id] || "bronce",
               completed: completedSet.has(c.id),
             }))
           );
         } else {
-          setChallenges(challengesData);
+          setChallenges(
+            challengesData.map((c) => ({
+              ...c,
+              rank: moduleRankMap[c.module_id] || "bronce",
+            }))
+          );
         }
       } catch (err) {
         console.error("Error cargando pool de retos de la arena:", err);
@@ -122,7 +136,7 @@ export function DailyCodingArena() {
     };
 
     fetchArenaChallenges();
-  }, [user, isSilver]);
+  }, [user, currentRank, isSilverOrAbove, isGold]);
 
   // Manejo de la Cola Clasificatoria (Matchmaking)
   const handleStartMatchmaking = () => {
@@ -131,8 +145,10 @@ export function DailyCodingArena() {
 
     const statusSteps = [
       "Conectando a la red clasificatoria...",
-      `Seleccionando reto de Rango ${rankInfo.label}...`,
-      "¡Desafío encontrado! Preparando sala del reto...",
+      isSilverOrAbove 
+        ? "Explorando retos activos (Plata y Bronce)..." 
+        : `Seleccionando reto de Rango ${rankInfo.label}...`,
+      "¡Desafío emparejado! Preparando sala del reto...",
     ];
 
     statusSteps.forEach((msg, idx) => {
@@ -227,7 +243,7 @@ export function DailyCodingArena() {
               <div className="flex items-center gap-2 bg-card/80 border border-border px-3.5 py-2 rounded-xl text-xs font-mono">
                 <span className="text-muted">Pool de Retos:</span>
                 <span className="font-bold text-primary">
-                  {isSilver ? "Plata (Avanzado)" : "Bronce (Fundamentos)"}
+                  {isSilverOrAbove ? "Plata + Bronce (Multirango)" : "Bronce (Fundamentos)"}
                 </span>
               </div>
             </div>
@@ -361,7 +377,7 @@ export function DailyCodingArena() {
           </p>
 
           <div className="space-y-2 pt-1">
-            {isSilver ? (
+            {isSilverOrAbove ? (
               <>
                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
                   <Database size={15} className="text-amber-400 shrink-0" />
@@ -401,6 +417,11 @@ export function DailyCodingArena() {
                     <span className="font-bold text-foreground block">Algoritmos O(N) & Big-O</span>
                     <span className="text-[11px] text-muted">Two-Sum, Búsqueda Binaria, Matrices 2D</span>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary font-medium">
+                  <Sparkles size={14} className="shrink-0 text-amber-400" />
+                  <span>Rotación Activa: También te tocarán retos de Bronce (Lógica, Fundamentos IT y Redes Base).</span>
                 </div>
               </>
             ) : (
@@ -457,7 +478,7 @@ export function DailyCodingArena() {
                 1
               </span>
               <p className="text-muted leading-relaxed">
-                <strong className="text-foreground">Matchmaking a Ciegas:</strong> Los retos no se eligen manualmente para evitar memorización o comodidad; se asignan al azar según tu liga.
+                <strong className="text-foreground">Matchmaking Multirango:</strong> Los retos se asignan al azar combinando tu rango actual con los retos de rangos anteriores ya desbloqueados.
               </p>
             </div>
 
@@ -515,7 +536,7 @@ export function DailyCodingArena() {
                   {challenges.length}
                 </span>
                 <span className="text-[10px] text-muted font-mono">
-                  Retos activos
+                  {isSilverOrAbove ? "Plata + Bronce" : "Retos activos"}
                 </span>
               </div>
             </div>
