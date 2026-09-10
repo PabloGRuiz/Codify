@@ -536,13 +536,13 @@ export default function ChallengeIDEPage() {
     if (!isCompleted) {
       if (user) {
         try {
-          await supabase.from("user_progress").insert({
+          await supabase.from("user_progress").upsert({
             user_id: user.id,
             challenge_id: challenge!.id,
             status: "completed",
             code_snapshot: JSON.stringify(files),
             completed_at: new Date().toISOString(),
-          });
+          }, { onConflict: "user_id, challenge_id" });
 
           const newXp = (profile?.xp || 0) + challenge!.xp_reward;
           const { level: newLevel } = getLevelInfo(newXp);

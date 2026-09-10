@@ -49,11 +49,28 @@ export function DailyCodingArena() {
   const [isQueueing, setIsQueueing] = useState(false);
   const [queueStatus, setQueueStatus] = useState("Buscando oponente...");
   const [queueMode, setQueueMode] = useState<"ranked" | "casual">("ranked");
+  const [syncedStreak, setSyncedStreak] = useState<number | null>(null);
 
-  const rankInfo = getArenaRankInfo(profile?.arena_rank, profile?.arena_streak);
+  const activeStreak = syncedStreak !== null ? syncedStreak : (profile?.arena_streak ?? 0);
+  const rankInfo = getArenaRankInfo(profile?.arena_rank, activeStreak);
   const currentRank = profile?.arena_rank?.toLowerCase() || "unranked";
   const isSilverOrAbove = currentRank === "plata" || currentRank === "oro";
   const isGold = currentRank === "oro";
+
+  // Auto-corrección: Si el usuario acaba de promocionar a Oro pero su racha en DB quedó en 3 por la promoción anterior
+  useEffect(() => {
+    if (user && profile?.arena_rank === "oro" && (profile?.arena_streak ?? 0) === 3 && syncedStreak === null) {
+      supabase
+        .from("profiles")
+        .update({ arena_streak: 0 })
+        .eq("id", user.id)
+        .then(({ error }) => {
+          if (!error) {
+            setSyncedStreak(0);
+          }
+        });
+    }
+  }, [user, profile?.arena_rank, profile?.arena_streak, syncedStreak]);
 
   // Cargar todos los módulos de la arena para tener disponibles los distintos tiers
   useEffect(() => {
@@ -378,6 +395,10 @@ export function DailyCodingArena() {
                 <>
                   ¡Racha de 3 victorias conseguida! Para sellar tu ascenso a <strong className="text-amber-400">{rankInfo.nextRankLabel}</strong>, debes vencer este examen del tier superior. Si ganas, asciendes con racha limpia de 0/3 en tu nueva liga.
                 </>
+              ) : rankInfo.rank === "oro" ? (
+                <>
+                  Compite en la máxima categoría (<strong className="text-amber-400">Oro</strong>). Enfréntate a desafíos avanzados de concurrencia, sistemas distribuidos y bases de datos para defender tu <strong className="text-amber-400">racha invicto</strong>.
+                </>
               ) : (
                 <>
                   Juega retos exclusivos de tu rango (<strong className="text-amber-400">{rankInfo.label}</strong>). Logra <strong className="text-amber-400">3 victorias consecutivas</strong> para desbloquear tu Desafío de Promoción al siguiente rango.
@@ -388,11 +409,15 @@ export function DailyCodingArena() {
             {/* Rango y Racha Visual */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <div className="flex items-center gap-2 bg-card/80 border border-border px-3.5 py-2 rounded-xl text-xs font-mono">
-                <span className="text-muted">Racha Clasificatoria:</span>
+                <span className="text-muted">
+                  {rankInfo.rank === "oro" ? "Racha Invicto:" : "Racha Clasificatoria:"}
+                </span>
                 <span className="font-bold text-amber-400 flex items-center gap-1">
                   <Flame size={14} className="fill-amber-400" />
                   {rankInfo.rank === "unranked" 
                     ? "0/1 para Bronce" 
+                    : rankInfo.rank === "oro"
+                    ? `${rankInfo.streak} Victorias (Cumbre)`
                     : rankInfo.inPromotion 
                     ? "3/3 (En Promoción)" 
                     : `${rankInfo.streak}/3 Victorias`}
@@ -487,36 +512,52 @@ export function DailyCodingArena() {
         {/* Barra de Racha Hacia el Ascenso */}
         <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <span className="text-xs font-bold font-mono text-muted uppercase">Progreso al Ascenso:</span>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3].map((node) => {
-                const filled = rankInfo.rank !== "unranked" && rankInfo.streak >= node;
-                const isPromoNode = node === 3 && rankInfo.inPromotion;
-                return (
-                  <div
-                    key={node}
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-mono transition-all ${
-                      isPromoNode
-                        ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-lg shadow-amber-500/50 scale-110 ring-2 ring-amber-300 animate-pulse"
-                        : filled
-                        ? "bg-amber-500 text-black shadow-lg shadow-amber-500/30 scale-105 ring-2 ring-amber-400"
-                        : "bg-white/10 text-muted border border-white/10"
-                    }`}
-                  >
-                    {isPromoNode ? "⚔️" : filled ? "✓" : node}
-                  </div>
-                );
-              })}
-            </div>
-            <span className="text-xs text-muted ml-2 hidden md:inline">
-              {rankInfo.rank === "unranked"
-                ? "Gana 1 reto para clasificar a Bronce"
-                : rankInfo.inPromotion
-                ? "🔥 ¡Racha 3/3 completa! Desafío de promoción activo."
-                : rankInfo.streak === 2
-                ? "🔥 ¡A 1 victoria de la Fase de Promoción!"
-                : `${3 - rankInfo.streak} victorias restantes para la promoción`}
+            <span className="text-xs font-bold font-mono text-muted uppercase">
+              {rankInfo.rank === "oro" ? "Racha en la Cumbre:" : "Progreso al Ascenso:"}
             </span>
+            {rankInfo.rank === "oro" ? (
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 font-mono font-bold text-xs flex items-center gap-1.5">
+                  <Flame size={14} className="fill-amber-400" />
+                  <span>{rankInfo.streak} Victorias Consecutivas</span>
+                </div>
+                <span className="text-xs text-muted ml-2">
+                  👑 ¡Rango Máximo Alcanzado! Defiende tu racha invicto en la cima de Codify.
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3].map((node) => {
+                    const filled = rankInfo.rank !== "unranked" && rankInfo.streak >= node;
+                    const isPromoNode = node === 3 && rankInfo.inPromotion;
+                    return (
+                      <div
+                        key={node}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-mono transition-all ${
+                          isPromoNode
+                            ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-lg shadow-amber-500/50 scale-110 ring-2 ring-amber-300 animate-pulse"
+                            : filled
+                            ? "bg-amber-500 text-black shadow-lg shadow-amber-500/30 scale-105 ring-2 ring-amber-400"
+                            : "bg-white/10 text-muted border border-white/10"
+                        }`}
+                      >
+                        {isPromoNode ? "⚔️" : filled ? "✓" : node}
+                      </div>
+                    );
+                  })}
+                </div>
+                <span className="text-xs text-muted ml-2 hidden md:inline">
+                  {rankInfo.rank === "unranked"
+                    ? "Gana 1 reto para clasificar a Bronce"
+                    : rankInfo.inPromotion
+                    ? "🔥 ¡Racha 3/3 completa! Desafío de promoción activo."
+                    : rankInfo.streak === 2
+                    ? "🔥 ¡A 1 victoria de la Fase de Promoción!"
+                    : `${3 - rankInfo.streak} victorias restantes para la promoción`}
+                </span>
+              </>
+            )}
           </div>
 
           <div className="text-xs text-muted font-mono flex items-center gap-2">
@@ -813,19 +854,27 @@ export function DailyCodingArena() {
 
             <div className="p-3.5 rounded-2xl bg-secondary/50 border border-border text-xs space-y-2">
               <div className="flex items-center justify-between font-mono text-[11px]">
-                <span className="text-muted">Racha Clasificatoria:</span>
+                <span className="text-muted">
+                  {rankInfo.rank === "oro" ? "Racha Invicto:" : "Racha Clasificatoria:"}
+                </span>
                 <span className="font-bold text-amber-400">
-                  {rankInfo.inPromotion ? "3 / 3 (Promoción)" : `${rankInfo.streak} / 3`}
+                  {rankInfo.rank === "oro"
+                    ? `${rankInfo.streak} Victorias`
+                    : rankInfo.inPromotion
+                    ? "3 / 3 (Promoción)"
+                    : `${rankInfo.streak} / 3`}
                 </span>
               </div>
               <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
                 <div 
                   className={`h-full transition-all duration-300 ${
-                    rankInfo.inPromotion 
+                    rankInfo.rank === "oro"
+                      ? "bg-gradient-to-r from-amber-400 to-amber-200"
+                      : rankInfo.inPromotion 
                       ? "bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 animate-pulse" 
                       : "bg-gradient-to-r from-amber-500 to-primary"
                   }`}
-                  style={{ width: `${(rankInfo.streak / 3) * 100}%` }}
+                  style={{ width: `${rankInfo.rank === "oro" ? Math.min(100, Math.max(8, rankInfo.streak * 20)) : (rankInfo.streak / 3) * 100}%` }}
                 />
               </div>
             </div>

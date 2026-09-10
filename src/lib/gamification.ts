@@ -127,9 +127,9 @@ export function getArenaRankInfo(rankInput?: string | null, streakInput?: number
         badge: "🥇",
         color: "text-amber-400 border-amber-500/30 bg-amber-500/10",
         nextRankLabel: null,
-        streak: 3,
+        streak: streak,
         requiredStreak: 3,
-        streakPercentage: 100,
+        streakPercentage: Math.min(100, Math.round((streak / 3) * 100)),
         inPromotion: false,
       };
     case "plata":
@@ -230,9 +230,9 @@ export function calculateArenaPromotion(currentRankInput?: string | null, curren
     if (currentStreak >= 3) {
       return {
         newRank: "oro",
-        newStreak: 3,
+        newStreak: 0, // Inicia en 0 en Oro (ascenso limpio)
         promoted: true,
-        message: "🏆 ¡DESAFÍO DE PROMOCIÓN SUPERADO! Has vencido el reto de tier superior y alcanzado el rango máximo de Oro 🥇!",
+        message: "🏆 ¡DESAFÍO DE PROMOCIÓN SUPERADO! Has vencido el reto de tier superior y alcanzado el rango de Oro 🥇!",
       };
     }
 
@@ -255,11 +255,12 @@ export function calculateArenaPromotion(currentRankInput?: string | null, curren
   }
 
   // Si ya es Oro
+  const nextStreak = currentStreak + 1;
   return {
     newRank: "oro",
-    newStreak: 3,
+    newStreak: nextStreak,
     promoted: false,
-    message: "¡Victoria en Rango Oro 🥇! Mantienes tu supremacía en la cumbre de la Arena.",
+    message: `¡Victoria en Rango Oro 🥇! Racha invicto: ${nextStreak} victorias consecutivas en la cumbre.`,
   };
 }
 
