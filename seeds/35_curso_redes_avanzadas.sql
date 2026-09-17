@@ -96,12 +96,11 @@ $SUMMARY$,
   -- ==============================================================================
   -- MÓDULO 1: LA CAPA DE ENLACE & ARQUITECTURA DE TRAMAS ETHERNET
   -- ==============================================================================
-  INSERT INTO public.modules (course_id, title, description, order_index)
+  INSERT INTO public.modules (course_id, title, description)
   VALUES (
     v_course_id,
     'Módulo 1: La Capa de Enlace & Arquitectura de Tramas Ethernet',
-    'Disección byte a byte de tramas Ethernet II, protocolo ARP, tablas CAM en conmutadores L2 y segmentación con VLANs 802.1Q.',
-    1
+    'Disección byte a byte de tramas Ethernet II, protocolo ARP, tablas CAM en conmutadores L2 y segmentación con VLANs 802.1Q.'
   )
   RETURNING id INTO v_m1_id;
 
@@ -455,12 +454,11 @@ $THEORY$,
   -- ==============================================================================
   -- MÓDULO 2: DATAGRAMA IP, SUBNETTING VLSM Y FRAGMENTACIÓN L3
   -- ==============================================================================
-  INSERT INTO public.modules (course_id, title, description, order_index)
+  INSERT INTO public.modules (course_id, title, description)
   VALUES (
     v_course_id,
     'Módulo 2: Datagrama IP, Subnetting VLSM y Fragmentación L3',
-    'Estructura de cabeceras IPv4/IPv6, MTU vs MSS, algoritmos de fragmentación, direccionamiento VLSM y protocolo NDP.',
-    2
+    'Estructura de cabeceras IPv4/IPv6, MTU vs MSS, algoritmos de fragmentación, direccionamiento VLSM y protocolo NDP.'
   )
   RETURNING id INTO v_m2_id;
 
@@ -807,12 +805,11 @@ $THEORY$,
   -- ==============================================================================
   -- MÓDULO 3: ENRUTAMIENTO DINÁMICO, L3 SWITCHING Y ALTA DISPONIBILIDAD
   -- ==============================================================================
-  INSERT INTO public.modules (course_id, title, description, order_index)
+  INSERT INTO public.modules (course_id, title, description)
   VALUES (
     v_course_id,
     'Módulo 3: Enrutamiento Dinámico, L3 Switching y Alta Disponibilidad',
-    'Diferenciación RIB vs FIB, protocolos IGP (OSPF) y EGP (BGP), prevención de bucles L2 con STP y redundancia FHRP.',
-    3
+    'Diferenciación RIB vs FIB, protocolos IGP (OSPF) y EGP (BGP), prevención de bucles L2 con STP y redundancia FHRP.'
   )
   RETURNING id INTO v_m3_id;
 
@@ -1166,12 +1163,11 @@ $THEORY$,
   -- ==============================================================================
   -- MÓDULO 4: CAPA DE TRANSPORTE AVANZADA, PROTOCOLOS Y ANÁLISIS CON WIRESHARK
   -- ==============================================================================
-  INSERT INTO public.modules (course_id, title, description, order_index)
+  INSERT INTO public.modules (course_id, title, description)
   VALUES (
     v_course_id,
     'Módulo 4: Capa de Transporte Avanzada, Protocolos y Análisis con Wireshark',
-    'TCP FSM al detalle, control de flujo por ventana deslizante, QUIC (HTTP/3) sobre UDP y análisis forense de tráfico con tcpdump.',
-    4
+    'TCP FSM al detalle, control de flujo por ventana deslizante, QUIC (HTTP/3) sobre UDP y análisis forense de tráfico con tcpdump.'
   )
   RETURNING id INTO v_m4_id;
 
