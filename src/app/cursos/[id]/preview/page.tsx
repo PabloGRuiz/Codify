@@ -382,6 +382,7 @@ export default function CoursePreviewPage() {
                               <div className="space-y-2 pt-2 border-t border-white/5">
                                 {(mod.challenges || []).map((ch: any, chIdx: number) => {
                                   const isQuiz = ch.challenge_type === "quiz";
+                                  const isInput = ch.challenge_type === "input";
                                   const isWeb = ch.challenge_type === "web";
 
                                   return (
@@ -400,13 +401,15 @@ export default function CoursePreviewPage() {
 
                                       <div className="flex items-center gap-2 shrink-0">
                                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                                          isQuiz
+                                          isInput
+                                            ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                                            : isQuiz
                                             ? "bg-purple-500/10 text-purple-300 border-purple-500/20"
                                             : isWeb
                                             ? "bg-blue-500/10 text-blue-300 border-blue-500/20"
                                             : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
                                         }`}>
-                                          {isQuiz ? "Cuestionario" : isWeb ? "Práctica Web" : "Código"}
+                                          {isInput ? "Ejercicio Práctico" : isQuiz ? "Cuestionario" : isWeb ? "Práctica Web" : "Código"}
                                         </span>
                                         {ch.xp_reward && (
                                           <span className="text-primary font-mono font-bold">

@@ -27,7 +27,8 @@ import {
   Paintbrush,
   Braces,
   RotateCcw,
-  Database
+  Database,
+  HelpCircle
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
@@ -835,9 +836,10 @@ for mod_name in ${JSON.stringify(moduleNames)}:
     );
 
   const isWebChallenge = challenge.challenge_type === "web";
+  const isQuizOrInput = challenge.challenge_type === "quiz" || challenge.challenge_type === "input";
 
   let parsedQuestions = [];
-  if (challenge.challenge_type === "quiz") {
+  if (isQuizOrInput) {
     try {
       parsedQuestions = JSON.parse(challenge.test_code || "[]");
     } catch (e) {
@@ -867,8 +869,8 @@ for mod_name in ${JSON.stringify(moduleNames)}:
             </button>
 
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg ${isWebChallenge ? "bg-blue-500/20" : challenge.challenge_type === "quiz" ? "bg-emerald-500/20" : "bg-yellow-500/20"} flex items-center justify-center shrink-0`}>
-                {isWebChallenge ? <Globe size={18} className="text-blue-400" /> : challenge.challenge_type === "quiz" ? <BookOpen size={18} className="text-emerald-400" /> : <TerminalSquare size={18} className="text-yellow-400" />}
+              <div className={`w-8 h-8 rounded-lg ${isWebChallenge ? "bg-blue-500/20" : isQuizOrInput ? "bg-emerald-500/20" : "bg-yellow-500/20"} flex items-center justify-center shrink-0`}>
+                {isWebChallenge ? <Globe size={18} className="text-blue-400" /> : isQuizOrInput ? <BookOpen size={18} className="text-emerald-400" /> : <TerminalSquare size={18} className="text-yellow-400" />}
               </div>
               <h1 className="font-heading font-bold text-base lg:text-lg text-white line-clamp-1">{challenge.title}</h1>
             </div>
@@ -884,7 +886,16 @@ for mod_name in ${JSON.stringify(moduleNames)}:
             >
               <BookOpen size={14} /> <span className="hidden sm:inline">Teoría</span>
             </button>
-            {challenge.challenge_type !== "quiz" && (
+            {isQuizOrInput ? (
+              <button
+                onClick={() => setActiveTab("code")}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  activeTab !== "theory" ? "bg-primary text-white shadow-lg" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <HelpCircle size={14} /> <span className="hidden sm:inline">Evaluación</span>
+              </button>
+            ) : (
               <button
                 onClick={() => setActiveTab("code")}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
@@ -922,7 +933,7 @@ for mod_name in ${JSON.stringify(moduleNames)}:
             <span className="text-primary font-bold text-xs lg:text-sm bg-primary/10 px-2 lg:px-3 py-1 lg:py-1.5 rounded-full border border-primary/20 hidden sm:block">
               +{challenge.xp_reward} XP
             </span>
-            {challenge.challenge_type !== "quiz" && (
+            {!isQuizOrInput && (
               <div className="flex items-center gap-2">
                 {/* Botón para actualizar solo la vista previa en retos web sin ejecutar tests */}
                 {isWebChallenge && (
@@ -961,8 +972,8 @@ for mod_name in ${JSON.stringify(moduleNames)}:
           </div>
         </header>
 
-        {/* Main Content Area: Quiz vs Code IDE */}
-        {challenge.challenge_type === "quiz" ? (
+        {/* Main Content Area: Quiz / Input vs Code IDE */}
+        {isQuizOrInput ? (
           <main className="flex-1 p-0 lg:p-4 bg-[#09090b] flex flex-col lg:flex-row gap-0 lg:gap-4 relative overflow-hidden">
             
             {/* Theory Reading Panel */}
