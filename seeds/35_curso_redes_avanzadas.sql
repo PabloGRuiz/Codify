@@ -1640,7 +1640,7 @@ $THEORY$,
   ),
   (
     v_cert_id,
-    'Si un paquete IPv4 viaja con el flag DF=0 (Don't Fragment desactivado) y supera el MTU de un enlace, ¿qué campo de la cabecera se utiliza para reordenar los fragmentos en bloques de 8 bytes?',
+    'Si un paquete IPv4 viaja con el flag DF=0 (fragmentación permitida / bandera DF desactivada) y supera el MTU de un enlace, ¿qué campo de la cabecera se utiliza para reordenar los fragmentos en bloques de 8 bytes?',
     ARRAY['Identification', 'Fragment Offset', 'Header Checksum', 'Time to Live'],
     1,
     'El campo Fragment Offset especifica la posición relativa de los datos del fragmento en múltiplos de 8 octetos.'
