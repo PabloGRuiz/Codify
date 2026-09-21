@@ -13,6 +13,7 @@ import { useEnrollments } from "@/hooks/useEnrollments";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { formatMathAndMarkdown } from "@/lib/formatMath";
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -300,25 +301,45 @@ export default function CoursePreviewPage() {
                                 </p>
                               ),
                               ul: ({ children }) => (
-                                <ul className="list-disc pl-5 space-y-1.5 text-sm sm:text-base text-zinc-300 mb-4">
+                                <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base text-zinc-300 mb-4">
                                   {children}
                                 </ul>
                               ),
-                              li: ({ children }) => <li>{children}</li>,
+                              ol: ({ children }) => (
+                                <ol className="list-decimal pl-5 space-y-2 text-sm sm:text-base text-zinc-300 mb-4">
+                                  {children}
+                                </ol>
+                              ),
+                              li: ({ children }) => <li className="leading-relaxed">{children}</li>,
                               strong: ({ children }) => (
                                 <strong className="text-white font-semibold">
                                   {children}
                                 </strong>
                               ),
+                              em: ({ children }) => (
+                                <em className="text-purple-300 font-serif italic">{children}</em>
+                              ),
+                              code({ node, className, children, ...props }: any) {
+                                return (
+                                  <code className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono text-xs sm:text-sm font-semibold mx-0.5 inline-block">
+                                    {children}
+                                  </code>
+                                );
+                              },
+                              blockquote: ({ children }) => (
+                                <blockquote className="my-3 border-l-4 border-indigo-500 bg-indigo-500/10 px-4 py-2.5 rounded-r-xl text-zinc-200 text-sm sm:text-base font-medium">
+                                  {children}
+                                </blockquote>
+                              ),
                             }}
                           >
-                            {course.summary}
+                            {formatMathAndMarkdown(course.summary)}
                           </ReactMarkdown>
                         </div>
                       ) : (
                         <div className="space-y-4 text-zinc-300">
                           <p className="text-base leading-relaxed">
-                            {course.description}
+                            {formatMathAndMarkdown(course.description)}
                           </p>
                           <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-zinc-400">
                             💡 Este curso incluye micro-lecciones interactivas, autoevaluaciones pedagógicas y retos de programación con retroalimentación instantánea en el navegador.

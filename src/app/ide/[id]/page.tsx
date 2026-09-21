@@ -41,6 +41,7 @@ import { QuizRunner } from "@/components/ide/QuizRunner";
 import { ReportIssueModal } from "@/components/ide/ReportIssueModal";
 import { getLevelInfo, calculateArenaPromotion, calculateArenaFailure, getArenaRankInfo } from "@/lib/gamification";
 import { ProjectFileTree, getFileLanguage } from "@/components/ide/ProjectFileTree";
+import { formatMathAndMarkdown } from "@/lib/formatMath";
 
 // Deshabilitar SSR para Monaco Editor con Loading State amigable
 const CodeEditor = dynamic(
@@ -104,35 +105,6 @@ async function getPyodideInstance(
   })();
 
   return await window._pyodideLoadingPromise;
-}
-
-function formatMathAndMarkdown(content: string): string {
-  if (!content) return "";
-
-  return content
-    .replace(/\\r\\n/g, "\n")
-    .replace(/\\n/g, "\n")
-    // Fix collapsed markdown table rows (where newlines were lost as "| |" or "||")
-    .replace(/\|\s*\|\s*/g, "|\n| ")
-    .replace(/\|\s*:\-\-/g, "\n| :--")
-    // Mathematical & Big-O notation cleanups
-    .replace(/\$\\log_2\(([^)]+)\)\s*\\approx\s*([^$]+)\$/g, "log₂($1) ≈ $2")
-    .replace(/\$O\(\\log\s*N\)\$/gi, "`O(log N)`")
-    .replace(/\$O\(N\s*\\log\s*N\)\$/gi, "`O(N log N)`")
-    .replace(/\$O\(([^$]+)\)\$/g, "`O($1)`")
-    .replace(/\$1\.000\.000\$/g, "1.000.000")
-    .replace(/\$2\^8\s*=\s*256\$/g, "2⁸ = 256")
-    .replace(/\$2\^(\w+)\$/g, "2^$1")
-    .replace(/\$N\$/g, "*N*")
-    .replace(/\\approx/g, "≈")
-    .replace(/\\log_2/g, "log₂")
-    .replace(/\\log/g, "log")
-    .replace(/\\cdot/g, "·")
-    .replace(/\\times/g, "×")
-    .replace(/\\le(q)?/g, "≤")
-    .replace(/\\ge(q)?/g, "≥")
-    .replace(/\\ne(q)?/g, "≠")
-    .replace(/\$([^$]+)\$/g, "$1");
 }
 
 function TheoryRenderer({ content }: { content: string }) {

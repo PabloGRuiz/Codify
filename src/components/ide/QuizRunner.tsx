@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { formatMathAndMarkdown } from "@/lib/formatMath";
 import { 
   CheckCircle2, 
   XCircle, 
@@ -90,18 +91,8 @@ function formatQuestionText(text: string): string {
     }
   }
 
-  // Notaciones matemáticas y superíndices habituales
-  processed = processed
-    .replace(/\bn\^4\b/g, "n⁴")
-    .replace(/\bn\^3\b/g, "n³")
-    .replace(/\bn\^2\b/g, "n²")
-    .replace(/\bx\^n\b/g, "xⁿ")
-    .replace(/\b2\^4\b/g, "2⁴")
-    .replace(/\b2\^8\b/g, "2⁸")
-    .replace(/\b2\^10\b/g, "2¹⁰")
-    .replace(/\$O\(([^$]+)\)\$/g, "`O($1)`")
-    .replace(/\$n\s*=\s*(\d+)\$/g, "*n* = $1")
-    .replace(/\$([a-zA-Z0-9_+*/^= -]+)\$/g, "*$1*");
+  // Formateo completo de expresiones matemáticas, LaTeX y notación asintótica
+  processed = formatMathAndMarkdown(processed);
 
   // Resalta la pregunta interrogativa principal si no está ya en negrita
   processed = processed.replace(/(?<!\*)(¿[^?\n]+\?)(?!\*)/g, "**$1**");
@@ -280,11 +271,7 @@ function QuestionContentRenderer({
 // Renderizador visual de explicaciones pedagógicas
 function ExplanationRenderer({ content }: { content: string }) {
   if (!content) return null;
-  const formatted = content
-    .replace(/\\r\\n/g, "\n")
-    .replace(/\\n/g, "\n")
-    .replace(/\$O\(([^$]+)\)\$/g, "`O($1)`")
-    .replace(/\$([a-zA-Z0-9_+*/^= -]+)\$/g, "*$1*");
+  const formatted = formatMathAndMarkdown(content);
 
   return (
     <ReactMarkdown

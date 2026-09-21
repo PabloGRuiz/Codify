@@ -64,19 +64,19 @@ BEGIN
     'Aprende a medir la eficiencia matemática de algoritmos sin depender del hardware ni del lenguaje. Domina la notación Big-O, análisis de bucles simples y anidados, árboles de recursión, el Teorema Maestro y las clases de complejidad P, NP y NP-Completitud con ejercicios prácticos manuales.',
     $SUMMARY$## ⚡ La Ciencia de Medir Algoritmos: De Big-O a P vs NP
 
-¿Alguna vez te has preguntado por qué un algoritmo tarda 0.01 segundos con 1.000 datos, pero se congela durante 3 horas cuando la entrada sube a 100.000? ¿O por qué tu empresa gasta miles de dólares en servidores adicionales cuando el verdadero problema era un bucle cuadrático $O(n^2)$ oculto en el código?
+¿Alguna vez te has preguntado por qué un algoritmo tarda 0.01 segundos con 1.000 datos, pero se congela durante 3 horas cuando la entrada sube a 100.000? ¿O por qué tu empresa gasta miles de dólares en servidores adicionales cuando el verdadero problema era un bucle cuadrático `O(n²)` oculto en el código?
 
-La **Complejidad Computacional** es el pilar matemático fundamental de las Ciencias de la Computación. Nos permite predecir con exactitud científica cómo escalará el consumo de tiempo y memoria de un programa a medida que el tamaño de entrada $n$ tiende al infinito, sin importar si corre en un smartphone de gama baja o en una supercomputadora cuántica.
+La **Complejidad Computacional** es el pilar matemático fundamental de las Ciencias de la Computación. Nos permite predecir con exactitud científica cómo escalará el consumo de tiempo y memoria de un programa a medida que el tamaño de entrada *n* tiende al infinito, sin importar si corre en un smartphone de gama baja o en una supercomputadora cuántica.
 
 ---
 
 ### 🎯 Lo que dominarás en este curso:
 
 1. **El Modelo Matemático de Computación:** Por qué los benchmarks de tiempo en segundos mienten y cómo contar operaciones elementales sobre el modelo RAM.
-2. **Notación Asintótica Rigurosa:** Diferencia matemática formal entre Big-O ($O$, cota superior peor caso), Big-Omega ($\Omega$, cota inferior mejor caso) y Big-Theta ($\Theta$, cota ajustada).
-3. **Análisis de Bucles y Series Matemáticas:** Técnicas para deducir la complejidad de bucles dependientes $\sum_{i=1}^n i = \frac{n(n+1)}{2}$, progresiones multiplicativas $O(\log n)$ y trade-offs de memoria auxiliar.
-4. **Recursión y Teorema Maestro:** Resolución de ecuaciones de recurrencia mediante árboles de expansión y la fórmula universal del Master Theorem $T(n) = aT(n/b) + f(n)$.
-5. **Teoría de Complejidad y Fronteras del Conocimiento:** Las clases de decisión P y NP, reducciones polinomiales, problemas NP-Completos (SAT, TSP, Mochila) y el enigma del Premio del Milenio: ¿$P = NP$?.
+2. **Notación Asintótica Rigurosa:** Diferencia matemática formal entre Big-O (`O`, cota superior peor caso), Big-Omega (Ω, cota inferior mejor caso) y Big-Theta (Θ, cota ajustada).
+3. **Análisis de Bucles y Series Matemáticas:** Técnicas para deducir la complejidad de bucles dependientes ∑ i = n(n + 1) / 2, progresiones multiplicativas `O(log n)` y trade-offs de memoria auxiliar.
+4. **Recursión y Teorema Maestro:** Resolución de ecuaciones de recurrencia mediante árboles de expansión y la fórmula universal del Master Theorem: `T(n) = aT(n/b) + f(n)`.
+5. **Teoría de Complejidad y Fronteras del Conocimiento:** Las clases de decisión P y NP, reducciones polinomiales, problemas NP-Completos (SAT, TSP, Mochila) y el enigma del Premio del Milenio: ¿P = NP?.
 6. **Ejercicios Prácticos con Cuadro de Texto:** En cada lección resolverás problemas de análisis a mano o en tu máquina y escribirás la notación exacta en el cuadro interactivo.
 $SUMMARY$,
     ARRAY['Algoritmos', 'Matemáticas', 'Complejidad', 'Big-O', 'Ciencias de la Computación', 'Estructuras de Datos'],
