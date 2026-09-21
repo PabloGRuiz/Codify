@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { 
   CheckCircle2, 
   XCircle, 
@@ -13,13 +14,18 @@ import {
   Lightbulb, 
   PenTool,
   Keyboard,
-  Sparkles
+  Sparkles,
+  Copy,
+  Check,
+  Code2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface QuizQuestion {
   id: string;
   question: string;
+  code?: string;
+  codeLanguage?: string;
   type?: "choice" | "input";
   options?: string[];
   correctIndex?: number;
@@ -62,6 +68,249 @@ function shuffleQuestionOptions(q: QuizQuestion): QuizQuestion {
     options: newOptions,
     correctIndex: newCorrectIndex >= 0 ? newCorrectIndex : 0,
   };
+}
+
+// Preprocesa y detecta código o fórmulas matemáticas en enunciados
+function formatQuestionText(text: string): string {
+  if (!text) return "";
+  let processed = text.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
+
+  // Si no tiene bloques de código con ``` pero contiene código evidente (def, int, while, for...)
+  if (!processed.includes("```")) {
+    const codeMatch = processed.match(/(Considera [^\n:]+:\s*\n+)([\s\S]*?)(\n\s*(?:Si|¿|Calcula|Dada|En|Entre|\?)[^\n]*[\s\S]*)$/i);
+    if (codeMatch) {
+      const header = codeMatch[1].trim();
+      const code = codeMatch[2].trim();
+      const prompt = codeMatch[3].trim();
+      
+      const lang = code.includes("def ") || code.includes("range(") ? "python" :
+                   code.includes("int ") || code.includes("cout") || code.includes("#include") ? "cpp" : "javascript";
+
+      processed = `${header}\n\n\`\`\`${lang}\n${code}\n\`\`\`\n\n${prompt}`;
+    }
+  }
+
+  // Notaciones matemáticas y superíndices habituales
+  processed = processed
+    .replace(/\bn\^4\b/g, "n⁴")
+    .replace(/\bn\^3\b/g, "n³")
+    .replace(/\bn\^2\b/g, "n²")
+    .replace(/\bx\^n\b/g, "xⁿ")
+    .replace(/\b2\^4\b/g, "2⁴")
+    .replace(/\b2\^8\b/g, "2⁸")
+    .replace(/\b2\^10\b/g, "2¹⁰")
+    .replace(/\$O\(([^$]+)\)\$/g, "`O($1)`")
+    .replace(/\$n\s*=\s*(\d+)\$/g, "*n* = $1")
+    .replace(/\$([a-zA-Z0-9_+*/^= -]+)\$/g, "*$1*");
+
+  // Resalta la pregunta interrogativa principal si no está ya en negrita
+  processed = processed.replace(/(?<!\*)(¿[^?\n]+\?)(?!\*)/g, "**$1**");
+
+  return processed;
+}
+
+// Componente interactivo para bloques de código con cabecera y botón de copiado
+function CodeSnippetBlock({ code, language }: { code: string; language?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error("Error al copiar código:", e);
+    }
+  };
+
+  const lines = code.trim().split("\n");
+  const displayLang = (language || "código").toUpperCase();
+
+  return (
+    <div className="my-4 rounded-2xl overflow-hidden border border-white/10 bg-[#09090f] shadow-2xl transition-all hover:border-white/20">
+      {/* Top Bar Header */}
+      <div className="bg-black/60 px-4 py-2 border-b border-white/10 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          {/* Traffic light dots */}
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
+          </div>
+          <div className="h-3.5 w-px bg-white/10 mx-1" />
+          <div className="flex items-center gap-1.5 text-zinc-400 font-mono text-xs">
+            <Code2 size={13} className="text-purple-400" />
+            <span className="font-bold tracking-wider text-[11px] text-zinc-300">
+              {displayLang}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white transition-all border border-white/5 active:scale-95 cursor-pointer"
+          title="Copiar código al portapapeles"
+        >
+          {copied ? (
+            <>
+              <Check size={12} className="text-emerald-400" />
+              <span className="text-emerald-400 font-bold">Copiado</span>
+            </>
+          ) : (
+            <>
+              <Copy size={12} className="text-zinc-400" />
+              <span>Copiar</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Code body with line numbers */}
+      <div className="flex font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto p-4 bg-[#09090e]">
+        <div className="select-none text-zinc-600 text-right pr-3.5 border-r border-white/10 font-mono text-xs space-y-0.5">
+          {lines.map((_, i) => (
+            <div key={i}>{i + 1}</div>
+          ))}
+        </div>
+        <pre className="pl-4 text-emerald-300 font-mono overflow-x-auto m-0 flex-1 whitespace-pre">
+          <code>{code}</code>
+        </pre>
+      </div>
+    </div>
+  );
+}
+
+// Renderizador visual de preguntas con Markdown y Código
+function QuestionContentRenderer({
+  question,
+  code,
+  codeLanguage,
+}: {
+  question: string;
+  code?: string;
+  codeLanguage?: string;
+}) {
+  const formatted = formatQuestionText(question);
+
+  return (
+    <div className="space-y-3 font-sans">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children }) => (
+            <h1 className="text-xl sm:text-2xl font-heading font-bold text-white mb-2 leading-snug">
+              {children}
+            </h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-lg sm:text-xl font-heading font-bold text-white mb-2 leading-snug">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-base sm:text-lg font-heading font-semibold text-purple-300 mb-2">
+              {children}
+            </h3>
+          ),
+          p: ({ children }) => (
+            <p className="text-base sm:text-lg text-zinc-200 leading-relaxed my-2 font-medium">
+              {children}
+            </p>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="my-3 border-l-4 border-purple-500 bg-purple-500/10 px-4 py-3 rounded-r-xl text-zinc-200 text-sm sm:text-base font-medium">
+              {children}
+            </blockquote>
+          ),
+          pre: ({ children }) => <>{children}</>,
+          code({ node, className, children, ...props }: any) {
+            const match = /language-(\w+)/.exec(className || "");
+            const codeString = String(children).replace(/\n$/, "");
+            const isBlock = match || codeString.includes("\n");
+
+            if (isBlock) {
+              return (
+                <CodeSnippetBlock
+                  code={codeString}
+                  language={match ? match[1] : codeLanguage}
+                />
+              );
+            }
+
+            return (
+              <code className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono text-xs sm:text-sm font-bold mx-0.5 inline-block shadow-sm">
+                {children}
+              </code>
+            );
+          },
+          strong: ({ children }) => (
+            <strong className="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/15">
+              {children}
+            </strong>
+          ),
+          em: ({ children }) => (
+            <em className="text-purple-300 font-serif italic">{children}</em>
+          ),
+          ul: ({ children }) => (
+            <ul className="space-y-1.5 my-2 pl-2 list-none">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="space-y-1.5 my-2 pl-4 list-decimal text-zinc-300">{children}</ol>
+          ),
+          li: ({ children }) => (
+            <li className="flex items-start gap-2 text-zinc-200 text-sm sm:text-base leading-relaxed">
+              <span className="text-primary font-bold shrink-0 mt-0.5">•</span>
+              <div className="flex-1">{children}</div>
+            </li>
+          ),
+        }}
+      >
+        {formatted}
+      </ReactMarkdown>
+
+      {/* Si se pasa un fragmento de código explícito por propiedad */}
+      {code && (
+        <CodeSnippetBlock code={code} language={codeLanguage} />
+      )}
+    </div>
+  );
+}
+
+// Renderizador visual de explicaciones pedagógicas
+function ExplanationRenderer({ content }: { content: string }) {
+  if (!content) return null;
+  const formatted = content
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\$O\(([^$]+)\)\$/g, "`O($1)`")
+    .replace(/\$([a-zA-Z0-9_+*/^= -]+)\$/g, "*$1*");
+
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => (
+          <p className="text-xs sm:text-sm leading-relaxed my-1 text-zinc-200">
+            {children}
+          </p>
+        ),
+        pre: ({ children }) => <>{children}</>,
+        code({ node, className, children, ...props }: any) {
+          return (
+            <code className="bg-black/40 text-emerald-300 border border-white/10 px-1 py-0.5 rounded font-mono text-xs font-bold mx-0.5 inline-block">
+              {children}
+            </code>
+          );
+        },
+        strong: ({ children }) => (
+          <strong className="text-white font-bold">{children}</strong>
+        ),
+      }}
+    >
+      {formatted}
+    </ReactMarkdown>
+  );
 }
 
 // Normaliza respuestas de texto para comparaciones flexibles
@@ -237,10 +486,12 @@ export function QuizRunner({
             </span>
           </div>
 
-          {/* Question Text */}
-          <h2 className="text-2xl font-heading font-bold text-white leading-snug">
-            {currentQ.question}
-          </h2>
+          {/* Question Text & Code Renderer */}
+          <QuestionContentRenderer
+            question={currentQ.question}
+            code={currentQ.code}
+            codeLanguage={currentQ.codeLanguage}
+          />
 
           {/* Formato de Respuesta: Cuadro de Texto vs Opciones Múltiples */}
           {isInputType ? (
@@ -361,7 +612,7 @@ export function QuizRunner({
                     </strong>
                   </div>
                 )}
-                <p className="text-xs opacity-90 leading-relaxed">{currentQ.explanation}</p>
+                <ExplanationRenderer content={currentQ.explanation} />
               </motion.div>
             )}
           </AnimatePresence>
