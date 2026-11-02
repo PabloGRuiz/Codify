@@ -202,7 +202,26 @@ function TheoryRenderer({ content }: { content: string }) {
             const codeString = String(children).replace(/\n$/, "");
             const isBlock = match || codeString.includes("\n");
 
+            const langName = match ? match[1].toLowerCase() : "";
+            const isFlowchart = langName === "flowchart" || langName === "diagrama";
+
             if (isBlock) {
+              if (isFlowchart) {
+                return (
+                  <div className="my-4 rounded-xl overflow-hidden border border-cyan-500/30 bg-[#080d14] font-mono text-xs sm:text-sm shadow-xl">
+                    <div className="bg-cyan-950/40 px-3.5 py-1.5 border-b border-cyan-500/20 text-xs text-cyan-300 flex items-center justify-between">
+                      <span className="font-bold text-cyan-400 tracking-wider uppercase text-[11px]">
+                        📐 DIAGRAMA DE FLUJO LÓGICO (ISO 5807)
+                      </span>
+                      <span className="text-[10px] text-cyan-300/70 font-mono">FLUJO VISUAL</span>
+                    </div>
+                    <pre className="p-4 overflow-x-auto text-cyan-200 font-mono leading-snug whitespace-pre m-0">
+                      <code>{codeString}</code>
+                    </pre>
+                  </div>
+                );
+              }
+
               return (
                 <div className="my-4 rounded-xl overflow-hidden border border-white/10 bg-[#0d0d11] font-mono text-xs sm:text-sm shadow-xl">
                   <div className="bg-black/60 px-3.5 py-1.5 border-b border-white/10 text-xs text-zinc-400 flex items-center justify-between">

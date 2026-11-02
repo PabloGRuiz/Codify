@@ -115,12 +115,17 @@ function CodeSnippetBlock({ code, language }: { code: string; language?: string 
   };
 
   const lines = code.trim().split("\n");
-  const displayLang = (language || "código").toUpperCase();
+  const isFlowchart = (language || "").toLowerCase() === "flowchart" || (language || "").toLowerCase() === "diagrama";
+  const displayLang = isFlowchart ? "📐 DIAGRAMA DE FLUJO (ISO 5807)" : (language || "código").toUpperCase();
 
   return (
-    <div className="my-4 rounded-2xl overflow-hidden border border-white/10 bg-[#09090f] shadow-2xl transition-all hover:border-white/20">
+    <div className={`my-4 rounded-2xl overflow-hidden border shadow-2xl transition-all ${
+      isFlowchart
+        ? "border-cyan-500/30 bg-[#080d14] hover:border-cyan-500/50"
+        : "border-white/10 bg-[#09090f] hover:border-white/20"
+    }`}>
       {/* Top Bar Header */}
-      <div className="bg-black/60 px-4 py-2 border-b border-white/10 flex items-center justify-between">
+      <div className={`${isFlowchart ? "bg-cyan-950/40 border-cyan-500/20" : "bg-black/60 border-white/10"} px-4 py-2 border-b flex items-center justify-between`}>
         <div className="flex items-center gap-2.5">
           {/* Traffic light dots */}
           <div className="flex items-center gap-1.5">
@@ -130,8 +135,8 @@ function CodeSnippetBlock({ code, language }: { code: string; language?: string 
           </div>
           <div className="h-3.5 w-px bg-white/10 mx-1" />
           <div className="flex items-center gap-1.5 text-zinc-400 font-mono text-xs">
-            <Code2 size={13} className="text-purple-400" />
-            <span className="font-bold tracking-wider text-[11px] text-zinc-300">
+            <Code2 size={13} className={isFlowchart ? "text-cyan-400" : "text-purple-400"} />
+            <span className={`font-bold tracking-wider text-[11px] ${isFlowchart ? "text-cyan-300" : "text-zinc-300"}`}>
               {displayLang}
             </span>
           </div>
@@ -141,7 +146,7 @@ function CodeSnippetBlock({ code, language }: { code: string; language?: string 
           type="button"
           onClick={handleCopy}
           className="flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white transition-all border border-white/5 active:scale-95 cursor-pointer"
-          title="Copiar código al portapapeles"
+          title="Copiar al portapapeles"
         >
           {copied ? (
             <>
@@ -157,17 +162,25 @@ function CodeSnippetBlock({ code, language }: { code: string; language?: string 
         </button>
       </div>
 
-      {/* Code body with line numbers */}
-      <div className="flex font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto p-4 bg-[#09090e]">
-        <div className="select-none text-zinc-600 text-right pr-3.5 border-r border-white/10 font-mono text-xs space-y-0.5">
-          {lines.map((_, i) => (
-            <div key={i}>{i + 1}</div>
-          ))}
+      {/* Code or Flowchart body */}
+      {isFlowchart ? (
+        <div className="font-mono text-xs sm:text-sm leading-snug overflow-x-auto p-4 bg-[#080d14]">
+          <pre className="text-cyan-200 font-mono overflow-x-auto m-0 whitespace-pre">
+            <code>{code}</code>
+          </pre>
         </div>
-        <pre className="pl-4 text-emerald-300 font-mono overflow-x-auto m-0 flex-1 whitespace-pre">
-          <code>{code}</code>
-        </pre>
-      </div>
+      ) : (
+        <div className="flex font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto p-4 bg-[#09090e]">
+          <div className="select-none text-zinc-600 text-right pr-3.5 border-r border-white/10 font-mono text-xs space-y-0.5">
+            {lines.map((_, i) => (
+              <div key={i}>{i + 1}</div>
+            ))}
+          </div>
+          <pre className="pl-4 text-emerald-300 font-mono overflow-x-auto m-0 flex-1 whitespace-pre">
+            <code>{code}</code>
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
